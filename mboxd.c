@@ -470,6 +470,32 @@ int main(int argc, char *argv[])
 	context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
 	context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
 
+	/* Test the single write facility by setting all the regs to 0xFF */
+	MSG_OUT("Setting all MBOX regs to 0xff individually...\n");
+	for (i = 0; i < MBOX_REG_BYTES; i++) {
+		uint8_t byte = 0xff;
+		off_t pos;
+		int len;
+
+		pos = lseek(context->fds[MBOX_FD].fd, i, SEEK_SET);
+		if (pos != i) {
+			MSG_ERR("Couldn't lseek() to byte %d: %s\n", i,
+					strerror(errno));
+			break;
+		}
+		len = write(context->fds[MBOX_FD].fd, &byte, 1);
+		if (len != 1) {
+			MSG_ERR("Couldn't write MBOX reg %d: %s\n", i,
+					strerror(errno));
+			break;
+		}
+	}
+	if (lseek(context->fds[MBOX_FD].fd, 0, SEEK_SET) != 0) {
+		r = -errno;
+		MSG_ERR("Couldn't reset MBOX pos to zero\n");
+		goto finish;
+	}
+
 	MSG_OUT("Entering polling loop\n");
 	while (running) {
 		polled = poll(context->fds, TOTAL_FDS, 1000);
