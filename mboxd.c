@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 	static const struct option long_options[] = {
 		{ "verbose", no_argument, 0, 'v' },
 		{ "syslog",  no_argument, 0, 's' },
-		{ 0,         0,           0,  0  }
+		{ 0,	     0,		  0,  0  }
 	};
 
 	context = calloc(1, sizeof(*context));
