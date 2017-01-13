@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include <mtd/mtd-abi.h>
 
@@ -242,8 +243,13 @@ static int dispatch_mbox(struct mbox_context *context)
 			 * the window...
 			 * This approach is easiest.
 			 */
-			if (context->dirty)
-				read(-context->fds[MTD_FD].fd, context->lpc_mem, context->size);
+			if (context->dirty) {
+				r = read(-context->fds[MTD_FD].fd, context->lpc_mem, context->size);
+				if (r != context->size) {
+					MSG_ERR("Short read: %d expecting %"PRIu32"\n", r, context->size);
+					goto out;
+				}
+			}
 			basepg += get_u16(&req.msg.data[0]);
 			put_u16(&resp.msg.data[0], basepg);
 			resp.msg.response = MBOX_R_SUCCESS;
