@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -70,6 +71,7 @@ struct mbox_context {
 };
 
 static int running = 1;
+static int sighup = 0;
 
 static int point_to_flash(struct mbox_context *context)
 {
@@ -98,7 +100,7 @@ static int point_to_flash(struct mbox_context *context)
 	MSG_OUT("Pointing HOST LPC bus at the actual flash\n");
 	MSG_OUT("Assuming 32MB of flash: HOST LPC 0x%08x\n", map.addr);
 
-	if (ioctl(-context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map) == -1) {
+	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map) == -1) {
 		r = -errno;
 		MSG_ERR("Couldn't MAP the host LPC bus to the platform flash\n");
 	}
@@ -313,6 +315,37 @@ out:
 	return r;
 }
 
+int copy_flash(struct mbox_context *context)
+{
+	int r;
+
+	/*
+	 * Copy flash into RAM early, same time.
+	 * The kernel has created the LPC->AHB mapping also, which means
+	 * flash should work.
+	 * Ideally we tell the kernel whats up and when to do stuff...
+	 */
+	MSG_OUT("Loading flash into ram at %p for 0x%08x bytes\n",
+		context->lpc_mem, context->size);
+	if (lseek(context->fds[MTD_FD].fd, 0, SEEK_SET) != 0) {
+		r = -errno;
+		MSG_ERR("Couldn't reset MBOX pos to zero\n");
+		return r;
+	}
+	r = read(context->fds[MTD_FD].fd, context->lpc_mem, context->size);
+	if (r != context->size) {
+		r = -errno;
+		MSG_ERR("Couldn't copy mtd into ram: %d\n", r);
+		return r;
+	}
+	return 0;
+}
+
+void signal_hup(int signum, siginfo_t *info, void *uc)
+{
+	sighup = 1;
+}
+
 static void usage(const char *name)
 {
 	fprintf(stderr, "Usage %s [ -v[v] | --syslog ]\n", name);
@@ -327,6 +360,7 @@ int main(int argc, char *argv[])
 	char *pnor_filename = NULL;
 	int opt, polled, r, i;
 	struct aspeed_lpc_ctrl_mapping map;
+	struct sigaction act;
 
 	static const struct option long_options[] = {
 		{ "verbose", no_argument, 0, 'v' },
@@ -364,6 +398,16 @@ int main(int argc, char *argv[])
 
 	if (verbosity == MBOX_LOG_DEBUG)
 		MSG_OUT("Debug logging\n");
+
+	MSG_OUT("Registering SigHUP hander\n");
+	act.sa_sigaction = signal_hup;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_SIGINFO;
+	if (sigaction(SIGHUP, &act, NULL) < 0) {
+		perror("Registering SIGHUP");
+		exit(1);
+	}
+	sighup = 0;
 
 	MSG_OUT("Starting\n");
 
@@ -439,19 +483,8 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	/*
-	 * Copy flash into RAM early, same time.
-	 * The kernel has created the LPC->AHB mapping also, which means
-	 * flash should work.
-	 * Ideally we tell the kernel whats up and when to do stuff...
-	 */
-	MSG_OUT("Loading flash into ram at %p for 0x%08x bytes\n",
-			context->lpc_mem, context->size);
-	r = read(context->fds[MTD_FD].fd, context->lpc_mem, context->size);
-	if (r != context->size) {
-		MSG_ERR("Couldn't copy mtd into ram: %d\n", r);
+	if (copy_flash(context))
 		goto finish;
-	}
 
 	context->fds[MBOX_FD].events = POLLIN;
 	/* Ignore in poll() */
@@ -489,6 +522,23 @@ int main(int argc, char *argv[])
 		polled = poll(context->fds, TOTAL_FDS, 1000);
 		if (polled == 0)
 			continue;
+		if ((polled == -1) && (errno != -EINTR) && (sighup == 1)) {
+			/* Got sighup. reset to point to flash and
+			 * reread flash */
+			context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
+			r = point_to_flash(context);
+			if (r) {
+				goto finish;
+			}
+			context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
+			context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
+			r = copy_flash(context);
+			if (r)
+				goto finish;
+			context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
+			sighup = 0;
+			continue;
+		}
 		if (polled < 0) {
 			r = -errno;
 			MSG_ERR("Error from poll(): %s\n", strerror(errno));
