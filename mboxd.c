@@ -71,56 +71,38 @@ struct mbox_context {
 
 static int running = 1;
 
-static int point_to_flash(void)
+static int point_to_flash(struct mbox_context *context)
 {
+	struct aspeed_lpc_ctrl_mapping map;
+	int r = 0;
+
 	/*
-	 * Point it to the real flash for sanity. Because hostboot has
-	 * expectations as to where the flash is we can't use the kernel
-	 * provided UNMAP ioctl().
+	 * Point it to the real flash for sanity.
 	 *
-	 * That that ioctl() does is detect the size of the flash and map it
-	 * appropriately on the LPC bus on the host. The issue with this is that
-	 * if a machine has a different flash size to what hostboot expects the
-	 * mapping will be incorrect.
-	 *
-	 * For example 32MB of flash for a platform would mean that hostboot
-	 * expects  flash to be at 0x0e000000 - 0x0fffffff on the LPC bus. If
-	 * the machine actually has 64MB of flash then the UNMAP ioctl() would
-	 * map it 0x0c000000 - 0x0fffffff but hostboot will still read at
-	 * 0x0e000000.
+	 * This function assumes 32MB of flash which means that that
+	 * hostboot expects flash to be at 0x0e000000 - 0x0fffffff on the
+	 * LPC bus. If the machine actually has 64MB of flash then the
+	 * map.addr should be 0x0c000000. TODO
 	 *
 	 * Until hostboot learns how to talk to this daemon this hardcode will
 	 * get hostboot going. Furthermore, when hostboot does learn to talk
 	 * then this mapping is unnecessary and this code should be removed.
 	 */
 
-	int r = 0, devmem_fd;
-	char *devmem_ptr;
+	map.addr = 0x0e000000;
+	map.size = 0x02000000; /* 32MB */
+	map.offset = 0;
+	map.window_type = ASPEED_LPC_CTRL_WINDOW_FLASH;
+	map.window_id = 0; /* Theres only one */
 
 	MSG_OUT("Pointing HOST LPC bus at the actual flash\n");
-	MSG_OUT("Assuming 32MB of flash: HOST LPC 0x%08x -> BMC 0x%08x\n",
-		BOOT_HICR7 & 0xffff0000, BOOT_HICR7 << 16);
-	devmem_fd = open("/dev/mem", O_RDWR);
-	if (devmem_fd == -1) {
-		r = -errno;
-		MSG_ERR("Couldn't open /dev/mem: %s\n", strerror(-r));
-		goto out;
-	}
-	devmem_ptr = mmap(NULL, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED,
-			devmem_fd, 0x1e789000);
-	if (devmem_ptr == MAP_FAILED) {
-		r = -errno;
-		MSG_ERR("Couldn't mmap() /dev/mem at 0x1e789000 for 0x1000: %s\n",
-				strerror(-r));
-		goto out;
-	}
-	*(uint32_t *)&devmem_ptr[0x88] = BOOT_HICR7;
-	*(uint32_t *)&devmem_ptr[0x8c] = BOOT_HICR8;
-	munmap(devmem_ptr, 0x1000);
-	close(devmem_fd);
-	/* Sigh */
+	MSG_OUT("Assuming 32MB of flash: HOST LPC 0x%08x\n", map.addr);
 
-out:
+	if (ioctl(-context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map) == -1) {
+		r = -errno;
+		MSG_ERR("Couldn't MAP the host LPC bus to the platform flash\n");
+	}
+
 	return r;
 }
 
@@ -207,7 +189,7 @@ static int dispatch_mbox(struct mbox_context *context)
 		case MBOX_C_RESET_STATE:
 			/* Called by early hostboot? TODO */
 			resp.msg.response = MBOX_R_SUCCESS;
-			r = point_to_flash();
+			r = point_to_flash(context);
 			if (r) {
 				resp.msg.response = MBOX_R_SYSTEM_ERROR;
 				MSG_ERR("Couldn't point the LPC BUS back to actual flash\n");
@@ -420,7 +402,7 @@ int main(int argc, char *argv[])
 	context->base = -context->size & 0x0FFFFFFF;
 
 	/* READ THE COMMENT AT THE START OF THIS FUNCTION! */
-	r = point_to_flash();
+	r = point_to_flash(context);
 	if (r) {
 		MSG_ERR("Failed to point the LPC BUS at the actual flash: %s\n",
 				strerror(-r));
