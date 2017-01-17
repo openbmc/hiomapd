@@ -12,11 +12,7 @@ AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
-# Checks for libraries.
-PKG_CHECK_MODULES([SYSTEMD], [libsystemd >= 221])
-
 # Checks for header files.
-AC_CHECK_HEADER(systemd/sd-bus.h, ,[AC_MSG_ERROR([Could not find systemd/sd-bus.h...systemd developement package required])])
 AC_CHECK_HEADER(linux/aspeed-lpc-ctrl.h,[HAVE_UAPI_LINUX_LPC_CTRL_H=""],[HAVE_UAPI_LINUX_LPC_CTRL_H="-I linux/aspeed-lpc-ctrl.h"])
 AS_IF([test "$HAVE_UAPI_LINUX_LPC_CTRL_H" = ""],
     AC_MSG_WARN([Could not find linux/aspeed-lpc-ctrl.h])
@@ -27,10 +23,6 @@ AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CFLAGS])
 
 # Checks for library functions.
 LT_INIT # Removes 'unrecognized options: --with-libtool-sysroot'
-
-# Check/set gtest specific functions.
-AX_PTHREAD([GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=1"],[GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=0"])
-AC_SUBST(GTEST_CPPFLAGS)
 
 AC_ARG_ENABLE([oe-sdk],
     AS_HELP_STRING([--enable-oe-sdk], [Link testcases absolutely against OE SDK so they can be ran within it.])
