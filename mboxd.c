@@ -68,6 +68,7 @@ struct mbox_context {
 	uint32_t dirtybase;
 	uint32_t dirtysize;
 	struct mtd_info_user mtd_info;
+	uint32_t flash_size;
 };
 
 static int running = 1;
@@ -91,14 +92,19 @@ static int point_to_flash(struct mbox_context *context)
 	 * then this mapping is unnecessary and this code should be removed.
 	 */
 
-	map.addr = 0x0e000000;
-	map.size = 0x02000000; /* 32MB */
+	/*
+	 * The mask is because the top nibble is the host LPC FW space, we
+	 * want space 0
+	 */
+	map.addr = (0UL - context->flash_size) & 0x0fffffff;
+	map.size = context->flash_size;
 	map.offset = 0;
 	map.window_type = ASPEED_LPC_CTRL_WINDOW_FLASH;
 	map.window_id = 0; /* Theres only one */
 
 	MSG_OUT("Pointing HOST LPC bus at the actual flash\n");
-	MSG_OUT("Assuming 32MB of flash: HOST LPC 0x%08x\n", map.addr);
+	MSG_OUT("Assuming %dMB of flash: HOST LPC 0x%08x\n", context->flash_size >> 20,
+			map.addr);
 
 	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map) == -1) {
 		r = -errno;
@@ -348,7 +354,8 @@ void signal_hup(int signum, siginfo_t *info, void *uc)
 
 static void usage(const char *name)
 {
-	fprintf(stderr, "Usage %s [ -v[v] | --syslog ]\n", name);
+	fprintf(stderr, "Usage %s [ -v[v] | --syslog ] --flash=size[K | M]\n", name);
+	fprintf(stderr, "\t--flash size[K | M]\t Map the flash for the according to 'size' in Kilobytes or Megabytes\n");
 	fprintf(stderr, "\t--verbose\t Be [more] verbose\n");
 	fprintf(stderr, "\t--syslog\t Log output to syslog (pointless without -v)\n\n");
 }
@@ -361,11 +368,13 @@ int main(int argc, char *argv[])
 	int opt, polled, r, i;
 	struct aspeed_lpc_ctrl_mapping map;
 	struct sigaction act;
+	char *endptr;
 
 	static const struct option long_options[] = {
-		{ "verbose", no_argument, 0, 'v' },
-		{ "syslog",  no_argument, 0, 's' },
-		{ 0,	     0,		  0,  0  }
+		{ "flash",   required_argument, 0, 'f' },
+		{ "verbose", no_argument,       0, 'v' },
+		{ "syslog",  no_argument,       0, 's' },
+		{ 0,	     0,		            0,  0  }
 	};
 
 	context = calloc(1, sizeof(*context));
@@ -373,9 +382,26 @@ int main(int argc, char *argv[])
 		context->fds[i].fd = -1;
 
 	mbox_vlog = &mbox_log_console;
-	while ((opt = getopt_long(argc, argv, "v", long_options, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "fv", long_options, NULL)) != -1) {
 		switch (opt) {
 			case 0:
+				break;
+			case 'f':
+				context->flash_size = strtol(optarg, &endptr, 0);
+				if (optarg == endptr) {
+					fprintf(stderr, "Unparseable flash size\n");
+					usage(name);
+					exit(EXIT_FAILURE);
+				}
+				if (*endptr == 'K') {
+					context->flash_size <<= 10;
+				} else if (*endptr == 'M') {
+					context->flash_size <<= 20;
+				} else if (*endptr != '\0') { /* Unknown units */
+					fprintf(stderr, "Unknown units '%c'\n", *endptr);
+					usage(name);
+					exit(EXIT_FAILURE);
+				}
 				break;
 			case 'v':
 				verbosity++;
@@ -391,6 +417,12 @@ int main(int argc, char *argv[])
 				usage(name);
 				exit(EXIT_FAILURE);
 		}
+	}
+
+	if (context->flash_size == 0) {
+		fprintf(stderr, "Must specify a non-zero flash size\n");
+		usage(name);
+		exit(EXIT_FAILURE);
 	}
 
 	if (verbosity == MBOX_LOG_VERBOSE)
