@@ -45,7 +45,10 @@
 
 #define LPC_CTRL_PATH "/dev/aspeed-lpc-ctrl"
 
+
+/* Put pulled fds first */
 #define MBOX_FD 0
+#define POLL_FDS 1
 #define LPC_CTRL_FD 1
 #define MTD_FD 2
 #define TOTAL_FDS 3
@@ -126,18 +129,18 @@ static int flash_write(struct mbox_context *context, uint32_t pos, uint32_t len)
 	erase_info.length = ALIGN_UP(len, context->mtd_info.erasesize);
 
 	MSG_OUT("Erasing 0x%08x for 0x%08x (aligned: 0x%08x)\n", pos, len, erase_info.length);
-	if (ioctl(-context->fds[MTD_FD].fd, MEMERASE, &erase_info) == -1) {
+	if (ioctl(context->fds[MTD_FD].fd, MEMERASE, &erase_info) == -1) {
 		MSG_ERR("Couldn't MEMERASE ioctl, flash write lost: %s\n", strerror(errno));
 		return -1;
 	}
 
-	if (lseek(-context->fds[MTD_FD].fd, pos, SEEK_SET) == (off_t) -1) {
+	if (lseek(context->fds[MTD_FD].fd, pos, SEEK_SET) == (off_t) -1) {
 		MSG_ERR("Couldn't seek to 0x%08x into MTD, flash write lost: %s\n", pos, strerror(errno));
 		return -1;
 	}
 
 	while (erase_info.length) {
-		rc = write(-context->fds[MTD_FD].fd, context->lpc_mem + pos, erase_info.length);
+		rc = write(context->fds[MTD_FD].fd, context->lpc_mem + pos, erase_info.length);
 		if (rc == -1) {
 			MSG_ERR("Couldn't write to flash! Flash write lost: %s\n", strerror(errno));
 			return -1;
@@ -211,7 +214,7 @@ static int dispatch_mbox(struct mbox_context *context)
 			resp.msg.response = MBOX_R_SUCCESS;
 			/* Wow that can't stay negated thats horrible */
 			MSG_OUT("LPC_CTRL_IOCTL_MAP to 0x%08x for 0x%08x\n", map.addr, map.size);
-			r = ioctl(-context->fds[LPC_CTRL_FD].fd,
+			r = ioctl(context->fds[LPC_CTRL_FD].fd,
 					ASPEED_LPC_CTRL_IOCTL_MAP, &map);
 			if (r < 0) {
 				r = -errno;
@@ -234,7 +237,7 @@ static int dispatch_mbox(struct mbox_context *context)
 			 * This approach is easiest.
 			 */
 			if (context->dirty) {
-				r = read(-context->fds[MTD_FD].fd, context->lpc_mem, context->size);
+				r = read(context->fds[MTD_FD].fd, context->lpc_mem, context->size);
 				if (r != context->size) {
 					MSG_ERR("Short read: %d expecting %"PRIu32"\n", r, context->size);
 					goto out;
@@ -519,9 +522,6 @@ int main(int argc, char *argv[])
 		goto finish;
 
 	context->fds[MBOX_FD].events = POLLIN;
-	/* Ignore in poll() */
-	context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
-	context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
 
 	/* Test the single write facility by setting all the regs to 0xFF */
 	MSG_OUT("Setting all MBOX regs to 0xff individually...\n");
@@ -551,23 +551,19 @@ int main(int argc, char *argv[])
 
 	MSG_OUT("Entering polling loop\n");
 	while (running) {
-		polled = poll(context->fds, TOTAL_FDS, 1000);
+		polled = poll(context->fds, POLL_FDS, 1000);
 		if (polled == 0)
 			continue;
 		if ((polled == -1) && (errno != -EINTR) && (sighup == 1)) {
 			/* Got sighup. reset to point to flash and
 			 * reread flash */
-			context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
 			r = point_to_flash(context);
 			if (r) {
 				goto finish;
 			}
-			context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
-			context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
 			r = copy_flash(context);
 			if (r)
 				goto finish;
-			context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
 			sighup = 0;
 			continue;
 		}
@@ -584,10 +580,6 @@ int main(int argc, char *argv[])
 	}
 
 	MSG_OUT("Exiting\n");
-
-	/* Unnegate so we can close it */
-	context->fds[LPC_CTRL_FD].fd = -context->fds[LPC_CTRL_FD].fd;
-	context->fds[MTD_FD].fd = -context->fds[MTD_FD].fd;
 
 finish:
 	if (context->lpc_mem)
