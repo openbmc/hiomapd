@@ -79,7 +79,7 @@ static int sighup = 0;
 
 static int point_to_flash(struct mbox_context *context)
 {
-	struct aspeed_lpc_ctrl_mapping map;
+	struct aspeed_lpc_ctrl_mapping map = { 0 };
 	int r = 0;
 
 	/*
@@ -97,7 +97,8 @@ static int point_to_flash(struct mbox_context *context)
 
 	/*
 	 * The mask is because the top nibble is the host LPC FW space, we
-	 * want space 0
+	 * want space 0. The struct has been zeroed, best to be explicit
+	 * though.
 	 */
 	map.addr = (0UL - context->flash_size) & 0x0fffffff;
 	map.size = context->flash_size;
@@ -167,7 +168,7 @@ static int dispatch_mbox(struct mbox_context *context)
 	union mbox_regs resp, req = { 0 };
 	uint16_t sizepg, basepg, dirtypg;
 	uint32_t dirtycount;
-	struct aspeed_lpc_ctrl_mapping map;
+	struct aspeed_lpc_ctrl_mapping map = { 0 };
 
 	assert(context);
 
@@ -369,7 +370,7 @@ int main(int argc, char *argv[])
 	const char *name = argv[0];
 	char *pnor_filename = NULL;
 	int opt, polled, r, i;
-	struct aspeed_lpc_ctrl_mapping map;
+	struct aspeed_lpc_ctrl_mapping map = { 0 };
 	struct sigaction act;
 	char *endptr;
 
