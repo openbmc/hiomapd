@@ -167,7 +167,7 @@ static int dispatch_mbox(struct mbox_context *context)
 	union mbox_regs resp, req = { 0 };
 	uint16_t sizepg, basepg, dirtypg;
 	uint32_t dirtycount;
-	struct aspeed_lpc_ctrl_mapping map;
+	struct aspeed_lpc_ctrl_mapping map = { 0 };
 
 	assert(context);
 
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
 	const char *name = argv[0];
 	char *pnor_filename = NULL;
 	int opt, polled, r, i;
-	struct aspeed_lpc_ctrl_mapping map;
+	struct aspeed_lpc_ctrl_mapping map = { 0 };
 	struct sigaction act;
 	char *endptr;
 
