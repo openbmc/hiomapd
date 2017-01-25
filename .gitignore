@@ -36,6 +36,9 @@ Makefile.in
 /texinfo.tex
 
 # Repo Specific Items
+/m4/*
+*.swp
+/libtool
 /*.o
 /config.h
 /config.h.in~
