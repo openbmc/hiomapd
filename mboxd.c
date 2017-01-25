@@ -325,9 +325,14 @@ out:
 	return r;
 }
 
+
+#define CHUNKSIZE (64 * 1024)
+
 int copy_flash(struct mbox_context *context)
 {
 	int r;
+	int readsize = CHUNKSIZE;
+	int offset = 0;
 
 	/*
 	 * Copy flash into RAM early, same time.
@@ -342,11 +347,17 @@ int copy_flash(struct mbox_context *context)
 		MSG_ERR("Couldn't reset MBOX pos to zero\n");
 		return r;
 	}
-	r = read(context->fds[MTD_FD].fd, context->lpc_mem, context->size);
-	if (r != context->size) {
-		r = -errno;
-		MSG_ERR("Couldn't copy mtd into ram: %d\n", r);
-		return r;
+	while (readsize) {
+		r = read(context->fds[MTD_FD].fd, context->lpc_mem + offset, readsize);
+		if (r != readsize) {
+			r = -errno;
+			MSG_ERR("Couldn't copy mtd into ram: %d\n", r);
+			return r;
+		}
+		offset += readsize;
+		readsize = context->size - offset;
+		if (readsize > CHUNKSIZE)
+			readsize = CHUNKSIZE;
 	}
 	return 0;
 }
