@@ -224,7 +224,7 @@ static int dispatch_mbox(struct mbox_context *context)
 			}
 			break;
 		case MBOX_C_GET_FLASH_INFO:
-			put_u32(&resp.msg.data[0], context->mtd_info.size);
+			put_u32(&resp.msg.data[0], context->flash_size);
 			put_u32(&resp.msg.data[4], context->mtd_info.erasesize);
 			resp.msg.response = MBOX_R_SUCCESS;
 			break;
