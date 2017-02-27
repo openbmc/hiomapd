@@ -13,8 +13,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 # Intro
-The autotools of this requires the autoconf-archive package for your
-system
 
 This is a protocol description using the mailbox registers on
 Aspeed 2400/2500 chips for host to BMC communication. The mailbox
@@ -61,6 +59,10 @@ mailbox data register 15 to determine the event code was set by the
 BMC (see BMC Event notifications in Commands for detail). After
 performing the necessary action the host should send a BMC_EVENT_ACK
 message to the BMC with which bit it has actioned.
+
+### Building
+The autotools of this requires the autoconf-archive package for your
+system
 
 ---
 
