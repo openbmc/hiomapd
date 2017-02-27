@@ -13,17 +13,103 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 # Intro
-
 This is a protocol description using the mailbox registers on
-Aspeed 2400/2500 chips for host to BMC communication. The mailbox
-consists of 16 (8 bit) data registers see Layout for their use.
-Mailbox interrupt enabling, masking and triggering is done using a
-pair of control registers, one accessible by the host the other by the
-BMC. Interrupts can also be raised per write to each data register, for
-BMC and host. Write tiggered interrupts are configured using two 8 bit
-registers where each bit represents a data register and if an
-interrupt should fire on write. Two 8 bit registers are present to act
-as a mask for write triggered interrupts.
+Aspeed 2400/2500 chips for host to BMC communication.
+
+### Problem Overview
+
+"mbox" is the name we use to represent a protocol we have established between
+the host and the BMC via the Aspeed mailbox registers. This protocol is used
+for the host to control the flash.
+
+Prior to the mbox protocol, the host uses a backdoor into the BMC address space
+(the iLPC-to-AHB bridge) to directly manipulate the BMC own flash controller.
+
+This is not sustainable for a number of reasons. The main ones are:
+
+1. Every piece of the host software stack that needs flash access (HostBoot,
+   OCC, OPAL, ...) has to have a complete driver for the flash controller,
+   update it on each BMC generation, have all the quirks for all the flash
+   chips supported etc... We have 3 copies on the host already in addition to
+   the one in the BMC itself.
+
+2. There are serious issues of access conflicts to that controller between the
+   host and the BMC.
+
+3. It's very hard to support "BMC reboots" when doing that
+
+4. It's slow
+
+5. Last but probably most important, having that backdoor open is a security
+   risk. It means the host can access any address on the BMC internal bus and
+   implant malware in the BMC itself. So if the host is a "bare metal" shared
+   system in some kind of data center, not only the host flash needs to be
+   reflashed when switching from one customer to another, but the entire BMC
+   flash too as nothing can be trusted. So we want to disable it.
+
+To address all these, we have implemented a new mechanism that we call mbox.
+
+When using that mechanism, the BMC is sole responsible for directly accessing
+the flash controller. All flash erase and write operations are performed by the
+BMC and the BMC only. (We can allow direct reads from flash under some
+circumstances but we tend to prefer going via memory).
+
+The host uses the mailbox registers to send "commands" to the BMC, which
+responds via the same mechanism. Those commands allow the host to control a
+"window" (which is the LPC -> AHB FW space mapping) that is either a read
+window or a write window onto the flash.
+
+When set for writing, the BMC makes the window point to a chunk of RAM instead.
+When the host "commits" a change (via MBOX), then the BMC can perform the
+actual flashing from the data in the RAM window.
+
+The idea is to have the LPC FW space be routed to an active "window".  That
+window can be a read or a write window. The commands allow to control which
+window and which offset into the flash it maps.
+
+* A read window can be a direct window to the flash controller space (ie.
+  0x3000\_0000) or it can be a window to a RAM image of a flash. It doesn't have
+  to be the full size of the flash per protocol (commands can be use to "slide"
+  it to various parts of the flash) but if its set to map the actual flash
+  controller space at 0x3000\_0000, it's probably simpler to make it the full
+  flash. The host makes no assumption, it's your choice what to provide. The
+  simplest implementation is to just route to the flash read/only.
+
+* A write window has to be a chunk of BMC memory. The minimum size is not
+  defined in the spec, but it should be at least one block (4k for now but it
+  should support larger block sizes in the future). When the BMC receive the
+  command to map the write window at a given offset of the flash, the BMC should
+  copy that portion of the flash into a reserved memory buffer, and modify the
+  LPC mapping to point to that buffer.
+
+The host can then write to that window directly (updating the BMC memory) and
+send a command to "commit" those updates to flash.
+
+Finally there is a `RESET_STATE`. It's the state in which the bootloader in the
+SEEPROM of the POWER9 chip will find what it needs to load HostBoot. The
+details are still being ironed out: either mapping the full flash read only or
+reset to a "window" that is either at the bottom or top of the flash. The
+current implementation resets to point to the full flash.
+
+### Where is the code?
+
+The mbox userspace is available [on GitHub](https://github.com/openbmc/mboxbridge)
+This is Apache licensed but we are keen to see any enhancements you may have.
+
+The kernel driver is still in the process of being upstreamed but can be found
+in the OpenBMC Linux kernel staging tree:
+
+https://github.com/openbmc/linux/commit/85770a7d1caa6a1fa1a291c33dfe46e05755a2ef
+
+### The Hardware
+The Aspeed mailbox consists of 16 (8 bit) data registers see Layout for their
+use. Mailbox interrupt enabling, masking and triggering is done using a pair
+of control registers, one accessible by the host the other by the BMC.
+Interrupts can also be raised per write to each data register, for BMC and
+host. Write tiggered interrupts are configured using two 8 bit registers where
+each bit represents a data register and if an interrupt should fire on write.
+Two 8 bit registers are present to act as a mask for write triggered
+interrupts.
 
 ### General use
 Messages usually originate from the host to the BMC. There are special
