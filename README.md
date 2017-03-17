@@ -16,6 +16,10 @@ limitations under the License.
 This is a protocol description using the mailbox registers on
 Aspeed 2400/2500 chips for host to BMC communication.
 
+### Version
+
+Description that follows if Version 2 (V2) of the protocol.
+
 ### Problem Overview
 
 "mbox" is the name we use to represent a protocol we have established between
@@ -111,6 +115,14 @@ each bit represents a data register and if an interrupt should fire on write.
 Two 8 bit registers are present to act as a mask for write triggered
 interrupts.
 
+### Low Level Protocol Flow
+The protocol itself consists of:
+```
+1. Commands sent from the Host to the BMC
+2. Responses sent from the BMC to the Host
+3. Asyncronous events raised by the BMC
+```
+
 ### General use
 Messages usually originate from the host to the BMC. There are special
 cases for a back channel for the BMC to pass new information to the
@@ -134,7 +146,6 @@ the one in the request from the host. The BMC must also ensure that
 mailbox data regsiter 13 is a valid response code (see Responses). The
 BMC should then use its control register to generate an interrupt for
 the host to notify it of a response.
-
 
 ### BMC to host
 BMC to host communication is also possible for notification of events
@@ -163,15 +174,16 @@ Byte 15: BMC controlled status reg
 ```
 ## Commands
 ```
-RESET_STATE          1
-GET_MBOX_INFO        2
-GET_FLASH_INFO       3
-CREATE_READ_WINDOW   4
-CLOSE_WINDOW         5
-CREATE_WRITE_WINDOW  6
-MARK_WRITE_DIRTY     7
-WRITE_FLUSH          8
-BMC_EVENT_ACK        9
+RESET_STATE          0x01
+GET_MBOX_INFO        0x02
+GET_FLASH_INFO       0x03
+CREATE_READ_WINDOW   0x04
+CLOSE_WINDOW         0x05
+CREATE_WRITE_WINDOW  0x06
+MARK_WRITE_DIRTY     0x07
+WRITE_FLUSH          0x08
+BMC_EVENT_ACK        0x09
+MARK_WRITE_ERASED    0x0a
 ```
 ## Sequence
 Unique message sequence number to be allocated by the host at the
@@ -194,11 +206,58 @@ TIMEOUT       5
 
 Only one window can be open at once.
 
+### High Level Protocol Flow
+The commands from the Host fall into rougly three categories:
+```
+1. Informational
+2. Window management
+3. Write handling
+```
+The active "window" refers to the part of the LPC FW space that has defined
+contents. The Host cannot make any assumptions about the contents of the FW
+space outside of the window and the Host must not write to a window that has
+been opened for reading. The exact behaviour of accessing outside the window is
+explictly undefined by the protocol to allow some flexibility in how the BMC
+implements the protocol.
+
+Informational commands are used by the host to determine information about the
+mbox deamon itself (what version of the protocol it implements, block size), as
+well as information about the backing storage (total size and erase granule).
+There is also an EVENT_ACK command for the host to acknowledge an asynchronous
+event raised by the BMC to the host.
+
+Window management commands are used to open, mark dirty, flush and close a
+window. A window is first opened with a CREATE_[READ/WRITE]_WINDOW command with
+a flash offset of what the window should contain and an indicative size. The
+daemon will then respond with the lpc bus address to access this window and the
+actual size mapped. The daemon is free to ignore the requested size and can
+return any window which maps at least the first byte of flash requested by the
+host (the size is more of a hint as to what the host will access in the future
+so the daemon could for example preload some of this). Since the daemon doesn't
+know when a write window has been modified MARK_WRITE_DIRTY and
+MARK_WRITE_ERASED can be called to tell the daemon when the window contents
+have been modified or to request they be erased (to prevent the need to write
+all 0xFF to erase a large block for example). The daemon is then free to flush
+these changes to backing storage at any time, or is required to when an
+explicit call to WRITE_FLUSH is made. A CLOSE_WINDOW command or opening a new
+window with one already opened will cause an implicit flush and then close the
+existing window, even if opening the new window fails.
+
+Mark dirty is done at the block level, however since the block is stored in
+memory only parts which the host has actually changed will be modified in the
+flash - since the other parts will remain unchanged in memory and will thus not
+change the flash contents when written back over identical data.
+
 ### Commands in detail
+In V2 of the protocol all sizes are a multiple of block size. Block size is
+variable and must be determined by the host through a call to GET_MBOX_INFO.
+In V1 of the protocol block size was hard coded as 4K.
 ```
 	Command:
 		RESET_STATE
-		Data:
+		Implemented in Versions:
+			V1, V2
+		Arguments:
 			-
 		Response:
 			-
@@ -208,109 +267,199 @@ Only one window can be open at once.
 			use it. Currently this means pointing back to BMC flash
 			pre mailbox protocol. Final behavour is still TBD.
 
-
 	Command:
 		GET_MBOX_INFO
-		Arguements:
-			Args 0: API version
-
-		Response:
-			Args 0: API version
-			Args 1-2: read window size as number of blocks
-			Args 3-4: write window size as number of block
-			Args 5: Block size as power of two.
-
-
-	Command:
-		CLOSE_WINDOW
+		Implemented in Versions:
+			V1, V2
 		Arguments:
-			-
-		Response:
-			-
-		Notes:
-			Close active window. Renders the LPC mapping unusable.
+			V1:
+			Args 0: API version
 
+			V2:
+			Args 0: API version
+
+		Response:
+			V1:
+			Args 0: API version
+			Args 1-2: default read window size as number of blocks
+			Args 3-4: default write window size as number of block
+
+			V2:
+			Args 0: API version
+			Args 1-2: default read window size as number of blocks
+			Args 3-4: default write window size as number of block
+			Args 5: Block size as power of two.
 
 	Command:
 		GET_FLASH_INFO
+		Implemented in Versions:
+			V1, V2
 		Arguments:
 			-
 		Response:
+			V1:
 			Args 0-3: Flash size in bytes
 			Args 4-7: Erase granule in bytes
 
+			V2:
+			Args 0-1: Flash size in number of blocks
+			Args 2-3: Erase granule in number of blocks
 
 	Command:
-		CREATE_READ_WINDOW
+		CREATE_[READ/WRITE]_WINDOW
+		Implemented in Versions:
+			V1, V2
 		Arguments:
+			V1:
 			Args 0-1: Read window offset as number of blocks
-		Respons:
-			Args 0-1: Read window position as number of blocks
-		Notes:
-			Offset is the offset within the flash, always specified
-			  from zero.
-			Position is where flash at the requested offset is mapped
-			  on the LPC bus as viewed from the host.
 
+			V2:
+			Args 0-1: Read window offset as number of blocks
+			Args 2-3: Requested read window size in blocks
+
+		Response:
+			V1:
+			Args 0-1: Start block of this window on the LPC bus
+
+			V2:
+			Args 0-1: Start block of this window on the LPC bus
+			Args 2-3: Actual size of the window in blocks
+		Notes:
+			Requested offset is the offset within the flash, always
+			specified from zero.
+			Response offset is where flash at the requested offset
+			is mapped on the LPC bus as viewed from the host.
+
+			The requested window size is only a hint. The response
+			indicates the actual size of the window. The BMC may
+			want to use the requested size to pre-load the remainder
+			of the request
+
+			The requested window size may be zero. In this case the
+			BMC is free to create any window which contains at least
+			the first block of data requested by the host. A large
+			window is of course preferred and should correspond to
+			the default size returned in the GET_MBOX_INFO command.
+
+			The format of the CREATE_{READ,WRITE}_WINDOW commands
+			are identical.
+
+			Writes/Mark Dirty/Erases/Flushes to a read window will
+			have unboundedly undefined effects.
 
 	Command:
-		CREATE_WRITE_WINDOW
-		ARguments:
-			Args 0-1: Write window offset as number of blocks
+		CLOSE_WINDOW
+		Implemented in Versions:
+			V1, V2
+		Arguments:
+			-
 		Response:
-			Args 0-1: Write window position as number of blocks
+			-
 		Notes:
-			Offset is the offset within the flash, always specified
-			  from zero.
-			Position is where flash at the requested offset is mapped
-			  on the LPC bus as viewed from the host.
-
+			Close active window. Any further access to the LPC bus
+			address specified to address this window will have
+			undefined effects. This should not be called without a
+			currently active window. If the active window is a
+			write window then an implicit flush is performed.
 
 	Command:
 		MARK_WRITE_DIRTY
-		Data:
-			Data 0-1: Where within window as number of blocks
-			Data 2-5: Number of dirty bytes
+		Implemented in Versions:
+			V1, V2
+		Arguments:
+			V1:
+			Args 0-1: Where within window as number of blocks
+			Args 2-5: Number of dirty bytes
+
+			V2:
+			Args 0-1: Where within window as number of blocks
+			Args 2-3: Number of dirty blocks
+
 		Response:
 			-
 		Notes:
-			Where within the window is the index of the first dirty
-			block within the window - zero refers to the first block of
-			the mapping.
-			This command marks bytes as dirty but does not nessesarily
-			flush them to flash. It is expected that this command will
-			respond quickly without actually performing a write to the
-			backing store.
+			The BMC has no method for intercepting writes that
+			occur over the LPC bus. The host must explicitly notify
+			the daemon of where and when a write has occured so it
+			can be flushed to backing storage.
 
+			Where within the window is the index of the first dirty
+			block within the window - zero refers to the first
+			block of the mapping.
+
+			After a block has been marked dirty it may at any time
+			be flushed to backing storage, or only on a FLUSH/CLOSE
+			command at the daemons discretion.
+
+			A dirty of an erased block (see MARK_WRITE_ERASED
+			below) will disregard the erase and maintain the data
+			in the dirty block.
 
 	Command
 		WRITE_FLUSH
-		Data:
-			Data 0-1: Where within window as number of blocks
-			Data 2-5: Number of dirty bytes
+		Implemented in Versions:
+			V1, V2
+		Arguments:
+			V1:
+			Args 0-1: Where within window as number of blocks
+			Args 2-5: Number of dirty bytes
+
+			V2:
+			-
+
 		Response:
 			-
 		Notes:
-			Where within the window is the index of the first dirty
-			block within the window - zero refers to the first block of
-			the mapping.
-			Number of dirty bytes can be zero, this would result in
-			writing all bytes previously marked as dirty.
-			This command will block untill all dirty bytes have been
-			written to the backing store.
+			Flushes any dirty/erased blocks in the active window to
+			the backing storage.
 
+			In V1 this can also be used to mark parts of the window
+			dirty and flush in a single command. In V2 the explicit
+			mark dirty command must be used before a call to flush
+			since there are no longer any arguments.
+
+			This is called implicity whenever a window is closed
+			(which also occurs when opening a window with one
+			 already currently active).
 
 	Command:
 		BMC_EVENT_ACK
-		Data:
-			Bits in the BMC status byte (mailbox data register 15) to ack
+		Implemented in Versions:
+			V1, V2
+		Arguments:
+			Args 0:	Bits in the BMC status byte (mailbox data
+				register 15) to ack
 		Response:
 			*clears the bits in mailbox data register 15*
-			-
 		Notes:
 			The host will use this command to acknowledge BMC events
 			supplied in mailbox register 15.
 
+	Command:
+		MARK_WRITE_ERASED
+		Implemented in Versions:
+			V2
+		Arguments:
+			V2:
+			Args 0-1: Where within window as number of blocks
+			Args 2-3: Number of erased blocks
+		Response:
+			-
+		Notes:
+			This command allows the host to erase a large area
+			without the need to individually write 0xFF
+			repetitively.
+
+			Where within the window is the index of the first
+			erased block within the window - zero refers to the
+			first block of the mapping.
+
+			After a block has been marked erased it may at any time
+			be flushed to backing storage, or only on a FLUSH/CLOSE
+			command at the daemons discretion.
+
+			And erase of a block previously marked dirty will
+			discard any data and just erase the block.
 
 	BMC notifications:
 		If the BMC needs to tell the host something then it simply
