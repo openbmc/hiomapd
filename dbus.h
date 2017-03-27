@@ -44,6 +44,7 @@
 #define E_DBUS_INVAL		0x02 /* Invalid Command */
 #define E_DBUS_REJECTED		0x03 /* Daemon Rejected Request */
 #define E_DBUS_HARDWARE		0x04 /* BMC Hardware Error */
+#define E_DBUS_NO_MEM		0x05 /* Failed Memory Allocation */
 
 /* Response Args */
 /* Status */
