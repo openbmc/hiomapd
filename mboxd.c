@@ -1,19 +1,23 @@
-/* Copyright 2016 IBM
+/*
+ * Mailbox Daemon Implementation
+ *
+ * Copyright 2016 IBM
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *	Unless required by applicable law or agreed to in writing, software
- *	distributed under the License is distributed on an "AS IS" BASIS,
- *	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *	See the License for the specific language governing permissions and
- *	limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
+#define _GNU_SOURCE
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -32,577 +36,369 @@
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
+#include <sys/signalfd.h>
 #include <time.h>
 #include <unistd.h>
 #include <inttypes.h>
-
-#include <mtd/mtd-abi.h>
-
-#include <linux/aspeed-lpc-ctrl.h>
+#include <systemd/sd-bus.h>
 
 #include "mbox.h"
 #include "common.h"
+#include "dbus.h"
+#include "mboxd_dbus.h"
+#include "mboxd_flash.h"
+#include "mboxd_lpc.h"
+#include "mboxd_msg.h"
+#include "mboxd_windows.h"
 
-#define LPC_CTRL_PATH "/dev/aspeed-lpc-ctrl"
+#define USAGE \
+"\nUsage: %s [--version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
+"\t\t-n | --window-num <num>\n" \
+"\t\t-w | --window-size <size>M\n" \
+"\t\t-f | --flash <size>[K|M]\n\n" \
+"\t-v | --verbose\t\tBe [more] verbose\n" \
+"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n" \
+"\t-n | --window-num\tThe number of windows\n" \
+"\t-w | --window-size\tThe window size (power of 2) in MB\n" \
+"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
 
+#define POLL_TIMEOUT_MS		1000
 
-/* Put pulled fds first */
-#define MBOX_FD 0
-#define POLL_FDS 1
-#define LPC_CTRL_FD 1
-#define MTD_FD 2
-#define TOTAL_FDS 3
+#define MSG_OUT(f_, ...)	do { if (verbosity >= MBOX_LOG_DEBUG) { \
+				    mbox_log(LOG_INFO, f_, ##__VA_ARGS__); } \
+				} while (0)
+#define MSG_ERR(f_, ...)	do { if (verbosity >= MBOX_LOG_VERBOSE) { \
+				    mbox_log(LOG_ERR, f_, ##__VA_ARGS__); } \
+				} while (0)
 
-#define ALIGN_UP(_v, _a)    (((_v) + (_a) - 1) & ~((_a) - 1))
-
-#define MSG_OUT(f_, ...) do { if (verbosity != MBOX_LOG_NONE) { mbox_log(LOG_INFO, f_, ##__VA_ARGS__); } } while(0)
-#define MSG_ERR(f_, ...) do { if (verbosity != MBOX_LOG_NONE) { mbox_log(LOG_ERR, f_, ##__VA_ARGS__); } } while(0)
-
-#define BOOT_HICR7 0x30000e00U
-#define BOOT_HICR8 0xfe0001ffU
-
-struct mbox_context {
-	struct pollfd fds[TOTAL_FDS];
-	void *lpc_mem;
-	uint32_t base;
-	uint32_t size;
-	uint32_t pgsize;
-	bool dirty;
-	uint32_t dirtybase;
-	uint32_t dirtysize;
-	struct mtd_info_user mtd_info;
-	uint32_t flash_size;
-};
-
-static int running = 1;
-static int sighup = 0;
-
-static int point_to_flash(struct mbox_context *context)
+static int poll_loop(struct mbox_context *context)
 {
-	struct aspeed_lpc_ctrl_mapping map = { 0 };
-	int r = 0;
+	int rc = 0, i;
 
-	/*
-	 * Point it to the real flash for sanity.
-	 *
-	 * This function assumes 32MB of flash which means that that
-	 * hostboot expects flash to be at 0x0e000000 - 0x0fffffff on the
-	 * LPC bus. If the machine actually has 64MB of flash then the
-	 * map.addr should be 0x0c000000. TODO
-	 *
-	 * Until hostboot learns how to talk to this daemon this hardcode will
-	 * get hostboot going. Furthermore, when hostboot does learn to talk
-	 * then this mapping is unnecessary and this code should be removed.
-	 */
-
-	/*
-	 * The mask is because the top nibble is the host LPC FW space, we
-	 * want space 0. The struct has been zeroed, best to be explicit
-	 * though.
-	 */
-	map.addr = (0UL - context->flash_size) & 0x0fffffff;
-	map.size = context->flash_size;
-	map.offset = 0;
-	map.window_type = ASPEED_LPC_CTRL_WINDOW_FLASH;
-	map.window_id = 0; /* Theres only one */
-
-	MSG_OUT("Pointing HOST LPC bus at the actual flash\n");
-	MSG_OUT("Assuming %dMB of flash: HOST LPC 0x%08x\n", context->flash_size >> 20,
-			map.addr);
-
-	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map) == -1) {
-		r = -errno;
-		MSG_ERR("Couldn't MAP the host LPC bus to the platform flash\n");
+	/* Set POLLIN on polling file descriptors */
+	for (i = 0; i < POLL_FDS; i++) {
+		context->fds[i].events = POLLIN;
 	}
 
-	return r;
+	while (1) {
+		rc = poll(context->fds, POLL_FDS, POLL_TIMEOUT_MS);
+
+		if (!rc) { /* Timeout */
+			continue;
+		}
+		if (rc < 0) { /* Error */
+			MSG_ERR("Error from poll(): %s\n", strerror(errno));
+			rc = -errno;
+			break; /* This should mean we clean up nicely */
+		}
+
+		/* Event on Polled File Descriptor - Handle It */
+		if (context->fds[SIG_FD].revents & POLLIN) { /* Signal */
+			struct signalfd_siginfo info = { 0 };
+
+			rc = read(context->fds[SIG_FD].fd, (void *) &info,
+				  sizeof(info));
+			if (rc != sizeof(info)) {
+				MSG_ERR("Error reading signal event: %s\n",
+					strerror(errno));
+			}
+
+			switch (info.ssi_signo) {
+			case SIGINT:
+			case SIGTERM:
+				MSG_OUT("Caught Signal - Exiting...\n");
+				context->terminate = true;
+				break;
+			case SIGHUP:
+				/* Host didn't request reset -> Notify it */
+				reset_all_windows(context, SET_BMC_EVENT);
+				rc = point_to_flash(context);
+				if (rc < 0) {
+					MSG_ERR("WARNING: Failed to point the "
+						"LPC bus back to flash on "
+						"SIGHUP\nIf the host requires "
+						"this expect problems...\n");
+				}
+				break;
+			default:
+				MSG_ERR("Unhandled Signal: %d\n",
+					info.ssi_signo);
+				break;
+			}
+		}
+		if (context->fds[DBUS_FD].revents & POLLIN) { /* DBUS */
+			while ((rc = sd_bus_process(context->bus, NULL)) > 0);
+			if (rc < 0) {
+				MSG_ERR("Error handling DBUS event: %s\n",
+						strerror(-rc));
+			}
+		}
+		if (context->terminate) {
+			break; /* This should mean we clean up nicely */
+		}
+		if (context->fds[MBOX_FD].revents & POLLIN) { /* MBOX */
+			rc = dispatch_mbox(context);
+			if (rc < 0) {
+				MSG_ERR("Error handling MBOX event\n");
+			}
+		}
+	}
+
+	/* Best to reset windows and point back to flash for safety */
+	/* Host didn't request reset -> Notify it */
+	reset_all_windows(context, SET_BMC_EVENT);
+	rc = point_to_flash(context);
+	/* Not much we can do if this fails */
+	if (rc < 0) {
+		MSG_ERR("WARNING: Failed to point the LPC bus back to flash\n"
+			"If the host requires this expect problems...\n");
+	}
+
+	return rc;
 }
 
-static int flash_write(struct mbox_context *context, uint32_t pos, uint32_t len)
+static int init_signals(struct mbox_context *context, sigset_t *set)
 {
 	int rc;
-	struct erase_info_user erase_info = {
-		.start = pos,
-	};
 
-	assert(context);
-
-	erase_info.length = ALIGN_UP(len, context->mtd_info.erasesize);
-
-	MSG_OUT("Erasing 0x%08x for 0x%08x (aligned: 0x%08x)\n", pos, len, erase_info.length);
-	if (ioctl(context->fds[MTD_FD].fd, MEMERASE, &erase_info) == -1) {
-		MSG_ERR("Couldn't MEMERASE ioctl, flash write lost: %s\n", strerror(errno));
-		return -1;
+	/* Block SIGHUPs, SIGTERMs and SIGINTs */
+	sigemptyset(set);
+	sigaddset(set, SIGHUP);
+	sigaddset(set, SIGINT);
+	sigaddset(set, SIGTERM);
+	rc = sigprocmask(SIG_BLOCK, set, NULL);
+	if (rc < 0) {
+		MSG_ERR("Failed to set SIG_BLOCK mask %s\n", strerror(errno));
+		return rc;
 	}
 
-	if (lseek(context->fds[MTD_FD].fd, pos, SEEK_SET) == (off_t) -1) {
-		MSG_ERR("Couldn't seek to 0x%08x into MTD, flash write lost: %s\n", pos, strerror(errno));
-		return -1;
+	/* Get Signal File Descriptor */
+	rc = signalfd(-1, set, SFD_NONBLOCK);
+	if (rc < 0) {
+		MSG_ERR("Failed to get signalfd %s\n", strerror(errno));
+		return rc;
 	}
 
-	while (erase_info.length) {
-		rc = write(context->fds[MTD_FD].fd, context->lpc_mem + pos, erase_info.length);
-		if (rc == -1) {
-			MSG_ERR("Couldn't write to flash! Flash write lost: %s\n", strerror(errno));
-			return -1;
-		}
-		erase_info.length -= rc;
-		pos += rc;
-	}
-
+	context->fds[SIG_FD].fd = rc;
 	return 0;
-}
-
-/* TODO: Add come consistency around the daemon exiting and either
- * way, ensuring it responds.
- * I'm in favour of an approach where it does its best to stay alive
- * and keep talking, the hacky prototype was written the other way.
- * This function is now inconsistent
- */
-static int dispatch_mbox(struct mbox_context *context)
-{
-	int r = 0;
-	int len;
-	off_t pos;
-	uint8_t byte;
-	union mbox_regs resp, req = { 0 };
-	uint16_t sizepg, basepg, dirtypg;
-	uint32_t dirtycount;
-	struct aspeed_lpc_ctrl_mapping map = { 0 };
-
-	assert(context);
-
-	map.addr = context->base;
-	map.size = context->size;
-	map.offset = 0;
-	map.window_type = ASPEED_LPC_CTRL_WINDOW_MEMORY;
-	map.window_id = 0; /* Theres only one */
-
-	MSG_OUT("Dispatched to mbox\n");
-	r = read(context->fds[MBOX_FD].fd, &req, sizeof(req.raw));
-	if (r < 0) {
-		r = -errno;
-		MSG_ERR("Couldn't read: %s\n", strerror(errno));
-		goto out;
-	}
-	if (r < sizeof(req.msg)) {
-		MSG_ERR("Short read: %d expecting %zu\n", r, sizeof(req.msg));
-		r = -1;
-		goto out;
-	}
-
-	/* We are NOT going to update the last two 'status' bytes */
-	memcpy(&resp, &req, sizeof(req.msg));
-
-	sizepg = context->size >> context->pgsize;
-	basepg = context->base >> context->pgsize;
-	MSG_OUT("Got data in with command %d\n", req.msg.command);
-	switch (req.msg.command) {
-		case MBOX_C_RESET_STATE:
-			/* Called by early hostboot? TODO */
-			resp.msg.response = MBOX_R_SUCCESS;
-			r = point_to_flash(context);
-			if (r) {
-				resp.msg.response = MBOX_R_SYSTEM_ERROR;
-				MSG_ERR("Couldn't point the LPC BUS back to actual flash\n");
-			}
-			break;
-		case MBOX_C_GET_MBOX_INFO:
-			/* TODO Freak if data.data[0] isn't 1 */
-			resp.msg.data[0] = 1;
-			put_u16(&resp.msg.data[1], sizepg);
-			put_u16(&resp.msg.data[3], sizepg);
-			resp.msg.response = MBOX_R_SUCCESS;
-			/* Wow that can't stay negated thats horrible */
-			MSG_OUT("LPC_CTRL_IOCTL_MAP to 0x%08x for 0x%08x\n", map.addr, map.size);
-			r = ioctl(context->fds[LPC_CTRL_FD].fd,
-					ASPEED_LPC_CTRL_IOCTL_MAP, &map);
-			if (r < 0) {
-				r = -errno;
-				resp.msg.response = MBOX_R_SYSTEM_ERROR;
-				MSG_ERR("Couldn't MAP ioctl(): %s\n", strerror(errno));
-			}
-			break;
-		case MBOX_C_GET_FLASH_INFO:
-			put_u32(&resp.msg.data[0], context->flash_size);
-			put_u32(&resp.msg.data[4], context->mtd_info.erasesize);
-			resp.msg.response = MBOX_R_SUCCESS;
-			break;
-		case MBOX_C_READ_WINDOW:
-			/*
-			 * We could probably play tricks with LPC mapping.
-			 * That would require kernel involvement.
-			 * We could also always copy the relevant flash part to
-			 * context->base even if it turns out that offset is in
-			 * the window...
-			 * This approach is easiest.
-			 */
-			if (context->dirty) {
-				r = read(context->fds[MTD_FD].fd, context->lpc_mem, context->size);
-				if (r != context->size) {
-					MSG_ERR("Short read: %d expecting %"PRIu32"\n", r, context->size);
-					goto out;
-				}
-			}
-			basepg += get_u16(&req.msg.data[0]);
-			put_u16(&resp.msg.data[0], basepg);
-			resp.msg.response = MBOX_R_SUCCESS;
-			context->dirty = false;
-			break;
-		case MBOX_C_CLOSE_WINDOW:
-			context->dirty = true;
-			break;
-		case MBOX_C_WRITE_WINDOW:
-			basepg += get_u16(&req.msg.data[0]);
-			put_u16(&resp.msg.data[0], basepg);
-			resp.msg.response = MBOX_R_SUCCESS;
-			context->dirtybase = basepg << context->pgsize;
-			break;
-		/* Optimise these later */
-		case MBOX_C_WRITE_DIRTY:
-		case MBOX_C_WRITE_FENCE:
-			dirtypg = get_u16(&req.msg.data[0]);
-			dirtycount = get_u32(&req.msg.data[2]);
-			if (dirtycount == 0) {
-				resp.msg.response = MBOX_R_PARAM_ERROR;
-				break;
-			}
-			/*
-			 * dirtypg is actually offset within window so we probs
-			 * need to know if the window isn't at zero
-			 */
-			if (flash_write(context, dirtypg << context->pgsize, dirtycount) != 0) {
-				resp.msg.response = MBOX_R_WRITE_ERROR;
-				break;
-			}
-			resp.msg.response = MBOX_R_SUCCESS;
-			break;
-		case MBOX_C_ACK:
-			resp.msg.response = MBOX_R_SUCCESS;
-			pos = lseek(context->fds[MBOX_FD].fd, MBOX_BMC_BYTE, SEEK_SET);
-			if (pos != MBOX_BMC_BYTE) {
-				r = -errno;
-				MSG_ERR("Couldn't lseek() to byte %d: %s\n", MBOX_BMC_BYTE,
-						strerror(errno));
-			}
-			/*
-			 * NAND what is in the hardware and the request.
-			 * This prevents the host being able to SET bits, it can
-			 * only request set ones be cleared.
-			 */
-			byte = ~(req.msg.data[0] & req.raw[MBOX_BMC_BYTE]);
-			len = write(context->fds[MBOX_FD].fd, &byte, 1);
-			if (len != 1) {
-				r = -errno;
-				MSG_ERR("Couldn't write to BMC status reg: %s\n",
-						strerror(errno));
-			}
-			pos = lseek(context->fds[MBOX_FD].fd, 0, SEEK_SET);
-			if (pos != 0) {
-				r = -errno;
-				MSG_ERR("Couldn't reset MBOX offset to zero\n");
-			}
-			break;
-		case MBOX_C_COMPLETED_COMMANDS:
-			/* This implementation always completes before responding */
-			resp.msg.data[0] = 0;
-			resp.msg.response = MBOX_R_SUCCESS;
-			break;
-		default:
-			MSG_ERR("UNKNOWN MBOX COMMAND\n");
-			resp.msg.response = MBOX_R_PARAM_ERROR;
-			r = -1;
-	}
-
-	MSG_OUT("Writing response to MBOX regs\n");
-	len = write(context->fds[MBOX_FD].fd, &resp, sizeof(resp.msg));
-	if (len < sizeof(resp.msg)) {
-		r = -errno;
-		MSG_ERR("Didn't write the full response\n");
-	}
-
-out:
-	return r;
-}
-
-
-#define CHUNKSIZE (64 * 1024)
-
-int copy_flash(struct mbox_context *context)
-{
-	int r;
-	int readsize = CHUNKSIZE;
-	int offset = 0;
-
-	/*
-	 * Copy flash into RAM early, same time.
-	 * The kernel has created the LPC->AHB mapping also, which means
-	 * flash should work.
-	 * Ideally we tell the kernel whats up and when to do stuff...
-	 */
-	MSG_OUT("Loading flash into ram at %p for 0x%08x bytes\n",
-		context->lpc_mem, context->size);
-	if (lseek(context->fds[MTD_FD].fd, 0, SEEK_SET) != 0) {
-		r = -errno;
-		MSG_ERR("Couldn't reset MBOX pos to zero\n");
-		return r;
-	}
-	while (readsize) {
-		r = read(context->fds[MTD_FD].fd, context->lpc_mem + offset, readsize);
-		if (r != readsize) {
-			r = -errno;
-			MSG_ERR("Couldn't copy mtd into ram: %d\n", r);
-			return r;
-		}
-		offset += readsize;
-		readsize = context->size - offset;
-		if (readsize > CHUNKSIZE)
-			readsize = CHUNKSIZE;
-	}
-	return 0;
-}
-
-void signal_hup(int signum, siginfo_t *info, void *uc)
-{
-	sighup = 1;
 }
 
 static void usage(const char *name)
 {
-	fprintf(stderr, "Usage %s [ -v[v] | --syslog ] --flash=size[K | M]\n", name);
-	fprintf(stderr, "\t--flash size[K | M]\t Map the flash for the according to 'size' in Kilobytes or Megabytes\n");
-	fprintf(stderr, "\t--verbose\t Be [more] verbose\n");
-	fprintf(stderr, "\t--syslog\t Log output to syslog (pointless without -v)\n\n");
+	printf(USAGE, name);
 }
 
-int main(int argc, char *argv[])
+static bool parse_cmdline(int argc, char **argv,
+			  struct mbox_context *context)
 {
-	struct mbox_context *context;
-	const char *name = argv[0];
-	char *pnor_filename = NULL;
-	int opt, polled, r, i;
-	struct aspeed_lpc_ctrl_mapping map = { 0 };
-	struct sigaction act;
 	char *endptr;
+	int opt, i;
 
 	static const struct option long_options[] = {
-		{ "flash",   required_argument, 0, 'f' },
-		{ "verbose", no_argument,       0, 'v' },
-		{ "syslog",  no_argument,       0, 's' },
-		{ 0,	     0,		            0,  0  }
+		{ "flash",		required_argument,	0, 'f' },
+		{ "window-size",	optional_argument,	0, 'w' },
+		{ "window-num",		optional_argument,	0, 'n' },
+		{ "verbose",		no_argument,		0, 'v' },
+		{ "syslog",		no_argument,		0, 's' },
+		{ "version",		no_argument,		0, 'z' },
+		{ "help",		no_argument,		0, 'h' },
+		{ 0,			0,			0, 0   }
 	};
 
-	context = calloc(1, sizeof(*context));
-	for (i = 0; i < TOTAL_FDS; i++)
-		context->fds[i].fd = -1;
-
+	verbosity = MBOX_LOG_NONE;
 	mbox_vlog = &mbox_log_console;
-	while ((opt = getopt_long(argc, argv, "fv", long_options, NULL)) != -1) {
+
+	/* Default to 1 window of size flash_size */
+	context->windows.default_size = context->flash_size;
+	context->windows.num = 1;
+	context->current = NULL; /* No current window */
+
+	while ((opt = getopt_long(argc, argv, "f:w::n::vsh", long_options, NULL))
+			!= -1) {
 		switch (opt) {
-			case 0:
+		case 0:
+			break;
+		case 'f':
+			context->flash_size = strtol(optarg, &endptr, 10);
+			if (optarg == endptr) {
+				fprintf(stderr, "Unparseable flash size\n");
+				return false;
+			}
+			switch (*endptr) {
+			case '\0':
 				break;
-			case 'f':
-				context->flash_size = strtol(optarg, &endptr, 0);
-				if (optarg == endptr) {
-					fprintf(stderr, "Unparseable flash size\n");
-					usage(name);
-					exit(EXIT_FAILURE);
-				}
-				if (*endptr == 'K') {
-					context->flash_size <<= 10;
-				} else if (*endptr == 'M') {
-					context->flash_size <<= 20;
-				} else if (*endptr != '\0') { /* Unknown units */
-					fprintf(stderr, "Unknown units '%c'\n", *endptr);
-					usage(name);
-					exit(EXIT_FAILURE);
-				}
-				break;
-			case 'v':
-				verbosity++;
-				break;
-			case 's':
-				/* Avoid a double openlog() */
-				if (mbox_vlog != &vsyslog) {
-					openlog(PREFIX, LOG_ODELAY, LOG_DAEMON);
-					mbox_vlog = &vsyslog;
-				}
+			case 'M':
+				context->flash_size <<= 10;
+			case 'K':
+				context->flash_size <<= 10;
 				break;
 			default:
-				usage(name);
-				exit(EXIT_FAILURE);
-		}
-	}
-
-	if (context->flash_size == 0) {
-		fprintf(stderr, "Must specify a non-zero flash size\n");
-		usage(name);
-		exit(EXIT_FAILURE);
-	}
-
-	if (verbosity == MBOX_LOG_VERBOSE)
-		MSG_OUT("Verbose logging\n");
-
-	if (verbosity == MBOX_LOG_DEBUG)
-		MSG_OUT("Debug logging\n");
-
-	MSG_OUT("Registering SigHUP hander\n");
-	act.sa_sigaction = signal_hup;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = SA_SIGINFO;
-	if (sigaction(SIGHUP, &act, NULL) < 0) {
-		perror("Registering SIGHUP");
-		exit(1);
-	}
-	sighup = 0;
-
-	MSG_OUT("Starting\n");
-
-	MSG_OUT("Opening %s\n", MBOX_HOST_PATH);
-	context->fds[MBOX_FD].fd = open(MBOX_HOST_PATH, O_RDWR | O_NONBLOCK);
-	if (context->fds[MBOX_FD].fd < 0) {
-		r = -errno;
-		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-				MBOX_HOST_PATH, strerror(errno));
-		goto finish;
-	}
-
-	MSG_OUT("Opening %s\n", LPC_CTRL_PATH);
-	context->fds[LPC_CTRL_FD].fd = open(LPC_CTRL_PATH, O_RDWR | O_SYNC);
-	if (context->fds[LPC_CTRL_FD].fd < 0) {
-		r = -errno;
-		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-				LPC_CTRL_PATH, strerror(errno));
-		goto finish;
-	}
-
-	MSG_OUT("Getting buffer size...\n");
-	/* This may become more variable in the future */
-	context->pgsize = 12; /* 4K */
-	map.window_type = ASPEED_LPC_CTRL_WINDOW_MEMORY;
-	map.window_id = 0; /* Theres only one */
-	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_GET_SIZE,
-				&map) < 0) {
-		r = -errno;
-		MSG_OUT("fail\n");
-		MSG_ERR("Couldn't get lpc control buffer size: %s\n", strerror(-r));
-		goto finish;
-	}
-	/* And strip the first nibble, LPC access speciality */
-	context->size = map.size;
-	context->base = -context->size & 0x0FFFFFFF;
-
-	/* READ THE COMMENT AT THE START OF THIS FUNCTION! */
-	r = point_to_flash(context);
-	if (r) {
-		MSG_ERR("Failed to point the LPC BUS at the actual flash: %s\n",
-				strerror(-r));
-		goto finish;
-	}
-
-	MSG_OUT("Mapping %s for %u\n", LPC_CTRL_PATH, context->size);
-	context->lpc_mem = mmap(NULL, context->size, PROT_READ | PROT_WRITE, MAP_SHARED,
-			context->fds[LPC_CTRL_FD].fd, 0);
-	if (context->lpc_mem == MAP_FAILED) {
-		r = -errno;
-		MSG_ERR("Didn't manage to mmap %s: %s\n", LPC_CTRL_PATH, strerror(errno));
-		goto finish;
-	}
-
-	pnor_filename = get_dev_mtd();
-	if (!pnor_filename) {
-		MSG_ERR("Couldn't find the PNOR /dev/mtd partition\n");
-		r = -1;
-		goto finish;
-	}
-
-	MSG_OUT("Opening %s\n", pnor_filename);
-	context->fds[MTD_FD].fd = open(pnor_filename, O_RDWR);
-	if (context->fds[MTD_FD].fd < 0) {
-		r = -errno;
-		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-				pnor_filename, strerror(errno));
-		goto finish;
-	}
-
-	if (ioctl(context->fds[MTD_FD].fd, MEMGETINFO, &context->mtd_info) == -1) {
-		MSG_ERR("Couldn't get information about MTD: %s\n", strerror(errno));
-		return -1;
-	}
-
-	if (copy_flash(context))
-		goto finish;
-
-	context->fds[MBOX_FD].events = POLLIN;
-
-	/* Test the single write facility by setting all the regs to 0xFF */
-	MSG_OUT("Setting all MBOX regs to 0xff individually...\n");
-	for (i = 0; i < MBOX_REG_BYTES; i++) {
-		uint8_t byte = 0xff;
-		off_t pos;
-		int len;
-
-		pos = lseek(context->fds[MBOX_FD].fd, i, SEEK_SET);
-		if (pos != i) {
-			MSG_ERR("Couldn't lseek() to byte %d: %s\n", i,
-					strerror(errno));
-			break;
-		}
-		len = write(context->fds[MBOX_FD].fd, &byte, 1);
-		if (len != 1) {
-			MSG_ERR("Couldn't write MBOX reg %d: %s\n", i,
-					strerror(errno));
-			break;
-		}
-	}
-	if (lseek(context->fds[MBOX_FD].fd, 0, SEEK_SET) != 0) {
-		r = -errno;
-		MSG_ERR("Couldn't reset MBOX pos to zero\n");
-		goto finish;
-	}
-
-	MSG_OUT("Entering polling loop\n");
-	while (running) {
-		polled = poll(context->fds, POLL_FDS, 1000);
-		if (polled == 0)
-			continue;
-		if ((polled == -1) && (errno != -EINTR) && (sighup == 1)) {
-			/* Got sighup. reset to point to flash and
-			 * reread flash */
-			r = point_to_flash(context);
-			if (r) {
-				goto finish;
+				fprintf(stderr, "Unknown units '%c'\n",
+					*endptr);
+				return false;
 			}
-			r = copy_flash(context);
-			if (r)
-				goto finish;
-			sighup = 0;
-			continue;
-		}
-		if (polled < 0) {
-			r = -errno;
-			MSG_ERR("Error from poll(): %s\n", strerror(errno));
 			break;
-		}
-		r = dispatch_mbox(context);
-		if (r < 0) {
-			MSG_ERR("Error handling MBOX event: %s\n", strerror(-r));
+		case 'n':
+			context->windows.num = strtol(argv[optind], &endptr,
+						      10);
+			if (optarg == endptr || *endptr != '\0') {
+				fprintf(stderr, "Unparseable window num\n");
+				return false;
+			}
 			break;
+		case 'w':
+			context->windows.default_size = strtol(argv[optind],
+							       &endptr, 10);
+			context->windows.default_size <<= 20; /* Given in MB */
+			if (optarg == endptr || (*endptr != '\0' &&
+						 *endptr != 'M')) {
+				fprintf(stderr, "Unparseable window size\n");
+				return false;
+			}
+			break;
+		case 'v':
+			verbosity++;
+			break;
+		case 's':
+			/* Avoid a double openlog() */
+			if (mbox_vlog != &vsyslog) {
+				openlog(PREFIX, LOG_ODELAY, LOG_DAEMON);
+				mbox_vlog = &vsyslog;
+			}
+			break;
+		case 'z':
+			printf("%s v%d.%.2d\n", THIS_NAME, API_MAX_VERSION,
+						SUB_VERSION);
+			exit(0);
+		case 'h':
+			return false; /* This will print the usage message */
+		default:
+			return false;
 		}
 	}
 
-	MSG_OUT("Exiting\n");
+	if (!context->flash_size) {
+		fprintf(stderr, "Must specify a non-zero flash size\n");
+		return false;
+	}
 
-finish:
-	if (context->lpc_mem)
-		munmap(context->lpc_mem, context->size);
+	if (!context->windows.num) {
+		fprintf(stderr, "Must specify a non-zero number of windows\n"
+				"If unsure - select 4 (-n 4)\n");
+		return false;
+	}
 
-	free(pnor_filename);
-	close(context->fds[MTD_FD].fd);
-	close(context->fds[LPC_CTRL_FD].fd);
-	close(context->fds[MBOX_FD].fd);
-	free(context);
+	if (!context->windows.default_size) {
+		fprintf(stderr, "Must specify a non-zero window size\n"
+				"If unsure - select 1M (-w 1)\n");
+		return false;
+	}
 
-	return r;
+	MSG_OUT("Flash size: 0x%.8x\n", context->flash_size);
+	MSG_OUT("Number of Windows: %d\n", context->windows.num);
+	MSG_OUT("Window size: 0x%.8x\n", context->windows.default_size);
+
+	context->windows.window = calloc(context->windows.num,
+					 sizeof(*context->windows.window));
+
+	for (i = 0; i < context->windows.num; i++) {
+		init_window_state(&context->windows.window[i],
+				  context->windows.default_size);
+	}
+
+	if (verbosity) {
+		MSG_OUT("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
+					"Verbose");
+	}
+
+	return true;
 }
 
+int main(int argc, char **argv)
+{
+	struct mbox_context *context;
+	char *name = argv[0];
+	sigset_t set;
+	int rc, i;
+
+	context = calloc(1, sizeof(*context));
+
+	if (!parse_cmdline(argc, argv, context)) {
+		usage(name);
+		exit(0);
+	}
+
+	for (i = 0; i < TOTAL_FDS; i++) {
+		context->fds[i].fd = -1;
+	}
+
+	MSG_OUT("Starting Daemon\n");
+
+	rc = init_signals(context, &set);
+	if (rc) {
+		goto finish;
+	}
+
+	rc = init_mbox_dev(context);
+	if (rc) {
+		goto finish;
+	}
+
+	rc = init_lpc_dev(context);
+	if (rc) {
+		goto finish;
+	}
+
+	/* We've found the reserved memory region -> we can assign to windows */
+	rc = init_window_mem(context);
+	if (rc) {
+		goto finish;
+	}
+
+	rc = init_flash_dev(context);
+	if (rc) {
+		goto finish;
+	}
+
+	rc = init_dbus_dev(context);
+	if (rc) {
+		goto finish;
+	}
+
+	/* Set the LPC bus mapping to point to the physical flash device */
+	rc = point_to_flash(context);
+	if (rc) {
+		goto finish;
+	}
+
+	rc = set_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
+	if (rc) {
+		goto finish;
+	}
+
+	MSG_OUT("Entering Polling Loop\n");
+	rc = poll_loop(context);
+
+	MSG_OUT("Exiting Poll Loop: %d\n", rc);
+
+finish:
+	MSG_OUT("Daemon Exiting...\n");
+	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
+
+	sd_bus_unref(context->bus);
+
+	free(context->flash_bmap);
+	if (context->mem) {
+		munmap(context->mem, context->mem_size);
+	}
+	for (i = 0; i < TOTAL_FDS; i++) {
+		close(context->fds[i].fd);
+	}
+	for (i = 0; i < context->windows.num; i++) {
+		free(context->windows.window[i].dirty_bmap);
+	}
+	free(context->windows.window);
+	free(context);
+
+	return rc;
+}
