@@ -42,6 +42,10 @@ AS_IF([test "x$enable_oe_sdk" == "xyes"],
     AC_SUBST([OESDK_TESTCASE_FLAGS], [$testcase_flags])
 )
 
+PKG_CHECK_MODULES(LIBSYSTEMD, libsystemd, , AC_MSG_ERROR([libsytemd not found]))
+AC_SUBST([LIBSYSTEMD_CFLAGS])
+AC_SUBST([LIBSYSTEMD_LIBS])
+
 # Create configured output
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
