@@ -18,6 +18,9 @@
 #define PREFIX ""
 #endif
 
+#ifndef COMMON_H
+#define COMMON_H
+
 enum {
    MBOX_LOG_NONE = 0,
    MBOX_LOG_VERBOSE = 1,
@@ -39,4 +42,26 @@ uint32_t get_u32(uint8_t *ptr);
 
 void put_u32(uint8_t *ptr, uint32_t val);
 
+static inline uint32_t min_u32(uint32_t a, uint32_t b)
+{
+	if (a <= b) {
+		return a;
+	}
+
+	return b;
+}
+
+static inline int log_2(int val)
+{
+	int ret = 0;
+
+	while (val >>= 1) {
+		ret++;
+	}
+
+	return ret;
+}
+
 char *get_dev_mtd(void);
+
+#endif /* COMMON_H */
