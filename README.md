@@ -395,8 +395,8 @@ Command:
 
 		V2:
 		Args 0: API version
-		Args 1-2: default read window size (blocks)
-		Args 3-4: default write window size (blocks)
+		Args 1-2: deprecated
+		Args 3-4: deprecated
 		Args 5: Block size as power of two (encoded as a shift)
 
 Command:
@@ -433,6 +433,7 @@ Command:
 		V2:
 		Args 0-1: LPC bus address of window (blocks)
 		Args 2-3: Actual window size (blocks)
+		Args 4-5: Actual window location as offset into flash (blocks)
 	Notes:
 		Window location is always given as an offset into flash as
 		taken from the start of flash - that is it is an absolute
@@ -446,6 +447,11 @@ Command:
 		want to use the requested size to pre-load the remainder
 		of the request. The host must not access past the end of the
 		active window.
+
+		The actual window location indicates the absolute flash offset
+		that the window actually maps. That is the first block of the
+		window will map the first block contained at the actual flash
+		offset specified in the response.
 
 		The requested window size may be zero. In this case the
 		BMC is free to create any sized window but it must contain
