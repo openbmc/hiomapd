@@ -17,6 +17,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+
 #ifndef PREFIX
 #define PREFIX ""
 #endif
