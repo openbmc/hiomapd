@@ -20,6 +20,8 @@
 
 #include <mtd/mtd-abi.h>
 #include <systemd/sd-bus.h>
+#include <poll.h>
+#include <stdbool.h>
 
 enum api_version {
 	API_VERSION_INVAL	= 0,
