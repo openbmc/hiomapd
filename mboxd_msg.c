@@ -265,7 +265,6 @@ static int mbox_handle_flash_info(struct mbox_context *context,
 	default:
 		MSG_ERR("API Version Not Valid - Invalid System State\n");
 		return -MBOX_R_SYSTEM_ERROR;
-		break;
 	}
 
 	return 0;
