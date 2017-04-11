@@ -108,6 +108,8 @@ void free_flash_dev(struct mbox_context *context)
 int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 	       uint32_t size)
 {
+	uint32_t size_read;
+
 	MSG_OUT("Loading flash at %p for 0x%08x bytes from offset 0x%.8x\n",
 							mem, size, offset);
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
@@ -116,8 +118,8 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 		return -MBOX_R_SYSTEM_ERROR;
 	}
 
-	while (size) {
-		uint32_t size_read = read(context->fds[MTD_FD].fd, mem,
+	do {
+		size_read = read(context->fds[MTD_FD].fd, mem,
 					  min_u32(CHUNKSIZE, size));
 		if (size_read < 0) {
 			MSG_ERR("Couldn't copy mtd into ram: %d. %s\n",
@@ -127,7 +129,7 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 
 		size -= size_read;
 		mem += size_read;
-	}
+	} while (size && size_read);
 
 	return 0;
 }
