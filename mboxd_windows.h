@@ -21,6 +21,8 @@
 #define NO_FLUSH	false
 #define WITH_FLUSH	true
 
+#include "mbox.h"
+
 /* Initialisation Functions */
 void init_window_state(struct window_context *window, uint32_t size);
 int init_windows(struct mbox_context *context);
