@@ -21,6 +21,8 @@
 #define FLASH_DIRTY	0x00
 #define FLASH_ERASED	0x01
 
+#include "mbox.h"
+
 int init_flash_dev(struct mbox_context *context);
 void free_flash_dev(struct mbox_context *context);
 int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
