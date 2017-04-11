@@ -50,3 +50,8 @@ arm-openbmc-linux-gnueabi-libtool
 mboxd
 mboxctl
 cscope.out
+/test/*.o
+
+# Autotools test infrastructure
+*.log
+*.trs
