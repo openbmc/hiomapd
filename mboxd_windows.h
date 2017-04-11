@@ -21,6 +21,8 @@
 #define NO_FLUSH	false
 #define WITH_FLUSH	true
 
+#include "mbox.h"
+
 /* Initialisation Functions */
 int init_windows(struct mbox_context *context);
 void free_windows(struct mbox_context *context);
