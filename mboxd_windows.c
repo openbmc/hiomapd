@@ -63,6 +63,24 @@ void init_window_state(struct window_context *window, uint32_t size)
 	window->age = 0;
 }
 
+int init_windows(struct mbox_context *context)
+{
+	int i;
+
+	context->windows.window = calloc(context->windows.num,
+					 sizeof(*context->windows.window));
+
+	if (!context->windows.window)
+		return -1;
+
+	for (i = 0; i < context->windows.num; i++) {
+		init_window_state(&context->windows.window[i],
+				  context->windows.default_size);
+	}
+
+	return 0;
+}
+
 /*
  * init_window_mem() - Divide the reserved memory region among the windows
  * @context:	The mbox context pointer

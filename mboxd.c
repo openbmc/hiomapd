@@ -179,7 +179,7 @@ static bool parse_cmdline(int argc, char **argv,
 			  struct mbox_context *context)
 {
 	char *endptr;
-	int opt, i;
+	int opt;
 
 	static const struct option long_options[] = {
 		{ "flash",		required_argument,	0, 'f' },
@@ -285,17 +285,10 @@ static bool parse_cmdline(int argc, char **argv,
 	MSG_OUT("Number of Windows: %d\n", context->windows.num);
 	MSG_OUT("Window size: 0x%.8x\n", context->windows.default_size);
 
-	context->windows.window = calloc(context->windows.num,
-					 sizeof(*context->windows.window));
-	if (!context->windows.window) {
-		MSG_ERR("Memory allocation failed\n");
+	if (init_windows(context) == -1) {
+		MSG_ERR("Failed to initialise windows\n");
 		free(context);
 		exit(1);
-	}
-
-	for (i = 0; i < context->windows.num; i++) {
-		init_window_state(&context->windows.window[i],
-				  context->windows.default_size);
 	}
 
 	if (verbosity) {

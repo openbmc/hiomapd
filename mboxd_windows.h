@@ -23,6 +23,7 @@
 
 /* Initialisation Functions */
 void init_window_state(struct window_context *window, uint32_t size);
+int init_windows(struct mbox_context *context);
 int init_window_mem(struct mbox_context *context);
 /* Write From Window Functions */
 int write_from_window_v1(struct mbox_context *context,
