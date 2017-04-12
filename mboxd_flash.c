@@ -75,6 +75,9 @@ int init_flash_dev(struct mbox_context *context)
 		goto out;
 	}
 
+	if (context->flash_size == 0)
+		context->flash_size = context->mtd_info.size;
+
 	/* We know the erase size so we can allocate the flash_erased bytemap */
 	context->erase_size_shift = log_2(context->mtd_info.erasesize);
 	context->flash_bmap = calloc(context->flash_size >>
