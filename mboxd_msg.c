@@ -740,7 +740,7 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
  *
  * Return:	0 if read successfully otherwise negative error code
  */
-static int get_message(struct mbox_context *context, union mbox_regs *msg)
+int get_message(struct mbox_context *context, union mbox_regs *msg)
 {
 	int rc;
 
