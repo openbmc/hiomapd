@@ -41,4 +41,7 @@ int dispatch_mbox(struct mbox_context *context);
 int init_mbox_dev(struct mbox_context *context);
 void free_mbox_dev(struct mbox_context *context);
 
+/* Helpers */
+int get_message(struct mbox_context *context, union mbox_regs *msg);
+
 #endif /* MBOXD_MSG_H */
