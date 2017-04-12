@@ -11,7 +11,8 @@ mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c common.c mtd.c test/tmpf.c
 test_erase_flash_SOURCES = test/erase_flash.c mboxd_flash.c common.c test/tmpf.c
+test_write_flash_SOURCES = test/write_flash.c mboxd_flash.c common.c test/tmpf.c
 
-check_PROGRAMS = test/copy_flash test/erase_flash
+check_PROGRAMS = test/copy_flash test/erase_flash test/write_flash
 
 TESTS = $(check_PROGRAMS)
