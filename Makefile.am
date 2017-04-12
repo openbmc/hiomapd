@@ -44,6 +44,9 @@ test_create_write_window_v2_SOURCES = test/create_write_window_v2.c \
 test_close_window_v2_SOURCES = test/close_window_v2.c \
 			       $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_mark_write_dirty_v2_SOURCES = test/mark_write_dirty_v2.c \
+				   $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -53,6 +56,7 @@ check_PROGRAMS = test/sanity \
 		 test/get_flash_info_v2 \
 		 test/create_read_window_v2 \
 		 test/create_write_window_v2 \
-		 test/close_window_v2
+		 test/close_window_v2 \
+		 test/mark_write_dirty_v2
 
 TESTS = $(check_PROGRAMS)
