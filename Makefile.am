@@ -53,6 +53,9 @@ test_write_flush_v2_SOURCES = test/write_flush_v2.c \
 test_mark_write_erased_v2_SOURCES = test/mark_write_erased_v2.c \
 				    $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_bmc_event_ack_v2_SOURCES = test/bmc_event_ack_v2.c \
+				$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -65,6 +68,7 @@ check_PROGRAMS = test/sanity \
 		 test/close_window_v2 \
 		 test/mark_write_dirty_v2 \
 		 test/write_flush_v2 \
-		 test/mark_write_erased_v2
+		 test/mark_write_erased_v2 \
+		 test/bmc_event_ack_v2
 
 TESTS = $(check_PROGRAMS)
