@@ -241,6 +241,10 @@ static bool parse_cmdline(int argc, char **argv,
 				fprintf(stderr, "Unparseable window size\n");
 				return false;
 			}
+			if (!is_power_of_2(context->windows.default_size)) {
+				fprintf(stderr, "Window size not power of 2\n");
+				return false;
+			}
 			break;
 		case 'v':
 			verbosity++;

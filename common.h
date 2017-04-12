@@ -83,6 +83,19 @@ static inline int log_2(int val)
 	return ret;
 }
 
+static inline bool is_power_of_2(int val)
+{
+	if (!val) {
+		return false;
+	}
+
+	while (!(val & 0x1)) {
+		val >>= 1;
+	}
+
+	return !(val >> 1);
+}
+
 char *get_dev_mtd(void);
 
 #endif /* COMMON_H */
