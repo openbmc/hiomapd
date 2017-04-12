@@ -54,7 +54,7 @@
  * @window:	The window to initialise
  * @size:	The size of the window
  */
-void init_window_state(struct window_context *window, uint32_t size)
+static void init_window_state(struct window_context *window, uint32_t size)
 {
 	window->mem = NULL;
 	window->flash_offset = FLASH_OFFSET_UNINIT;
@@ -69,7 +69,7 @@ void init_window_state(struct window_context *window, uint32_t size)
  *
  * Return:	0 on success otherwise negative error code
  */
-int init_window_mem(struct mbox_context *context)
+static int init_window_mem(struct mbox_context *context)
 {
 	void *mem_location = context->mem;
 	int i;
@@ -94,6 +94,60 @@ int init_window_mem(struct mbox_context *context)
 	}
 
 	return 0;
+}
+/*
+ * init_windows() - Initalise the window cache
+ * @context:    The mbox context pointer
+ *
+ * Return:      0 on success otherwise negative
+ */
+int init_windows(struct mbox_context *context)
+{
+	int i;
+
+	/* Check if window size and number set - otherwise set to default */
+	if (!context->windows.default_size) {
+		/* Default to 1MB windows */
+		context->windows.default_size = 1 << 20;
+	}
+	MSG_OUT("Window size: 0x%.8x\n", context->windows.default_size);
+	if (!context->windows.num) {
+		/* Use the entire reserved memory region by default */
+		context->windows.num = context->mem_size /
+				       context->windows.default_size;
+	}
+	MSG_OUT("Number of Windows: %d\n", context->windows.num);
+
+	context->windows.window = calloc(context->windows.num,
+					 sizeof(*context->windows.window));
+	if (!context->windows.window) {
+		MSG_ERR("Memory allocation failed\n");
+		return -1;
+	}
+
+	for (i = 0; i < context->windows.num; i++) {
+		init_window_state(&context->windows.window[i],
+				  context->windows.default_size);
+	}
+
+	return init_window_mem(context);
+}
+
+/*
+ * free_windows() - Free the window cache
+ * @context:	The mbox context pointer
+ */
+void free_windows(struct mbox_context *context)
+{
+	int i;
+
+	/* Check window cache has actually been allocated */
+	if (context->windows.window) {
+		for (i = 0; i < context->windows.num; i++) {
+			free(context->windows.window[i].dirty_bmap);
+		}
+		free(context->windows.window);
+	}
 }
 
 /* Write from Window Functions */
@@ -306,19 +360,6 @@ void alloc_window_dirty_bytemap(struct mbox_context *context)
 		cur->dirty_bmap = calloc((cur->size >>
 					  context->block_size_shift),
 					 sizeof(*cur->dirty_bmap));
-	}
-}
-
-/*
- * free_window_dirty_bytemap() - free all window dirty bytemaps
- * @context:	The mbox context pointer
- */
-void free_window_dirty_bytemap(struct mbox_context *context)
-{
-	int i;
-
-	for (i = 0; i < context->windows.num; i++) {
-		free(context->windows.window[i].dirty_bmap);
 	}
 }
 

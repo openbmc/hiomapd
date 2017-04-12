@@ -53,13 +53,15 @@
 
 #define USAGE \
 "\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
-"\t\t-n | --window-num <num>\n" \
-"\t\t-w | --window-size <size>M\n" \
+"\t\t[-n | --window-num <num>]\n" \
+"\t\t[-w | --window-size <size>M]\n" \
 "\t\t-f | --flash <size>[K|M]\n\n" \
 "\t-v | --verbose\t\tBe [more] verbose\n" \
 "\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n" \
 "\t-n | --window-num\tThe number of windows\n" \
+"\t\t\t\t(default: fill the reserved memory region)\n" \
 "\t-w | --window-size\tThe window size (power of 2) in MB\n" \
+"\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
 
 static int poll_loop(struct mbox_context *context)
@@ -179,7 +181,7 @@ static bool parse_cmdline(int argc, char **argv,
 			  struct mbox_context *context)
 {
 	char *endptr;
-	int opt, i;
+	int opt;
 
 	static const struct option long_options[] = {
 		{ "flash",		required_argument,	0, 'f' },
@@ -195,9 +197,6 @@ static bool parse_cmdline(int argc, char **argv,
 	verbosity = MBOX_LOG_NONE;
 	mbox_vlog = &mbox_log_console;
 
-	/* Default to 1 window of size flash_size */
-	context->windows.default_size = context->flash_size;
-	context->windows.num = 1;
 	context->current = NULL; /* No current window */
 
 	while ((opt = getopt_long(argc, argv, "f:w::n::vsVh", long_options, NULL))
@@ -269,34 +268,7 @@ static bool parse_cmdline(int argc, char **argv,
 		return false;
 	}
 
-	if (!context->windows.num) {
-		fprintf(stderr, "Must specify a non-zero number of windows\n"
-				"If unsure - select 4 (-n 4)\n");
-		return false;
-	}
-
-	if (!context->windows.default_size) {
-		fprintf(stderr, "Must specify a non-zero window size\n"
-				"If unsure - select 1M (-w 1)\n");
-		return false;
-	}
-
 	MSG_OUT("Flash size: 0x%.8x\n", context->flash_size);
-	MSG_OUT("Number of Windows: %d\n", context->windows.num);
-	MSG_OUT("Window size: 0x%.8x\n", context->windows.default_size);
-
-	context->windows.window = calloc(context->windows.num,
-					 sizeof(*context->windows.window));
-	if (!context->windows.window) {
-		MSG_ERR("Memory allocation failed\n");
-		free(context);
-		exit(1);
-	}
-
-	for (i = 0; i < context->windows.num; i++) {
-		init_window_state(&context->windows.window[i],
-				  context->windows.default_size);
-	}
 
 	if (verbosity) {
 		MSG_OUT("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
@@ -347,7 +319,7 @@ int main(int argc, char **argv)
 	}
 
 	/* We've found the reserved memory region -> we can assign to windows */
-	rc = init_window_mem(context);
+	rc = init_windows(context);
 	if (rc) {
 		goto finish;
 	}
@@ -386,8 +358,7 @@ finish:
 	free_flash_dev(context);
 	free_lpc_dev(context);
 	free_mbox_dev(context);
-	free_window_dirty_bytemap(context);
-	free(context->windows.window);
+	free_windows(context);
 	free(context);
 
 	return rc;

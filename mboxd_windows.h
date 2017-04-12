@@ -22,8 +22,8 @@
 #define WITH_FLUSH	true
 
 /* Initialisation Functions */
-void init_window_state(struct window_context *window, uint32_t size);
-int init_window_mem(struct mbox_context *context);
+int init_windows(struct mbox_context *context);
+void free_windows(struct mbox_context *context);
 /* Write From Window Functions */
 int write_from_window_v1(struct mbox_context *context,
 			 uint32_t offset_bytes, uint32_t count_bytes);
@@ -31,7 +31,6 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t type);
 /* Window Management Functions */
 void alloc_window_dirty_bytemap(struct mbox_context *context);
-void free_window_dirty_bytemap(struct mbox_context *context);
 int set_window_bytemap(struct mbox_context *context, struct window_context *cur,
 		       uint32_t offset, uint32_t size, uint8_t val);
 void close_current_window(struct mbox_context *context, bool set_bmc_event,
