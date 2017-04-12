@@ -57,6 +57,9 @@ test_bmc_event_ack_v2_SOURCES = test/bmc_event_ack_v2.c \
 test_create_oversize_window_SOURCES = test/create_oversize_window.c \
 				      $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_create_zero_size_window_SOURCES = test/create_zero_size_window.c \
+				       $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/copy_flash \
 		 test/erase_flash \
 		 test/write_flash \
@@ -70,6 +73,7 @@ check_PROGRAMS = test/copy_flash \
 		 test/write_flush_v2 \
 		 test/mark_write_erased_v2 \
 		 test/bmc_event_ack_v2 \
-		 test/create_oversize_window
+		 test/create_oversize_window \
+		 test/create_zero_size_window
 
 TESTS = $(check_PROGRAMS)
