@@ -8,3 +8,9 @@ mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 mboxctl_SOURCES = mboxctl.c
 mboxctl_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
+
+test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c common.c mtd.c test/tmpf.c
+
+check_PROGRAMS = test/copy_flash
+
+TESTS = $(check_PROGRAMS)
