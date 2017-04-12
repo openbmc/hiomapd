@@ -14,3 +14,9 @@ mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 AM_LIBS = $(CODE_COVERAGE_LIBS)
 AM_CPPFLAGS = $(CODE_COVERAGE_CPPFLAGS)
 AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+
+test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c common.c mtd.c test/tmpf.c
+
+check_PROGRAMS = test/copy_flash
+
+TESTS = $(check_PROGRAMS)
