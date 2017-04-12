@@ -83,6 +83,11 @@ static inline int log_2(int val)
 	return ret;
 }
 
+static inline bool is_power_of_2(unsigned val)
+{
+	return __builtin_popcount(val) == 1;
+}
+
 char *get_dev_mtd(void);
 
 #endif /* COMMON_H */
