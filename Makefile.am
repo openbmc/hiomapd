@@ -21,7 +21,8 @@ test_close_window_v2_SOURCES = test/close_window_v2.c mboxd_msg.c mboxd_windows.
 test_mark_write_dirty_v2_SOURCES = test/mark_write_dirty_v2.c mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c test/tmpf.c test/mbox.c test/system.c
 test_write_flush_v2_SOURCES = test/write_flush_v2.c mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c test/tmpf.c test/mbox.c test/system.c
 test_mark_write_erased_v2_SOURCES = test/mark_write_erased_v2.c mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c test/tmpf.c test/mbox.c test/system.c
+test_bmc_event_ack_v2_SOURCES = test/bmc_event_ack_v2.c mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c test/tmpf.c test/mbox.c test/system.c
 
-check_PROGRAMS = test/copy_flash test/erase_flash test/write_flash test/reset_state test/get_mbox_info_v2 test/get_flash_info_v2 test/create_read_window_v2 test/create_write_window_v2 test/close_window_v2 test/mark_write_dirty_v2 test/write_flush_v2 test/mark_write_erased_v2
+check_PROGRAMS = test/copy_flash test/erase_flash test/write_flash test/reset_state test/get_mbox_info_v2 test/get_flash_info_v2 test/create_read_window_v2 test/create_write_window_v2 test/close_window_v2 test/mark_write_dirty_v2 test/write_flush_v2 test/mark_write_erased_v2 test/bmc_event_ack_v2
 
 TESTS = $(check_PROGRAMS)
