@@ -75,6 +75,31 @@ int init_flash_dev(struct mbox_context *context)
 		goto out;
 	}
 
+	if (context->flash_size == 0) {
+		/*
+		 * PNOR images for current OpenPOWER systems are at most 64MB
+		 * despite the PNOR itself sometimes being as big as 128MB. To
+		 * ensure the image read from the PNOR is exposed in the LPC
+		 * address space at the location expected by the host firmware,
+		 * it is required that the image size be used for
+		 * context->flash_size, and not the size of the flash device.
+		 *
+		 * However, the test cases specify the flash size via special
+		 * test APIs (controlling flash behaviour) which don't have
+		 * access to the mbox context. Rather than requiring
+		 * error-prone assignments in every test case, we instead rely
+		 * on context->flash_size being set to the size reported by the
+		 * MEMINFO ioctl().
+		 *
+		 * As this case should never be hit in production (i.e. outside
+		 * the test environment), log an error. As a consequence, this
+		 * error is expected in the test case output.
+		 */
+		MSG_ERR("Flash size MUST be supplied on the commandline. However, continuing by assuming flash is %u bytes\n",
+				context->mtd_info.size);
+		context->flash_size = context->mtd_info.size;
+	}
+
 	/* We know the erase size so we can allocate the flash_erased bytemap */
 	context->erase_size_shift = log_2(context->mtd_info.erasesize);
 	context->flash_bmap = calloc(context->flash_size >>
