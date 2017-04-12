@@ -48,7 +48,7 @@
 
 #define LPC_CTRL_PATH		"/dev/aspeed-lpc-ctrl"
 
-int init_lpc_dev(struct mbox_context *context)
+int __init_lpc_dev(struct mbox_context *context, const char *path)
 {
 	struct aspeed_lpc_ctrl_mapping map = {
 		.window_type = ASPEED_LPC_CTRL_WINDOW_MEMORY,
@@ -61,11 +61,11 @@ int init_lpc_dev(struct mbox_context *context)
 	int fd;
 
 	/* Open LPC Device */
-	MSG_OUT("Opening %s\n", LPC_CTRL_PATH);
-	fd = open(LPC_CTRL_PATH, O_RDWR | O_SYNC);
+	MSG_OUT("Opening %s\n", path);
+	fd = open(path, O_RDWR | O_SYNC);
 	if (fd < 0) {
 		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-			LPC_CTRL_PATH, strerror(errno));
+			path, strerror(errno));
 		return -errno;
 	}
 
@@ -84,7 +84,7 @@ int init_lpc_dev(struct mbox_context *context)
 	context->lpc_base = 0x0FFFFFFF & -context->mem_size;
 	
 	/* mmap the Reserved Memory Region */
-	MSG_OUT("Mapping %s for %u\n", LPC_CTRL_PATH, context->mem_size);
+	MSG_OUT("Mapping %s for %u\n", path, context->mem_size);
 	context->mem = mmap(NULL, context->mem_size, PROT_READ | PROT_WRITE,
 				MAP_SHARED, fd, 0);
 	if (context->mem == MAP_FAILED) {
@@ -94,6 +94,11 @@ int init_lpc_dev(struct mbox_context *context)
 	}
 
 	return 0;
+}
+
+int init_lpc_dev(struct mbox_context *context)
+{
+	return __init_lpc_dev(context, LPC_CTRL_PATH);
 }
 
 void free_lpc_dev(struct mbox_context *context)
