@@ -12,7 +12,8 @@ mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c common.c mtd.c test/tmpf.c
 test_erase_flash_SOURCES = test/erase_flash.c mboxd_flash.c common.c test/tmpf.c
 test_write_flash_SOURCES = test/write_flash.c mboxd_flash.c common.c test/tmpf.c
+test_get_mbox_info_v2_SOURCES = test/get_mbox_info_v2.c mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c test/tmpf.c test/mbox.c test/system.c
 
-check_PROGRAMS = test/copy_flash test/erase_flash test/write_flash
+check_PROGRAMS = test/copy_flash test/erase_flash test/write_flash test/get_mbox_info_v2
 
 TESTS = $(check_PROGRAMS)
