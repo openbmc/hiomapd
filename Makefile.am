@@ -38,6 +38,9 @@ test_get_flash_info_v2_SOURCES = test/get_flash_info_v2.c \
 test_create_read_window_v2_SOURCES = test/create_read_window_v2.c \
 				     $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_create_write_window_v2_SOURCES = test/create_write_window_v2.c \
+				      $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -45,6 +48,7 @@ check_PROGRAMS = test/sanity \
 		 test/get_mbox_info_v2 \
 		 test/reset_state \
 		 test/get_flash_info_v2 \
-		 test/create_read_window_v2
+		 test/create_read_window_v2 \
+		 test/create_write_window_v2
 
 TESTS = $(check_PROGRAMS)
