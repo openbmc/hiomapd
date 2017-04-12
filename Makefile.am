@@ -17,6 +17,9 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 
 test_sanity_SOURCES = test/sanity.c
 
-check_PROGRAMS = test/sanity
+test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c common.c mtd.c test/tmpf.c
+
+check_PROGRAMS = test/sanity \
+		test/copy_flash
 
 TESTS = $(check_PROGRAMS)
