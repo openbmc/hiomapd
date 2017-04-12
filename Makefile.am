@@ -29,10 +29,14 @@ TEST_MOCK_SRCS = test/tmpf.c test/mbox.c test/system.c
 test_get_mbox_info_v2_SOURCES = test/get_mbox_info_v2.c \
 				$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_reset_state_SOURCES = test/reset_state.c \
+			   $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
 		 test/write_flash \
-		 test/get_mbox_info_v2
+		 test/get_mbox_info_v2 \
+		 test/reset_state
 
 TESTS = $(check_PROGRAMS)
