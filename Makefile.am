@@ -71,6 +71,9 @@ test_request_high_version_SOURCES = test/request_high_version.c \
 test_request_low_version_SOURCES = test/request_low_version.c \
 			     $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_mark_read_dirty_SOURCES = test/mark_read_dirty.c \
+			     $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -89,6 +92,7 @@ check_PROGRAMS = test/sanity \
 		 test/create_zero_size_window \
 		 test/implicit_flush \
 		 test/request_high_version \
-		 test/request_low_version 
+		 test/request_low_version \
+		 test/mark_read_dirty 
 
 TESTS = $(check_PROGRAMS)
