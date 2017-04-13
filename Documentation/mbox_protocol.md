@@ -210,16 +210,17 @@ Given that a majority of command and response arguments are specified as a
 multiple of block size it is necessary for the host and BMC to agree on a
 protocol version as this determines the block size. In V1 it is hard coded at
 4K and in V2 the BMC chooses and specifies this to the host as a response
-argument to MBOX_GET_INFO. Thus the host must always call MBOX_GET_INFO before
-any other command which specifies an argument in block size.
+argument to `MBOX_GET_INFO`. Thus the host must always call `MBOX_GET_INFO`
+before any other command which specifies an argument in block size.
 
-The host must tell the BMC the highest protocol level which it supports. The
-BMC will then respond with a protocol level. If the host doesn't understand
-the protocol level specified by the BMC then it must not continue to
-communicate with the BMC. Otherwise the protocol level specified by the
-BMC is taken to be the protocol level used for further communication and can
-only be changed by another call to MBOX_GET_INFO. The BMC should use the
-request from the host to influence its protocol version choice.
+When invoking `MBOX_GET_INFO` the host must provide the BMC its highest
+supported version of the protocol. The BMC must respond with a protocol version
+less than or equal to that requested by the host, or in the event that there is
+no such value, an error code. In the event that an error is returned the host
+must not continue to communicate with the BMC. Otherwise, the protocol version
+returned by the BMC is the agreed protocol version for all further
+communication. The host may at a future point request a change in protocol
+version by issuing a subsequent `MBOX_GET_INFO` command.
 
 ### Window Management
 

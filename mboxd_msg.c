@@ -176,10 +176,12 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 	int rc;
 
 	/* Check we support the version requested */
-	if (mbox_api_version < API_MIN_VERSION ||
-	    mbox_api_version > API_MAX_VERSION) {
+	if (mbox_api_version < API_MIN_VERSION)
 		return -MBOX_R_PARAM_ERROR;
-	}
+
+	if (mbox_api_version > API_MAX_VERSION)
+		mbox_api_version = API_MAX_VERSION;
+
 	context->version = mbox_api_version;
 	MSG_OUT("Using Protocol Version: %d\n", context->version);
 
