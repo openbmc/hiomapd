@@ -86,6 +86,9 @@ test_write_window_dirty_erase_SOURCES = test/write_window_dirty_erase.c \
 test_invalid_command_SOURCES = test/invalid_command.c \
 			     $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_read_window_cycle_SOURCES = test/read_window_cycle.c \
+			     $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -109,6 +112,7 @@ check_PROGRAMS = test/sanity \
 		 test/read_window_write_flush \
 		 test/read_window_mark_write_erased \
 		 test/write_window_dirty_erase \
-		 test/invalid_command
+		 test/invalid_command \
+		 test/read_window_cycle
 
 TESTS = $(check_PROGRAMS)
