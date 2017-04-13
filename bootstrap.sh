@@ -16,4 +16,15 @@ case $1 in
 esac
 
 autoreconf -i
-echo 'Run "./configure ${CONFIGURE_FLAGS} && make"'
+
+case $1 in
+    dev)
+        ./configure \
+            CPPFLAGS="-UNDEBUG" \
+            CFLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -Wall -Werror" \
+            --enable-code-coverage
+        ;;
+    *)
+        echo 'Run "./configure ${CONFIGURE_FLAGS} && make"'
+        ;;
+esac
