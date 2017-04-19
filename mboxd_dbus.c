@@ -314,12 +314,31 @@ out:
 	if (rc < 0) {
 		resp.cmd = -rc;
 	}
-	sd_bus_message_new_method_return(m, &n); /* Generate response */
-	sd_bus_message_append(n, "y", resp.cmd); /* Set return code */
-	sd_bus_message_append_array(n, 'y', resp.args, resp.num_args);
-	sd_bus_send(sd_bus_message_get_bus(m), n, NULL); /* Send response */
+	rc = sd_bus_message_new_method_return(m, &n); /* Generate response */
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		goto cleanup;
+	}
+
+	rc = sd_bus_message_append(n, "y", resp.cmd); /* Set return code */
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_append failed: %d\n", rc);
+		goto cleanup;
+	}
+
+	rc = sd_bus_message_append_array(n, 'y', resp.args, resp.num_args);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_append_array failed: %d\n", rc);
+		goto cleanup;
+	}
+
+	rc = sd_bus_send(NULL, n, NULL); /* Send response */
+	if (rc < 0)
+		MSG_ERR("sd_bus_send failed: %d\n", rc);
+
+cleanup:
 	free(resp.args);
-	return 0;
+	return rc;
 }
 
 static const sd_bus_vtable mboxd_vtable[] = {
