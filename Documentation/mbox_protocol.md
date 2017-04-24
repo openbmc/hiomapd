@@ -153,15 +153,14 @@ Messages usually originate from the host to the BMC. There are special
 cases for a back channel for the BMC to pass new information to the
 host which will be discussed later.
 
-To initiate a request the host must set a command code (see
-Commands) into mailbox data register 0. It is also the hosts
-responsibility to generate a unique sequence number into mailbox
-register 1. After this any command specific data should be written
-(see Layout). The host must then generate an interrupt to the BMC by
-using bit 0 of its control register and wait for an interrupt on the
-response register. Generating an interrupt automatically sets bit 7 of the
-corresponding control register. This bit can be used to poll for
-messages.
+To initiate a request the host must set a command code (see Commands) into
+mailbox data register 0, and generate a sequence number (see Sequence Numbers)
+to write to mailbox register data 1. After these two values, any
+command-specific data should be written (see Layout). The host must then
+generate an interrupt to the BMC by using bit 0 of its control register and
+wait for an interrupt on the response register.  Generating an interrupt
+automatically sets bit 7 of the corresponding control register. This bit can be
+used to poll for messages.
 
 On receiving an interrupt (or polling on bit 7 of its Control
 Register) the BMC should read the message from the general registers
@@ -312,13 +311,6 @@ BMC_EVENT_ACK        0x09
 MARK_WRITE_ERASED    0x0a	(V2)
 ```
 
-### Sequence
-
-The host must ensure a unique sequence number at the start of a
-command/response pair. The BMC must ensure the responses to
-a particular message contain the same sequence number that was in the
-command request from the host.
-
 ### Responses
 
 ```
@@ -329,7 +321,27 @@ SYSTEM_ERROR	4
 TIMEOUT		5
 BUSY		6	(V2)
 WINDOW_ERROR	7	(V2)
+SEQ_ERROR	8	(V2)
 ```
+
+### Sequence Numbers
+
+Sequence numbers are included in messages for correlation of commands and
+responses. V1 and V2 of the protocol permit either zero or one commands to be
+in progress (yet to receive a response).
+
+For generality, the host must generate a sequence number that is unique with
+respect to the previous command (one that has received a response) and any
+in-progress commands. Sequence numbers meeting this requirement are considered
+valid. The BMC's response to a command must contain the same sequence number
+issued by the host as found in the relevant command.
+
+Sequence numbers may be reused in accordance with the constraints outlined
+above, however it is not an error if the BMC receives a `GET_MBOX_INFO` with an
+invalid sequence number. For all other cases, the BMC must respond with
+`SEQ_ERROR` if the constraints are violated. If the host receives a `SEQ_ERROR`
+response it must consider any in-progress commands to have failed. The host may
+retry the affected command(s) after generating a suitable sequence number.
 
 #### Description:
 
