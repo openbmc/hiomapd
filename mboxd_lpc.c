@@ -84,12 +84,11 @@ int __init_lpc_dev(struct mbox_context *context, const char *path)
 	context->lpc_base = 0x0FFFFFFF & -context->mem_size;
 	
 	/* mmap the Reserved Memory Region */
-	MSG_OUT("Mapping %s for %u\n", path, context->mem_size);
+	MSG_OUT("Mapping in %u bytes of %s\n", context->mem_size, path);
 	context->mem = mmap(NULL, context->mem_size, PROT_READ | PROT_WRITE,
 				MAP_SHARED, fd, 0);
 	if (context->mem == MAP_FAILED) {
-		MSG_ERR("Didn't manage to mmap %s: %s\n", LPC_CTRL_PATH,
-			strerror(errno));
+		MSG_ERR("Failed to map %s: %s\n", path, strerror(errno));
 		return -errno;
 	}
 
