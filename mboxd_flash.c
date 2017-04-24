@@ -147,8 +147,8 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 		size_read = read(context->fds[MTD_FD].fd, mem,
 					  min_u32(CHUNKSIZE, size));
 		if (size_read < 0) {
-			MSG_ERR("Couldn't copy mtd into ram: %d. %s\n",
-				size_read, strerror(size_read));
+			MSG_ERR("Couldn't copy mtd into ram: %s\n",
+				strerror(errno));
 			return -MBOX_R_SYSTEM_ERROR;
 		}
 
