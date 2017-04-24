@@ -650,17 +650,25 @@ static int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
 }
 
 /*
- * check_cmd_valid() - Check if the given command is a valid mbox command code
+ * check_req_valid() - Check if the given command is a valid mbox command code
  * @context:	The mbox context pointer
  * @cmd:	The command code
  *
  * Return:	0 if command is valid otherwise negative error code
  */
-static int check_cmd_valid(struct mbox_context *context, int cmd)
+static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 {
-	if (cmd <= 0 || cmd > NUM_MBOX_CMDS) {
+	uint8_t cmd = req->msg.command;
+	uint8_t seq = req->msg.seq;
+
+	if (cmd > NUM_MBOX_CMDS) {
 		MSG_ERR("Unknown mbox command: %d\n", cmd);
 		return -MBOX_R_PARAM_ERROR;
+	}
+
+	if (seq == context->prev_seq && cmd != MBOX_C_GET_MBOX_INFO) {
+		MSG_ERR("Invalid sequence number: %d\n", seq);
+		return -MBOX_R_SEQ_ERROR;
 	}
 
 	if (context->state & STATE_SUSPENDED) {
@@ -714,7 +722,7 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 	int rc = 0, len;
 
 	MSG_OUT("Got data in with command %d\n", req->msg.command);
-	rc = check_cmd_valid(context, req->msg.command);
+	rc = check_req_valid(context, req);
 	if (rc < 0) {
 		resp.response = -rc;
 	} else {
@@ -726,6 +734,8 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 			resp.response = -rc;
 		}
 	}
+
+	context->prev_seq = req->msg.seq;
 
 	MSG_OUT("Writing response to MBOX regs: %d\n", resp.response);
 	len = write(context->fds[MBOX_FD].fd, &resp, sizeof(resp));

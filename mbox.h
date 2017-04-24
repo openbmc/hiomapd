@@ -54,6 +54,7 @@ enum api_version {
 #define MBOX_R_TIMEOUT			0x05
 #define MBOX_R_BUSY			0x06
 #define MBOX_R_WINDOW_ERROR		0x07
+#define MBOX_R_SEQ_ERROR		0x08
 
 /* Argument Flags */
 #define FLAGS_NONE			0x00
@@ -137,6 +138,7 @@ struct mbox_context {
 	sd_bus *bus;
 	bool terminate;
 	uint8_t bmc_events;
+	uint8_t prev_seq;
 
 /* Window State */
 	/* The window list struct containing all current "windows" */
