@@ -168,7 +168,7 @@ Register) the BMC should read the message from the general registers
 of the mailbox and perform the necessary action before responding. On
 responding the BMC must ensure that the sequence number is the same as
 the one in the request from the host. The BMC must also ensure that
-mailbox data regsiter 13 is a valid response code (see Responses). The
+mailbox data register 13 is a valid response code (see Responses). The
 BMC should then use its control register to generate an interrupt for
 the host to notify it of a response.
 
