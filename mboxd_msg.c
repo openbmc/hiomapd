@@ -659,9 +659,10 @@ static int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
 static int check_cmd_valid(struct mbox_context *context, int cmd)
 {
 	if (cmd <= 0 || cmd > NUM_MBOX_CMDS) {
-		MSG_ERR("UNKNOWN MBOX COMMAND: %d\n", cmd);
+		MSG_ERR("Unknown mbox command: %d\n", cmd);
 		return -MBOX_R_PARAM_ERROR;
 	}
+
 	if (context->state & STATE_SUSPENDED) {
 		if (cmd != MBOX_C_GET_MBOX_INFO && cmd != MBOX_C_ACK) {
 			MSG_ERR("Cannot use that cmd while suspended: %d\n",
@@ -670,11 +671,11 @@ static int check_cmd_valid(struct mbox_context *context, int cmd)
 						: -MBOX_R_PARAM_ERROR;
 		}
 	}
+
 	if (!(context->state & MAPS_MEM)) {
 		if (cmd != MBOX_C_RESET_STATE && cmd != MBOX_C_GET_MBOX_INFO
 					      && cmd != MBOX_C_ACK) {
-			MSG_ERR("Must call GET_MBOX_INFO before that cmd: %d\n",
-				cmd);
+			MSG_ERR("Must call GET_MBOX_INFO before %d\n", cmd);
 			return -MBOX_R_PARAM_ERROR;
 		}
 	}
