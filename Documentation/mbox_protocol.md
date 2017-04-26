@@ -368,8 +368,19 @@ WINDOW_ERROR	- Command not valid for active window or no active window
 
 ### Commands in detail
 
-Note in V1 block size is hard coded to 4K, in V2 it is variable and must be
-queried with GET_MBOX_INFO.
+Block size refers to an agreed value which is used as a unit for the
+arguments of various commands and responses. Having a block size multiplier
+allows us to specify larger values with fewer command and response fields.
+
+In V1 block size is hard coded to 4K.
+In V2 it is variable and must be queried with the GET_MBOX_INFO command.
+Note that for simplicity block size must always be a power-of-2.
+Block size must also be greater than or equal to 4K. This is due to the
+fact that we have a 28-bit LPC address space and commands which return an
+LPC address do so in 16 bits, thus we need at least a 12-bit unit to ensure
+that we can specify the entire address space. This additionally allows us
+to specify flash addresses of at least 256MB.
+
 Sizes and addresses are specified in either bytes - (bytes)
 					 or blocks - (blocks)
 Sizes and addresses specified in blocks must be converted to bytes by
