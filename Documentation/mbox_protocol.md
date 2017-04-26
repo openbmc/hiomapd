@@ -433,11 +433,11 @@ Command:
 		V1, V2
 	Arguments:
 		V1:
-		Args 0-1: Window location as offset into flash (blocks)
+		Args 0-1: Requested flash offset (blocks)
 
 		V2:
-		Args 0-1: Window location as offset into flash (blocks)
-		Args 2-3: Requested window size (blocks)
+		Args 0-1: Requested flash offset (blocks)
+		Args 2-3: Requested flash size to access (blocks)
 
 	Response:
 		V1:
@@ -445,30 +445,26 @@ Command:
 
 		V2:
 		Args 0-1: LPC bus address of window (blocks)
-		Args 2-3: Actual window size (blocks)
-		Args 4-5: Actual window location as offset into flash (blocks)
+		Args 2-3: Window size (blocks)
+		Args 4-5: Flash offset mapped by window (blocks)
 	Notes:
-		Window location is always given as an offset into flash as
+		The flash offset which the host requests access to is always
 		taken from the start of flash - that is it is an absolute
-		address.
+		offset into flash.
 
 		LPC bus address is always given from the start of the LPC
 		address space - that is it is an absolute address.
 
-		The requested window size is only a hint. The response
+		The requested access size is only a hint. The response
 		indicates the actual size of the window. The BMC may
 		want to use the requested size to pre-load the remainder
 		of the request. The host must not access past the end of the
 		active window.
 
-		The actual window location indicates the absolute flash offset
-		that the window actually maps and is not required to be equal
-		to the flash offset requested by the host, but however must be
-		less than or equal to it. Thus the first block of the window at
-		the lpc address in the response will map the first block at the
-		actual flash offset also contained in the response. It is the
-		responsibility of the host to use this information to access
-		any offset which is required.
+		The flash offset mapped by the window is an absolute flash
+		offset and must be less than or equal to the flash offset
+		requested by the host. It is the responsibility of the host
+		to use this information to access any offset which is required.
 
 		The requested window size may be zero. In this case the
 		BMC is free to create any sized window but it must contain
@@ -476,9 +472,9 @@ Command:
 		window is of course preferred and should correspond to
 		the default size returned in the GET_MBOX_INFO command.
 
-		If this command returns successfully then the window which the
-		host requested is the active window. If it fails then there is
-		no active window.
+		If this command returns successfully then the created window
+		is the active window. If it fails then there is	no active
+		window.
 
 Command:
 	CLOSE_WINDOW
