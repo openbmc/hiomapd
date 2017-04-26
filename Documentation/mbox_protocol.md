@@ -369,7 +369,8 @@ WINDOW_ERROR	- Command not valid for active window or no active window
 ### Commands in detail
 
 Note in V1 block size is hard coded to 4K, in V2 it is variable and must be
-queried with GET_MBOX_INFO.
+queried with GET_MBOX_INFO. Block size must always be greater than or equal
+to 4K and a power-of-2.
 Sizes and addresses are specified in either bytes - (bytes)
 					 or blocks - (blocks)
 Sizes and addresses specified in blocks must be converted to bytes by
