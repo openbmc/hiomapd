@@ -417,6 +417,16 @@ Command:
 		Args 1-2: reserved
 		Args 3-4: reserved
 		Args 5: Block size as power of two (encoded as a shift)
+		Args 6: Suggested timeout
+	Notes:
+		The suggested timeout is a hint to the host as to how long
+		it should wait after issuing a command to the BMC before it
+		times out on the request. This is the maximum time which the
+		BMC thinks it could take to service any command which the host
+		could issue. This may be set to zero to indicate that the BMC
+		does not wish to provide a hint in which case the host should
+		choose some reasonable value.
+		`timeout = args[6] * 2 seconds`
 
 Command:
 	GET_FLASH_INFO
