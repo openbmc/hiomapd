@@ -137,6 +137,13 @@ Byte 14: Host controlled status reg
 Byte 15: BMC controlled status reg
 ```
 
+Note: when the BMC is writing a response to the mbox registers (as described
+above), the "Response Code" (Register 13) must be the last register written to.
+Writing register 13 will trigger an interrupt to the host indicating a complete
+response has been written. Triggering the interrupt by writing register 13
+prior to completing the response may lead to a data race, and must therefore
+be avoided.
+
 ## Low Level Protocol Flow
 
 What we essentially have is a set of registers which either the host or BMC can
