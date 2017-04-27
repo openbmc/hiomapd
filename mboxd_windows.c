@@ -479,6 +479,30 @@ struct window_context *find_oldest_window(struct mbox_context *context)
 }
 
 /*
+ * find_largest_window() - Find the largest window in the window cache
+ * @context:	The mbox context pointer
+ *
+ * Return:	The largest window
+ */
+struct window_context *find_largest_window(struct mbox_context *context)
+{
+	struct window_context *largest = NULL, *cur;
+	uint32_t max_size = 0;
+	int i;
+
+	for (i = 0; i < context->windows.num; i++) {
+		cur = &context->windows.window[i];
+
+		if (cur->size > max_size) {
+			max_size = cur->size;
+			largest = cur;
+		}
+	}
+
+	return largest;
+}
+
+/*
  * search_windows() - Search the window cache for a window containing offset
  * @context:	The mbox context pointer
  * @offset:	Absolute flash offset to search for (bytes)

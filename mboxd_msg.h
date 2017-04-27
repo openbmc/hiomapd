@@ -18,8 +18,13 @@
 #ifndef MBOXD_MSG_H
 #define MBOXD_MSG_H
 
-#define NO_BMC_EVENT	false
-#define SET_BMC_EVENT	true
+#include "common.h"
+
+/* Estimate as to how long (milliseconds) it takes to access a MB from flash */
+#define FLASH_ACCESS_MS_PER_MB		6500
+
+#define NO_BMC_EVENT			false
+#define SET_BMC_EVENT			true
 
 struct mbox_msg {
 	uint8_t command;
@@ -40,5 +45,10 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 int dispatch_mbox(struct mbox_context *context);
 int init_mbox_dev(struct mbox_context *context);
 void free_mbox_dev(struct mbox_context *context);
+
+static inline uint8_t __get_suggested_timeout(uint32_t max_size_mb)
+{
+	return align_up(max_size_mb * FLASH_ACCESS_MS_PER_MB, 2000) / 1000;
+}
 
 #endif /* MBOXD_MSG_H */

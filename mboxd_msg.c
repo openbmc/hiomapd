@@ -147,6 +147,24 @@ static int mbox_handle_reset(struct mbox_context *context,
 }
 
 /*
+ * get_suggested_timeout() - get the suggested timeout value in seconds
+ * @context:	The mbox context pointer
+ *
+ * Return:	Suggested timeout in seconds
+ */
+static uint8_t get_suggested_timeout(struct mbox_context *context)
+{
+	struct window_context *window = find_largest_window(context);
+	uint32_t max_size_mb = window ? (window->size >> 20) : 0;
+
+	/*
+	 * Note: we align up to the nearest two seconds because the timeout
+	 * value is given in 2 second increments.
+	 */
+	return __get_suggested_timeout(max_size_mb);
+}
+
+/*
  * Command: GET_MBOX_INFO
  * Get the API version, default window size and block size
  * We also set the LPC mapping to point to the reserved memory region here so
@@ -229,6 +247,8 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 	}
 	if (context->version >= API_VERSION_2) {
 		resp->args[5] = context->block_size_shift;
+		/* arg[6] specified as half actual timeout value */
+		resp->args[6] = (get_suggested_timeout(context) / 2);
 	}
 
 	return 0;
