@@ -35,6 +35,9 @@ enum api_version {
 #define THIS_NAME			"Mailbox Daemon"
 #define SUB_VERSION			0
 
+/* Estimate as to how long (milliseconds) it takes to access a MB from flash */
+#define FLASH_ACCESS_MS_PER_MB		6000
+
 /* Command Values */
 #define MBOX_C_RESET_STATE		0x01
 #define MBOX_C_GET_MBOX_INFO		0x02
