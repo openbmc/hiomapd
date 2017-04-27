@@ -92,10 +92,11 @@ static int poll_loop(struct mbox_context *context)
 					strerror(errno));
 			}
 
+			MSG_DBG("Received signal: %d\n", info.ssi_signo);
 			switch (info.ssi_signo) {
 			case SIGINT:
 			case SIGTERM:
-				MSG_OUT("Caught Signal - Exiting...\n");
+				MSG_INFO("Caught Signal - Exiting...\n");
 				context->terminate = true;
 				break;
 			case SIGHUP:
@@ -116,7 +117,9 @@ static int poll_loop(struct mbox_context *context)
 			}
 		}
 		if (context->fds[DBUS_FD].revents & POLLIN) { /* DBUS */
-			while ((rc = sd_bus_process(context->bus, NULL)) > 0);
+			while ((rc = sd_bus_process(context->bus, NULL)) > 0) {
+				MSG_DBG("DBUS Event\n");
+			}
 			if (rc < 0) {
 				MSG_ERR("Error handling DBUS event: %s\n",
 						strerror(-rc));
@@ -126,6 +129,7 @@ static int poll_loop(struct mbox_context *context)
 			break; /* This should mean we clean up nicely */
 		}
 		if (context->fds[MBOX_FD].revents & POLLIN) { /* MBOX */
+			MSG_DBG("MBOX Event\n");
 			rc = dispatch_mbox(context);
 			if (rc < 0) {
 				MSG_ERR("Error handling MBOX event\n");
@@ -272,10 +276,10 @@ static bool parse_cmdline(int argc, char **argv,
 		return false;
 	}
 
-	MSG_OUT("Flash size: 0x%.8x\n", context->flash_size);
+	MSG_INFO("Flash size: 0x%.8x\n", context->flash_size);
 
 	if (verbosity) {
-		MSG_OUT("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
+		MSG_INFO("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
 					"Verbose");
 	}
 
@@ -305,7 +309,7 @@ int main(int argc, char **argv)
 		context->fds[i].fd = -1;
 	}
 
-	MSG_OUT("Starting Daemon\n");
+	MSG_INFO("Starting Daemon\n");
 
 	rc = init_signals(context, &set);
 	if (rc) {
@@ -349,13 +353,13 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	MSG_OUT("Entering Polling Loop\n");
+	MSG_INFO("Entering Polling Loop\n");
 	rc = poll_loop(context);
 
-	MSG_OUT("Exiting Poll Loop: %d\n", rc);
+	MSG_INFO("Exiting Poll Loop: %d\n", rc);
 
 finish:
-	MSG_OUT("Daemon Exiting...\n");
+	MSG_INFO("Daemon Exiting...\n");
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
 	free_mboxd_dbus(context);

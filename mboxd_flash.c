@@ -55,7 +55,7 @@ int init_flash_dev(struct mbox_context *context)
 		return -1;
 	}
 
-	MSG_OUT("Opening %s\n", filename);
+	MSG_DBG("Opening %s\n", filename);
 
 	/* Open Flash Device */
 	fd = open(filename, O_RDWR);
@@ -105,6 +105,7 @@ int init_flash_dev(struct mbox_context *context)
 	context->flash_bmap = calloc(context->flash_size >>
 				     context->erase_size_shift,
 				     sizeof(*context->flash_bmap));
+	MSG_DBG("Flash erase size: 0x%.8x\n", context->mtd_info.erasesize);
 
 out:
 	free(filename);
@@ -135,8 +136,8 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 {
 	int32_t size_read;
 
-	MSG_OUT("Loading flash at %p for 0x%08x bytes from offset 0x%.8x\n",
-							mem, size, offset);
+	MSG_DBG("Copy flash to %p for size 0x%.8x from offset 0x%.8x\n",
+		mem, size, offset);
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
 		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
 			strerror(errno));
@@ -192,6 +193,8 @@ int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
 		return -MBOX_R_PARAM_ERROR;
 	}
 
+	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
+		offset, count, val ? "ERASED" : "DIRTY");
 	memset(context->flash_bmap + (offset >> context->erase_size_shift),
 	       val,
 	       align_up(count, 1 << context->erase_size_shift) >>
@@ -214,7 +217,7 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 	struct erase_info_user erase_info = { 0 };
 	int rc;
 
-	MSG_OUT("Erasing 0x%.8x for 0x%.8x\n", offset, count);
+	MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n", offset, count);
 
 	/*
 	 * We have an erased_bytemap for the flash so we want to avoid erasing
@@ -231,6 +234,8 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 			erase_info.length += erase_size;
 		} else if (erase_info.length) { /* Already erased|end of run? */
 			/* Erase the previous run which just ended */
+			MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
+				erase_info.start, erase_info.length);
 			rc = ioctl(context->fds[MTD_FD].fd, MEMERASE,
 				   &erase_info);
 			if (rc < 0) {
@@ -250,6 +255,8 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 	}
 
 	if (erase_info.length) {
+		MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
+			erase_info.start, erase_info.length);
 		rc = ioctl(context->fds[MTD_FD].fd, MEMERASE, &erase_info);
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash at 0x%.8x\n",
@@ -279,7 +286,7 @@ int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
 	uint32_t buf_offset = 0;
 	int rc;
 
-	MSG_OUT("Writing 0x%.8x for 0x%.8x from %p\n", offset, count, buf);
+	MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count, buf);
 
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
 		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
