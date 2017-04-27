@@ -40,6 +40,7 @@ void close_current_window(struct mbox_context *context, bool set_bmc_event,
 void reset_window(struct mbox_context *context, struct window_context *window);
 void reset_all_windows(struct mbox_context *context, bool set_bmc_event);
 struct window_context *find_oldest_window(struct mbox_context *context);
+struct window_context *find_largest_window(struct mbox_context *context);
 struct window_context *search_windows(struct mbox_context *context,
 				      uint32_t offset, bool exact);
 int create_map_window(struct mbox_context *context,

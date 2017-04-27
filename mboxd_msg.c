@@ -147,6 +147,20 @@ static int mbox_handle_reset(struct mbox_context *context,
 }
 
 /*
+ * get_suggested_timeout() - get the suggested timeout value in seconds
+ * @context:	The mbox context pointer
+ *
+ * Return:	Suggested timeout in seconds
+ */
+static uint16_t get_suggested_timeout(struct mbox_context *context)
+{
+	struct window_context *window = find_largest_window(context);
+	uint32_t max_size_mb = window ? (window->size >> 20) : 0;
+
+	return align_up(max_size_mb * FLASH_ACCESS_MS_PER_MB, 1000) / 1000;
+}
+
+/*
  * Command: GET_MBOX_INFO
  * Get the API version, default window size and block size
  * We also set the LPC mapping to point to the reserved memory region here so
@@ -229,6 +243,7 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 	}
 	if (context->version >= API_VERSION_2) {
 		resp->args[5] = context->block_size_shift;
+		put_u16(&resp->args[6], get_suggested_timeout(context));
 	}
 
 	return 0;
