@@ -112,6 +112,7 @@ int set_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 	}
 
 	context->bmc_events |= (bmc_event & mask);
+	MSG_DBG("BMC Events set to: 0x%.2x\n", context->bmc_events);
 
 	return write_back ? write_bmc_event_reg(context) : 0;
 }
@@ -128,6 +129,7 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 		   bool write_back)
 {
 	context->bmc_events &= ~bmc_event;
+	MSG_DBG("BMC Events clear to: 0x%.2x\n", context->bmc_events);
 
 	return write_back ? write_bmc_event_reg(context) : 0;
 }
@@ -156,12 +158,17 @@ static uint8_t get_suggested_timeout(struct mbox_context *context)
 {
 	struct window_context *window = find_largest_window(context);
 	uint32_t max_size_mb = window ? (window->size >> 20) : 0;
+	uint8_t ret;
 
 	/*
 	 * Note: we align up to the nearest two seconds because the timeout
 	 * value is given in 2 second increments.
 	 */
-	return __get_suggested_timeout(max_size_mb);
+	ret = __get_suggested_timeout(max_size_mb);
+
+	MSG_DBG("Suggested Timeout: %us, max window size: %uMB, for %dms/MB\n",
+		ret, max_size_mb, FLASH_ACCESS_MS_PER_MB);
+	return ret;
 }
 
 /*
@@ -201,7 +208,7 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 		mbox_api_version = API_MAX_VERSION;
 
 	context->version = mbox_api_version;
-	MSG_OUT("Using Protocol Version: %d\n", context->version);
+	MSG_INFO("Using Protocol Version: %d\n", context->version);
 
 	/*
 	 * The reset state is currently to have the LPC bus point directly to
@@ -222,7 +229,8 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 		context->block_size_shift = log_2(context->mtd_info.erasesize);
 		break;
 	}
-	MSG_OUT("Block Size Shift: %d\n", context->block_size_shift);
+	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
+		 1 << context->block_size_shift, context->block_size_shift);
 
 	/* Now we know the blocksize we can allocate the window dirty_bytemap */
 	if (mbox_api_version != old_api_version) {
@@ -305,6 +313,8 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 	/* Total LPC Address */
 	lpc_addr = context->lpc_base + mem_offset;
 
+	MSG_DBG("LPC address of current window: 0x%.8x\n", lpc_addr);
+
 	return lpc_addr >> context->block_size_shift;
 }
 
@@ -348,12 +358,13 @@ static int mbox_handle_read_window(struct mbox_context *context,
 
 	/* Offset the host has requested */
 	flash_offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
-	MSG_OUT("Host Requested Flash @ 0x%.8x\n", flash_offset);
+	MSG_INFO("Host requested flash @ 0x%.8x\n", flash_offset);
 	/* Check if we have an existing window */
 	context->current = search_windows(context, flash_offset,
 					  context->version == API_VERSION_1);
 
 	if (!context->current) { /* No existing window */
+		MSG_DBG("No existing window which maps that flash offset\n");
 		rc = create_map_window(context, &context->current, flash_offset,
 				       context->version == API_VERSION_1);
 		if (rc < 0) { /* Unable to map offset */
@@ -362,6 +373,10 @@ static int mbox_handle_read_window(struct mbox_context *context,
 			return rc;
 		}
 	}
+
+	MSG_INFO("Window @ %p for size 0x%.8x maps flash offset 0x%.8x\n",
+		 context->current->mem, context->current->size,
+		 context->current->flash_offset);
 
 	put_u16(&resp->args[0], get_lpc_addr_shifted(context));
 	if (context->version >= API_VERSION_2) {
@@ -467,6 +482,10 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
 		size >>= context->block_size_shift;
 	}
 
+	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
+		 offset << context->block_size_shift,
+		 size << context->block_size_shift);
+
 	return set_window_bytemap(context, context->current, offset, size,
 				  WINDOW_DIRTY);
 }
@@ -502,6 +521,10 @@ static int mbox_handle_erase_window(struct mbox_context *context,
 
 	offset = get_u16(&req->msg.args[0]);
 	size = get_u16(&req->msg.args[2]);
+
+	MSG_INFO("Erase window @ 0x%.8x for 0x%.8x\n",
+		 offset << context->block_size_shift,
+		 size << context->block_size_shift);
 
 	rc = set_window_bytemap(context, context->current, offset, size,
 				WINDOW_ERASED);
@@ -562,6 +585,10 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 	offset = 0;
 	count = 0;
 	prev = WINDOW_CLEAN;
+
+	MSG_INFO("Flush window @ %p for size 0x%.8x which maps flash @ 0x%.8x\n",
+		 context->current->mem, context->current->size,
+		 context->current->flash_offset);
 
 	/*
 	 * We look for streaks of the same type and keep a count, when the type
@@ -686,7 +713,8 @@ static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 	}
 
 	if (seq == context->prev_seq && cmd != MBOX_C_GET_MBOX_INFO) {
-		MSG_ERR("Invalid sequence number: %d\n", seq);
+		MSG_ERR("Invalid sequence number: %d, previous: %d\n", seq,
+			context->prev_seq);
 		return -MBOX_R_SEQ_ERROR;
 	}
 
@@ -738,9 +766,9 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 		.args = { 0 },
 		.response = MBOX_R_SUCCESS
 	};
-	int rc = 0, len;
+	int rc = 0, len, i;
 
-	MSG_OUT("Got data in with command %d\n", req->msg.command);
+	MSG_INFO("Received MBOX command: %u\n", req->msg.command);
 	rc = check_req_valid(context, req);
 	if (rc < 0) {
 		resp.response = -rc;
@@ -756,7 +784,13 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 
 	context->prev_seq = req->msg.seq;
 
-	MSG_OUT("Writing response to MBOX regs: %d\n", resp.response);
+	MSG_DBG("Writing MBOX response:\n");
+	MSG_DBG("MBOX cmd: %u\n", resp.command);
+	MSG_DBG("MBOX seq: %u\n", resp.seq);
+	for (i = 0; i < MBOX_ARGS_BYTES; i++) {
+		MSG_DBG("MBOX arg[%d]: 0x%.2x\n", i, resp.args[i]);
+	}
+	MSG_INFO("Writing MBOX response: %u\n", resp.response);
 	len = write(context->fds[MBOX_FD].fd, &resp, sizeof(resp));
 	if (len < sizeof(resp)) {
 		MSG_ERR("Didn't write the full response\n");
@@ -775,7 +809,7 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
  */
 static int get_message(struct mbox_context *context, union mbox_regs *msg)
 {
-	int rc;
+	int rc, i;
 
 	rc = read(context->fds[MBOX_FD].fd, msg, sizeof(msg->raw));
 	if (rc < 0) {
@@ -784,6 +818,13 @@ static int get_message(struct mbox_context *context, union mbox_regs *msg)
 	} else if (rc < sizeof(msg->raw)) {
 		MSG_ERR("Short read: %d expecting %zu\n", rc, sizeof(msg->raw));
 		return -1;
+	}
+
+	MSG_DBG("Received MBOX request:\n");
+	MSG_DBG("MBOX cmd: %u\n", msg->msg.command);
+	MSG_DBG("MBOX seq: %u\n", msg->msg.seq);
+	for (i = 0; i < MBOX_ARGS_BYTES; i++) {
+		MSG_DBG("MBOX arg[%d]: 0x%.2x\n", i, msg->msg.args[i]);
 	}
 
 	return 0;
@@ -802,7 +843,6 @@ int dispatch_mbox(struct mbox_context *context)
 
 	assert(context);
 
-	MSG_OUT("Dispatched to mbox\n");
 	rc = get_message(context, &req);
 	if (rc) {
 		return rc;
@@ -822,6 +862,7 @@ int __init_mbox_dev(struct mbox_context *context, const char *path)
 			path, strerror(errno));
 		return -errno;
 	}
+	MSG_DBG("Opened mbox dev: %s\n", path);
 
 	context->fds[MBOX_FD].fd = fd;
 
