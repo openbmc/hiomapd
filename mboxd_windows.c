@@ -82,8 +82,11 @@ static int init_window_mem(struct mbox_context *context)
 	 * did we will error out here
 	 */
 	for (i = 0; i < context->windows.num; i++) {
+		uint32_t size = context->windows.window[i].size;
+		MSG_DBG("Window %d @ %p for size 0x%.8x\n", i,
+			mem_location, size);
 		context->windows.window[i].mem = mem_location;
-		mem_location += context->windows.window[i].size;
+		mem_location += size;
 		if (mem_location > (context->mem + context->mem_size)) {
 			/* Tried to allocate window past the end of memory */
 			MSG_ERR("Total size of windows exceeds reserved mem\n");
@@ -110,13 +113,13 @@ int init_windows(struct mbox_context *context)
 		/* Default to 1MB windows */
 		context->windows.default_size = 1 << 20;
 	}
-	MSG_OUT("Window size: 0x%.8x\n", context->windows.default_size);
+	MSG_INFO("Window size: 0x%.8x\n", context->windows.default_size);
 	if (!context->windows.num) {
 		/* Use the entire reserved memory region by default */
 		context->windows.num = context->mem_size /
 				       context->windows.default_size;
 	}
-	MSG_OUT("Number of Windows: %d\n", context->windows.num);
+	MSG_INFO("Number of windows: %d\n", context->windows.num);
 
 	context->windows.window = calloc(context->windows.num,
 					 sizeof(*context->windows.window));
@@ -404,6 +407,8 @@ int set_window_bytemap(struct mbox_context *context, struct window_context *cur,
 void close_current_window(struct mbox_context *context, bool set_bmc_event,
 			  uint8_t flags)
 {
+	MSG_DBG("Close current window, flags: 0x%.2x\n", flags);
+
 	if (set_bmc_event) {
 		set_bmc_events(context, BMC_EVENT_WINDOW_RESET, SET_BMC_EVENT);
 	}
@@ -443,6 +448,7 @@ void reset_all_windows(struct mbox_context *context, bool set_bmc_event)
 {
 	int i;
 
+	MSG_DBG("Resetting all windows\n");
 	/* We might have an open window which needs closing */
 	if (context->current) {
 		close_current_window(context, set_bmc_event, FLAGS_NONE);
@@ -522,6 +528,8 @@ struct window_context *search_windows(struct mbox_context *context,
 	struct window_context *cur;
 	int i;
 
+	MSG_DBG("Searching for window which contains 0x%.8x %s\n",
+		offset, exact ? "exactly" : "");
 	for (i = 0; i < context->windows.num; i++) {
 		cur = &context->windows.window[i];
 		if (cur->flash_offset == FLASH_OFFSET_UNINIT) {
@@ -567,12 +575,15 @@ int create_map_window(struct mbox_context *context,
 	struct window_context *cur = NULL;
 	int rc;
 
+	MSG_DBG("Creating window which maps 0x%.8x %s\n", offset,
+		exact ? "exactly" : "");
 
 	/* Search for an uninitialised window, use this before evicting */
 	cur = search_windows(context, FLASH_OFFSET_UNINIT, true);
 
 	/* No uninitialised window found, we need to choose one to "evict" */
 	if (!cur) {
+		MSG_DBG("No uninitialised window, evicting one\n");
 		cur = find_oldest_window(context);
 	}
 
@@ -627,6 +638,8 @@ int create_map_window(struct mbox_context *context,
 	 */
 	if (context->version == API_VERSION_1) {
 		uint32_t i;
+
+		MSG_DBG("Checking for window overlap\n");
 
 		for (i = offset; i < (offset + cur->size); i += (cur->size - 1)) {
 			struct window_context *tmp = NULL;

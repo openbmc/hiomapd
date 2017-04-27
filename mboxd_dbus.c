@@ -159,7 +159,7 @@ static int dbus_handle_kill(struct mbox_context *context,
 {
 	context->terminate = 1;
 
-	MSG_OUT("DBUS Kill - Exiting...\n");
+	MSG_INFO("DBUS Kill - Exiting...\n");
 
 	return 0;
 }
@@ -276,7 +276,7 @@ static int method_cmd(sd_bus_message *m, void *userdata,
 	struct mbox_dbus_msg req = { 0 }, resp = { 0 };
 	struct mbox_context *context;
 	sd_bus_message *n;
-	int rc;
+	int rc, i;
 
 	context = (struct mbox_context *) userdata;
 	if (!context) {
@@ -292,6 +292,7 @@ static int method_cmd(sd_bus_message *m, void *userdata,
 		rc = -E_DBUS_INTERNAL;
 		goto out;
 	}
+	MSG_DBG("DBUS request: %u\n", req.cmd);
 
 	/* Read the args */
 	rc = sd_bus_message_read_array(m, 'y', (const void **) &req.args,
@@ -300,6 +301,10 @@ static int method_cmd(sd_bus_message *m, void *userdata,
 		MSG_ERR("DBUS error reading message: %s\n", strerror(-rc));
 		rc = -E_DBUS_INTERNAL;
 		goto out;
+	}
+	MSG_DBG("DBUS num_args: %u\n", (unsigned) req.num_args);
+	for (i = 0; i < req.num_args; i++) {
+		MSG_DBG("DBUS arg[%d]: %u\n", i, req.args[i]);
 	}
 
 	/* Handle the command */
@@ -330,6 +335,12 @@ out:
 	if (rc < 0) {
 		MSG_ERR("sd_bus_message_append_array failed: %d\n", rc);
 		goto cleanup;
+	}
+
+	MSG_DBG("DBUS response: %u\n", resp.cmd);
+	MSG_DBG("DBUS num_args: %u\n", (unsigned) resp.num_args);
+	for (i = 0; i < resp.num_args; i++) {
+		MSG_DBG("DBUS arg[%d]: %u\n", i, resp.args[i]);
 	}
 
 	rc = sd_bus_send(NULL, n, NULL); /* Send response */
