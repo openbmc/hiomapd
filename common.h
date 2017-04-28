@@ -46,6 +46,10 @@ extern enum verbose verbosity;
 
 extern void (*mbox_vlog)(int p, const char *fmt, va_list args);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void mbox_log_console(int p, const char *fmt, va_list args);
 
 __attribute__((format(printf, 2, 3)))
@@ -99,5 +103,9 @@ static inline bool is_power_of_2(unsigned val)
 }
 
 char *get_dev_mtd(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COMMON_H */
