@@ -1,8 +1,24 @@
 ACLOCAL_AMFLAGS = -I m4
 sbin_PROGRAMS = mboxd mboxctl
 
-mboxd_SOURCES = mboxd.c common.c mboxd_dbus.c mboxd_flash.c mboxd_lpc.c mboxd_msg.c mboxd_windows.c mtd.c
-mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
+mboxd_SOURCES = \
+	mboxd.c \
+	common.c \
+	mboxd_dbus.c \
+	mboxd_flash.c \
+	mboxd_lpc.c \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mtd.c
+
+if VIRTUAL_PNOR_ENABLED
+mboxd_SOURCES += mboxd_flash_partition.cpp
+endif
+
+mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS) -lstdc++fs
+if VIRTUAL_PNOR_ENABLED
+mboxd_LDFLAGS += -lstdc++fs
+endif
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 mboxctl_SOURCES = mboxctl.c
