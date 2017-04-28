@@ -50,6 +50,9 @@ PKG_CHECK_MODULES(LIBSYSTEMD, libsystemd, , AC_MSG_ERROR([libsytemd not found]))
 AC_SUBST([LIBSYSTEMD_CFLAGS])
 AC_SUBST([LIBSYSTEMD_LIBS])
 
+AC_DEFINE(PARTITION_HDR_FILE, "/tmp/pnor.toc", [The path to the PNOR Table of contents file.])
+AC_DEFINE(PARTITION_FILES_LOC, "/tmp", [The path to the directory containing PNOR partition files.])
+
 # Create configured output
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
