@@ -1,8 +1,24 @@
 ACLOCAL_AMFLAGS = -I m4
 sbin_PROGRAMS = mboxd mboxctl
 
-mboxd_SOURCES = mboxd.c common.c mboxd_dbus.c mboxd_flash.c mboxd_lpc.c mboxd_msg.c mboxd_windows.c mtd.c
+mboxd_SOURCES = \
+	mboxd.c \
+	common.c \
+	mboxd_dbus.c \
+	mboxd_flash.c \
+	mboxd_lpc.c \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mtd.c
+
+if VIRTUAL_PNOR_ENABLED
+mboxd_SOURCES += pnor_partition_table.cpp
+endif
+
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
+if VIRTUAL_PNOR_ENABLED
+mboxd_LDFLAGS += -lstdc++fs
+endif
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 mboxctl_SOURCES = mboxctl.c
@@ -95,6 +111,12 @@ test_sequence_numbers_SOURCES = test/sequence_numbers.c \
 test_get_mbox_info_v2_timeout_SOURCES = test/get_mbox_info_v2_timeout.c \
 					$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_create_pnor_partition_table_SOURCES = \
+	test/create_pnor_partition_table.cpp \
+	common.c \
+	pnor_partition_table.cpp
+test_create_pnor_partition_table_LDFLAGS = -lstdc++fs
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -122,5 +144,9 @@ check_PROGRAMS = test/sanity \
 		 test/read_window_cycle \
 		 test/sequence_numbers \
 		 test/get_mbox_info_v2_timeout
+
+if VIRTUAL_PNOR_ENABLED
+check_PROGRAMS += test/create_pnor_partition_table
+endif
 
 TESTS = $(check_PROGRAMS)
