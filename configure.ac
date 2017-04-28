@@ -8,6 +8,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_AR
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
@@ -20,6 +21,7 @@ AS_IF([test "$HAVE_UAPI_LINUX_LPC_CTRL_H" != ""],
 )
 
 # Checks for typedefs, structures, and compiler characteristics.
+AX_CXX_COMPILE_STDCXX_14([noext])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CFLAGS])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CXXFLAGS])
 
