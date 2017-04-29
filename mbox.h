@@ -131,6 +131,10 @@ struct window_list {
 	struct window_context *window;
 };
 
+#ifdef VIRTUAL_PNOR_ENABLED
+struct vpnor_partition_table;
+#endif
+
 struct mbox_context {
 /* System State */
 	enum mbox_state state;
@@ -166,6 +170,10 @@ struct mbox_context {
 	uint32_t block_size_shift;
 	/* Actual Flash Info */
 	struct mtd_info_user mtd_info;
+#ifdef VIRTUAL_PNOR_ENABLED
+	/* Virtual PNOR partition table */
+	struct vpnor_partition_table *table;
+#endif
 };
 
 #endif /* MBOX_H */

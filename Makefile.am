@@ -12,7 +12,7 @@ mboxd_SOURCES = \
 	mtd.c
 
 if VIRTUAL_PNOR_ENABLED
-mboxd_SOURCES += mboxd_flash_partition.cpp
+mboxd_SOURCES += mboxd_flash_partition.cpp mboxd_flash_partition_intf.cpp
 endif
 
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS) -lstdc++fs
