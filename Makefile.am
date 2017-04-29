@@ -10,7 +10,8 @@ mboxd_SOURCES = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mtd.c \
-	mboxd_flash_partition.cpp
+	mboxd_flash_partition.cpp \
+	mboxd_flash_partition_intf.cpp
 
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
