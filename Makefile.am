@@ -14,7 +14,7 @@ mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 if VIRTUAL_PNOR_ENABLED
-mboxd_SOURCES += pnor_partition_table.cpp
+mboxd_SOURCES += pnor_partition_table.cpp mboxd_pnor_partition_table.cpp
 mboxd_LDFLAGS += -lstdc++fs
 endif
 
