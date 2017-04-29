@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include "flash_partition.h"
 
 namespace openpower
@@ -28,6 +29,42 @@ class Table
         Table(Table&&) = delete;
         Table& operator=(Table&&) = delete;
         ~Table() = default;
+
+        /** @brief Return size of partition table
+         *
+         *  @returns size_t - size of partition table
+         */
+        size_t size() const
+        {
+            return sz;
+        }
+
+        /** @brief Return partition header
+         *
+         *  @returns const partition_hdr& - const reference to partition header
+         */
+        const partition_hdr& hdr() const
+        {
+            return header;
+        }
+
+        /** @brief Return partition entries
+         *
+         *  @returns const std::vector<partition_entry>& - reference to list
+         *           of partition entries
+         */
+        const Entries& entryList() const
+        {
+            return entries;
+        }
+
+        /** @brief Return partition entry corresponding to flash offset
+         *
+         *  @param[in] offset - flash offset
+         *
+         *  @returns const partition_entry* - const pointer to partition_entry
+         */
+        const partition_entry* entry(const off_t offset) const;
 
     private:
         /** @brief Generates flash partition entries
