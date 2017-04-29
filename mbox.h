@@ -22,6 +22,7 @@
 #include <systemd/sd-bus.h>
 #include <poll.h>
 #include <stdbool.h>
+#include "mboxd_pnor_partition_table.h"
 
 enum api_version {
 	API_VERSION_INVAL	= 0,
@@ -166,6 +167,10 @@ struct mbox_context {
 	uint32_t block_size_shift;
 	/* Actual Flash Info */
 	struct mtd_info_user mtd_info;
+#ifdef VIRTUAL_PNOR_ENABLED
+	/* Virtual PNOR partition table */
+	struct vpnor_partition_table *vpnor;
+#endif
 };
 
 #endif /* MBOX_H */
