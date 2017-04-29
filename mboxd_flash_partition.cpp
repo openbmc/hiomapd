@@ -161,6 +161,22 @@ void Table::applyProperties(const std::string& line,
     entry.user.data[1] = htobe32(entry.user.data[1]);
 }
 
+const partition_entry* Table::entry(const off_t offset) const
+{
+    const partition_entry* e = nullptr;
+
+    for (const auto& itr : entries)
+    {
+        if (htobe32(offset >> block::shift) == itr.base)
+        {
+            e = &itr;
+            break;
+        }
+    }
+
+    return e;
+}
+
 }
 }
 }
