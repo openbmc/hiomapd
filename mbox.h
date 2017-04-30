@@ -119,17 +119,17 @@ enum mbox_state {
 
 struct window_context {
 	void *mem;			/* Portion of Reserved Memory Region */
-	uint32_t flash_offset;		/* Flash area the window maps (bytes) */
-	uint32_t size;			/* Window Size (bytes) power-of-2 */
+	off_t flash_offset;		/* Flash area the window maps (bytes) */
+	size_t size;			/* Window Size (bytes) power-of-2 */
 	uint8_t *dirty_bmap;		/* Bytemap of the dirty/erased state */
 	uint32_t age;			/* Used for LRU eviction scheme */
+	struct window_context *next;    /* Pointer to next window in list */
 };
 
 struct window_list {
-	uint32_t num;
 	uint32_t max_age;
 	uint32_t default_size;
-	struct window_context *window;
+	struct window_context *head;
 };
 
 struct mbox_context {

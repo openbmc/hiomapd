@@ -51,18 +51,26 @@
 
 /*
  * init_window_state() - Initialise a new window to a known state
+ * @context:	The mbox context pointer
  * @window:	The window to initialise
  * @size:	The size of the window
  */
-static void init_window_state(struct window_context *window, uint32_t size)
+static void init_window_state(struct mbox_context *context,
+                              struct window_context *window,
+                              size_t size,
+                              off_t offset)
 {
-	window->mem = NULL;
-	window->flash_offset = FLASH_OFFSET_UNINIT;
-	window->size = size;
-	window->dirty_bmap = NULL;
-	window->age = 0;
+    window->mem = NULL;
+    window->flash_offset = offset;
+    window->size = size;
+    window->dirty_bmap = NULL;
+    window->age = 0;
+    window->next = NULL;
+    window->dirty_bmap = calloc((window->size >> context->block_size_shift),
+                                 sizeof(*window->dirty_bmap));
 }
 
+#if 0
 /*
  * init_window_mem() - Divide the reserved memory region among the windows
  * @context:	The mbox context pointer
@@ -95,6 +103,8 @@ static int init_window_mem(struct mbox_context *context)
 
 	return 0;
 }
+#endif
+
 /*
  * init_windows() - Initalise the window cache
  * @context:    The mbox context pointer
@@ -103,34 +113,16 @@ static int init_window_mem(struct mbox_context *context)
  */
 int init_windows(struct mbox_context *context)
 {
-	int i;
-
 	/* Check if window size and number set - otherwise set to default */
 	if (!context->windows.default_size) {
 		/* Default to 1MB windows */
 		context->windows.default_size = 1 << 20;
 	}
 	MSG_OUT("Window size: 0x%.8x\n", context->windows.default_size);
-	if (!context->windows.num) {
-		/* Use the entire reserved memory region by default */
-		context->windows.num = context->mem_size /
-				       context->windows.default_size;
-	}
-	MSG_OUT("Number of Windows: %d\n", context->windows.num);
 
-	context->windows.window = calloc(context->windows.num,
-					 sizeof(*context->windows.window));
-	if (!context->windows.window) {
-		MSG_ERR("Memory allocation failed\n");
-		return -1;
-	}
+	context->windows.head = NULL;
 
-	for (i = 0; i < context->windows.num; i++) {
-		init_window_state(&context->windows.window[i],
-				  context->windows.default_size);
-	}
-
-	return init_window_mem(context);
+	return 0;
 }
 
 /*
@@ -139,15 +131,14 @@ int init_windows(struct mbox_context *context)
  */
 void free_windows(struct mbox_context *context)
 {
-	int i;
+    struct window_context *curr = NULL;
 
-	/* Check window cache has actually been allocated */
-	if (context->windows.window) {
-		for (i = 0; i < context->windows.num; i++) {
-			free(context->windows.window[i].dirty_bmap);
-		}
-		free(context->windows.window);
-	}
+    while (context->windows.head)
+    {
+        curr = context->windows.head;
+        context->windows.head = (context->windows.head)->next;
+        free(curr);
+    }
 }
 
 /* Write from Window Functions */
@@ -349,18 +340,18 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
  */
 void alloc_window_dirty_bytemap(struct mbox_context *context)
 {
-	struct window_context *cur;
-	int i;
+    struct window_context *curr = context->windows.head;
 
-	for (i = 0; i < context->windows.num; i++) {
-		cur = &context->windows.window[i];
-		/* There may already be one allocated */
-		free(cur->dirty_bmap);
-		/* Allocate the new one */
-		cur->dirty_bmap = calloc((cur->size >>
-					  context->block_size_shift),
-					 sizeof(*cur->dirty_bmap));
-	}
+    while (curr)
+    {
+        /* There may already be one allocated */
+        free(curr->dirty_bmap);
+        /* Allocate the new one */
+        curr->dirty_bmap = calloc((curr->size >>
+                                  context->block_size_shift),
+                                  sizeof(*curr->dirty_bmap));
+        curr = curr->next;
+    }
 }
 
 /*
@@ -441,17 +432,20 @@ void reset_window(struct mbox_context *context, struct window_context *window)
  */
 void reset_all_windows(struct mbox_context *context, bool set_bmc_event)
 {
-	int i;
+    struct window_context *curr = context->windows.head;
 
-	/* We might have an open window which needs closing */
-	if (context->current) {
-		close_current_window(context, set_bmc_event, FLAGS_NONE);
-	}
-	for (i = 0; i < context->windows.num; i++) {
-		reset_window(context, &context->windows.window[i]);
-	}
+    /* We might have an open window which needs closing */
+    if (context->current) {
+        close_current_window(context, set_bmc_event, FLAGS_NONE);
+    }
 
-	context->windows.max_age = 0;
+    while (curr)
+    {
+        reset_window(context, curr);
+        curr = curr->next;
+    }
+
+    context->windows.max_age = 0;
 }
 
 /*
@@ -462,20 +456,21 @@ void reset_all_windows(struct mbox_context *context, bool set_bmc_event)
  */
 struct window_context *find_oldest_window(struct mbox_context *context)
 {
-	struct window_context *oldest = NULL, *cur;
-	uint32_t min_age = context->windows.max_age + 1;
-	int i;
+    struct window_context *oldest = NULL;
+    uint32_t min_age = context->windows.max_age + 1;
 
-	for (i = 0; i < context->windows.num; i++) {
-		cur = &context->windows.window[i];
+    struct window_context *curr = context->windows.head;
 
-		if (cur->age < min_age) {
-			min_age = cur->age;
-			oldest = cur;
-		}
-	}
+    while (curr)
+    {
+        if (curr->age < min_age) {
+            min_age = curr->age;
+            oldest = curr;
+        }
+        curr = curr->next;
+    }
 
-	return oldest;
+    return oldest;
 }
 
 /*
@@ -495,30 +490,30 @@ struct window_context *find_oldest_window(struct mbox_context *context)
 struct window_context *search_windows(struct mbox_context *context,
 				      uint32_t offset, bool exact)
 {
-	struct window_context *cur;
-	int i;
+    struct window_context *curr = context->windows.head;
 
-	for (i = 0; i < context->windows.num; i++) {
-		cur = &context->windows.window[i];
-		if (cur->flash_offset == FLASH_OFFSET_UNINIT) {
-			/* Uninitialised Window */
-			if (offset == FLASH_OFFSET_UNINIT) {
-				return cur;
-			}
-			continue;
-		}
-		if ((offset >= cur->flash_offset) &&
-		    (offset < (cur->flash_offset + cur->size))) {
-			if (exact && (cur->flash_offset != offset)) {
-				continue;
-			}
-			/* This window contains the requested offset */
-			cur->age = ++(context->windows.max_age);
-			return cur;
-		}
-	}
+    while (curr)
+    {
+        if (curr->flash_offset == FLASH_OFFSET_UNINIT) {
+            /* Uninitialised Window */
+            if (offset == FLASH_OFFSET_UNINIT) {
+                return curr;
+            }
+            continue;
+        }
+        if ((offset >= curr->flash_offset) &&
+            (offset < (curr->flash_offset + curr->size))) {
+            if (exact && (curr->flash_offset != offset)) {
+                continue;
+            }
+            /* This window contains the requested offset */
+            curr->age = ++(context->windows.max_age);
+            return curr;
+        }
+        curr = curr->next;
+    }
 
-	return NULL;
+    return NULL;
 }
 
 /*
@@ -547,9 +542,8 @@ int create_map_window(struct mbox_context *context,
 	/* Search for an uninitialised window, use this before evicting */
 	cur = search_windows(context, FLASH_OFFSET_UNINIT, true);
 
-	/* No uninitialised window found, we need to choose one to "evict" */
 	if (!cur) {
-		cur = find_oldest_window(context);
+                add_window(context, &cur, offset, 0);
 	}
 
 	if (!exact) {
@@ -626,4 +620,51 @@ int create_map_window(struct mbox_context *context,
 	*this_window = cur;
 
 	return 0;
+}
+
+int add_window(struct mbox_context *context,
+               struct window_context **this_window,
+               off_t offset,
+               size_t size)
+{
+    *this_window = NULL;
+
+    if (!size)
+    {
+        size = context->windows.default_size;
+    }
+
+    if ((offset + size) > context->flash_size)
+    {
+        MSG_ERR("Tried add window past flash limit\n");
+        return -MBOX_R_PARAM_ERROR;
+    }
+
+    struct window_context *new_window = malloc(sizeof(struct window_context));
+    init_window_state(context, new_window, size, offset);
+
+    if (!(context->windows.head))
+    {
+        new_window->mem = context->mem;
+        context->windows.head = new_window;
+        *this_window = context->windows.head;
+    }
+    else
+    {
+        if ((offset + size) > context->mem_size)
+        {
+            /* no more space in the reserved area, pick the oldest window */
+            *this_window = find_oldest_window(context);
+        }
+        else
+        {
+            new_window->next = context->windows.head;
+            new_window->mem = (context->windows.head)->mem +
+                              (context->windows.head)->size;
+            context->windows.head = new_window;
+            *this_window = context->windows.head;
+        }
+    }
+
+    return 0;
 }
