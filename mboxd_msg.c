@@ -48,6 +48,7 @@
 #include "flash_partition.h"
 
 int createPartition();
+size_t getPartitionSize();
 const struct partition_hdr* getPartitionHeader();
 const struct partition_entry* getAllPartitionEntries(size_t *sz);
 
@@ -337,12 +338,11 @@ static int mbox_handle_read_window(struct mbox_context *context,
 
         if (!flash_offset && (context->version >= API_VERSION_2))
         {
-            // Copy flash partition table to memory
-            context->current =
-                search_windows(context, FLASH_OFFSET_UNINIT, true);
-            if (!context->current) {
-                    context->current = find_oldest_window(context);
-            }
+            /* Read the flash partition info, and store that in a window */
+            add_window(context,
+                       &context->current,
+                       flash_offset,
+                       getPartitionSize());
             createPartition();
             memcpy(context->current->mem,
                    getPartitionHeader(),
