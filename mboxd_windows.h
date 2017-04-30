@@ -45,5 +45,9 @@ struct window_context *search_windows(struct mbox_context *context,
 int create_map_window(struct mbox_context *context,
 		      struct window_context **this_window,
 		      uint32_t offset, bool exact);
+int add_window(struct mbox_context *context,
+               struct window_context **this_window,
+               off_t offset,
+               size_t size);
 
 #endif /* MBOXD_WINDOWS_H */
