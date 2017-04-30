@@ -227,12 +227,6 @@ static bool parse_cmdline(int argc, char **argv,
 			}
 			break;
 		case 'n':
-			context->windows.num = strtol(argv[optind], &endptr,
-						      10);
-			if (optarg == endptr || *endptr != '\0') {
-				fprintf(stderr, "Unparseable window num\n");
-				return false;
-			}
 			break;
 		case 'w':
 			context->windows.default_size = strtol(argv[optind],
