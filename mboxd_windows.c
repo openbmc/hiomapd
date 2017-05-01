@@ -46,6 +46,9 @@
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
 #include "mboxd_flash.h"
+#ifdef VIRTUAL_PNOR_ENABLED
+#include "mboxd_pnor_partition_table.h"
+#endif
 
 /* Initialisation Functions */
 
@@ -574,6 +577,9 @@ int create_map_window(struct mbox_context *context,
 {
 	struct window_context *cur = NULL;
 	int rc;
+#ifdef VIRTUAL_PNOR_ENABLED
+	size_t sz = 0;
+#endif
 
 	MSG_DBG("Creating window which maps 0x%.8x %s\n", offset,
 		exact ? "exactly" : "");
@@ -620,6 +626,16 @@ int create_map_window(struct mbox_context *context,
 		}
 	}
 
+#ifdef VIRTUAL_PNOR_ENABLED
+	// The PNOR partition table starts at offset 0 in the PNOR image
+	sz =
+	vpnor_get_partition_table_size(context) << context->block_size_shift;
+	if (offset < sz) {
+		memcpy(cur->mem,
+		       ((uint8_t *)vpnor_get_partition_table(context)) + offset,
+		       min_u32(sz - offset, cur->size));
+	}
+#else
 	/* Copy from flash into the window buffer */
 	rc = copy_flash(context, offset, cur->mem, cur->size);
 	if (rc < 0) {
@@ -627,6 +643,7 @@ int create_map_window(struct mbox_context *context,
 		reset_window(context, cur);
 		return rc;
 	}
+#endif
 
 	/*
 	 * Since for V1 windows aren't constrained to start at multiples of
