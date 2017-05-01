@@ -64,6 +64,8 @@
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
 
+int destroyPartition();
+
 static int poll_loop(struct mbox_context *context)
 {
 	int rc = 0, i;
@@ -364,6 +366,7 @@ finish:
 	free_mbox_dev(context);
 	free_windows(context);
 	free(context);
+        destroyPartition();
 
 	return rc;
 }
