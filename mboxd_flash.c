@@ -120,46 +120,6 @@ void free_flash_dev(struct mbox_context *context)
 
 /* Flash Functions */
 
-#define CHUNKSIZE (64 * 1024)
-
-/*
- * copy_flash() - Copy data from the flash device into a provided buffer
- * @context:	The mbox context pointer
- * @offset:	The flash offset to copy from (bytes)
- * @mem:	The buffer to copy into (must be of atleast size)
- * @size:	The number of bytes to copy
- *
- * Return:	0 on success otherwise negative error code
- */
-int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
-	       uint32_t size)
-{
-	int32_t size_read;
-
-	MSG_DBG("Copy flash to %p for size 0x%.8x from offset 0x%.8x\n",
-		mem, size, offset);
-	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
-		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
-			strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
-	}
-
-	do {
-		size_read = read(context->fds[MTD_FD].fd, mem,
-					  min_u32(CHUNKSIZE, size));
-		if (size_read < 0) {
-			MSG_ERR("Couldn't copy mtd into ram: %s\n",
-				strerror(errno));
-			return -MBOX_R_SYSTEM_ERROR;
-		}
-
-		size -= size_read;
-		mem += size_read;
-	} while (size && size_read);
-
-	return size ? -MBOX_R_SYSTEM_ERROR : 0;
-}
-
 /*
  * flash_is_erased() - Check if an offset into flash is erased
  * @context:	The mbox context pointer
