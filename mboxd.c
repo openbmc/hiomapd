@@ -42,6 +42,7 @@
 #include <inttypes.h>
 #include <systemd/sd-bus.h>
 
+#include "config.h"
 #include "mbox.h"
 #include "common.h"
 #include "dbus.h"
@@ -261,8 +262,7 @@ static bool parse_cmdline(int argc, char **argv,
 			}
 			break;
 		case 'V':
-			printf("%s v%d.%.2d\n", THIS_NAME, API_MAX_VERSION,
-						SUB_VERSION);
+			printf("%s V%s\n", THIS_NAME, PACKAGE_VERSION);
 			exit(0);
 		case 'h':
 			return false; /* This will print the usage message */
