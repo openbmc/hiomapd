@@ -1,0 +1,8 @@
+Change Log:
+
+This file documents the changes between successive versions of the mbox daemon.
+
+V2 -> V2.01:
+ - Implement the suggested timeout value in the GET_MBOX_INFO command response
+ - Introduce DEBUG logging, make ERROR logging unconditional and reword some
+   log output
