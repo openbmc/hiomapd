@@ -33,7 +33,7 @@ enum api_version {
 #define API_MAX_VERSION			API_VERSION_2
 
 #define THIS_NAME			"Mailbox Daemon"
-#define SUB_VERSION			0
+#define SUB_VERSION			1
 
 /* Command Values */
 #define MBOX_C_RESET_STATE		0x01
