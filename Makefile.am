@@ -14,8 +14,10 @@ mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 if VIRTUAL_PNOR_ENABLED
-mboxd_SOURCES += pnor_partition_table.cpp mboxd_pnor_partition_table.cpp
+mboxd_SOURCES += pnor_partition_table.cpp mboxd_pnor_partition_table.cpp mboxd_flash_virtual.c
 mboxd_LDFLAGS += -lstdc++fs
+else
+mboxd_SOURCES += mboxd_flash_physical.c
 endif
 
 mboxctl_SOURCES = mboxctl.c
@@ -30,13 +32,13 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 
 test_sanity_SOURCES = test/sanity.c
 
-test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c common.c mtd.c test/tmpf.c
+test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c mboxd_flash_physical.c common.c mtd.c test/tmpf.c
 
 test_erase_flash_SOURCES = test/erase_flash.c mboxd_flash.c common.c test/tmpf.c
 
 test_write_flash_SOURCES = test/write_flash.c mboxd_flash.c common.c test/tmpf.c
 
-TEST_MBOX_SRCS = mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c
+TEST_MBOX_SRCS = mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c mboxd_flash_physical.c
 TEST_MOCK_SRCS = test/tmpf.c test/mbox.c test/system.c
 
 test_get_mbox_info_v2_SOURCES = test/get_mbox_info_v2.c \
@@ -111,7 +113,8 @@ test_get_mbox_info_v2_timeout_SOURCES = test/get_mbox_info_v2_timeout.c \
 test_create_pnor_partition_table_SOURCES = \
 	test/create_pnor_partition_table.cpp \
 	common.c \
-	pnor_partition_table.cpp
+	pnor_partition_table.cpp \
+	mboxd_flash_physical.c
 test_create_pnor_partition_table_LDFLAGS = -lstdc++fs
 
 check_PROGRAMS = test/sanity \
