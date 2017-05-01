@@ -51,6 +51,9 @@
 #include "mboxd_lpc.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
+#ifdef VIRTUAL_PNOR_ENABLED
+#include "mboxd_flash_partition_intf.hpp"
+#endif
 
 #define USAGE \
 "\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
@@ -64,6 +67,8 @@
 "\t-w | --window-size\tThe window size (power of 2) in MB\n" \
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+
+int destroyPartition();
 
 static int poll_loop(struct mbox_context *context)
 {
@@ -311,6 +316,10 @@ int main(int argc, char **argv)
 
 	MSG_INFO("Starting Daemon\n");
 
+#ifdef VIRTUAL_PNOR_ENABLED
+	vpnor_create_partition_table(context);
+#endif
+
 	rc = init_signals(context, &set);
 	if (rc) {
 		goto finish;
@@ -367,6 +376,9 @@ finish:
 	free_lpc_dev(context);
 	free_mbox_dev(context);
 	free_windows(context);
+#ifdef VIRTUAL_PNOR_ENABLED
+	vpnor_destroy_partition_table(context);
+#endif
 	free(context);
 
 	return rc;
