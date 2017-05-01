@@ -51,6 +51,7 @@
 #include "mboxd_lpc.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
+#include "mboxd_pnor_partition_table.h"
 
 #define USAGE \
 "\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
@@ -311,6 +312,10 @@ int main(int argc, char **argv)
 
 	MSG_INFO("Starting Daemon\n");
 
+#ifdef VIRTUAL_PNOR_ENABLED
+	vpnor_create_partition_table(context);
+#endif
+
 	rc = init_signals(context, &set);
 	if (rc) {
 		goto finish;
@@ -367,6 +372,9 @@ finish:
 	free_lpc_dev(context);
 	free_mbox_dev(context);
 	free_windows(context);
+#ifdef VIRTUAL_PNOR_ENABLED
+	vpnor_destroy_partition_table(context);
+#endif
 	free(context);
 
 	return rc;
