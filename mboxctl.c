@@ -42,6 +42,7 @@
 
 #include <systemd/sd-bus.h>
 
+#include "config.h"
 #include "dbus.h"
 
 #define USAGE \
@@ -59,9 +60,7 @@
 "\t\t\targ[0]: < \"clean\" | \"modified\" >\n" \
 "\t\t--clear-cache\t- tell the daemon to discard any caches (0)\n"
 
-#define NAME		"MBOX Control"
-#define VERSION		1
-#define SUBVERSION	0
+#define NAME		"Mailbox Control"
 
 static bool silent;
 
@@ -449,7 +448,7 @@ static int parse_cmdline(struct mboxctl_context *context, int argc, char **argv)
 			rc = handle_cmd_modified(context);
 			break;
 		case 'v':
-			MSG_OUT("%s V%d.%.2d\n", NAME, VERSION, SUBVERSION);
+			MSG_OUT("%s V%s\n", NAME, PACKAGE_VERSION);
 			rc = 0;
 			break;
 		case 'h':
