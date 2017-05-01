@@ -329,19 +329,41 @@ static int mbox_handle_read_window(struct mbox_context *context,
 	/* Offset the host has requested */
 	flash_offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
 	MSG_OUT("Host Requested Flash @ 0x%.8x\n", flash_offset);
-	/* Check if we have an existing window */
-	context->current = search_windows(context, flash_offset,
-					  context->version == API_VERSION_1);
 
-	if (!context->current) { /* No existing window */
-		rc = create_map_window(context, &context->current, flash_offset,
-				       context->version == API_VERSION_1);
-		if (rc < 0) { /* Unable to map offset */
-			MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n"
-				, flash_offset);
-			return rc;
-		}
-	}
+        if (!flash_offset && (context->version >= API_VERSION_2))
+        {
+            // Copy flash partition table to memory
+            context->current =
+                search_windows(context, FLASH_OFFSET_UNINIT, true);
+            if (!context->current) {
+                    context->current = find_oldest_window(context);
+            }
+            memcpy(context->current->mem,
+                   getPartitionHeader(),
+                   sizeof(struct partition_hdr));
+            size_t sz = 0;
+            const struct partition_entry *entries = getAllPartitionEntries(&sz);
+            memcpy(context->current->mem + sizeof(struct partition_hdr),
+                   entries, sz);
+        }
+        else
+        {
+            /* Check if we have an existing window */
+            context->current = search_windows(
+                                   context, flash_offset,
+                                   context->version == API_VERSION_1);
+
+            if (!context->current) { /* No existing window */
+                rc = create_map_window(
+                         context, &context->current, flash_offset,
+                         context->version == API_VERSION_1);
+                if (rc < 0) { /* Unable to map offset */
+                    MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n"
+                            , flash_offset);
+                    return rc;
+                }
+            }
+        }
 
 	put_u16(&resp->args[0], get_lpc_addr_shifted(context));
 	if (context->version >= API_VERSION_2) {
