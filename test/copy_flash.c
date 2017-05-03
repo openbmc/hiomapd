@@ -51,6 +51,8 @@ int main(void)
 
 	atexit(cleanup);
 
+	mbox_vlog = &mbox_log_console;
+
 	src = malloc(TEST_SIZE);
 	dst = malloc(TEST_SIZE);
 	if (!(src && dst)) {
