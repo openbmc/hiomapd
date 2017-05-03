@@ -77,6 +77,8 @@ int main(void)
 
 	atexit(cleanup);
 
+	mbox_vlog = &mbox_log_console;
+
 	rc = init_flash_dev(context);
 	assert(rc == 0);
 

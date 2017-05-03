@@ -120,6 +120,8 @@ int main(void)
 	if (rc)
 		return rc;
 
+	mbox_vlog = &mbox_log_console;
+
 	n_ioctls = 0;
 	recorded = NULL;
 
