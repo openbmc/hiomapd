@@ -44,6 +44,17 @@ AS_IF([test "x$enable_oe_sdk" == "xyes"],
     AC_SUBST([OESDK_TESTCASE_FLAGS], [$testcase_flags])
 )
 
+AC_ARG_ENABLE([virtual-pnor],
+    AS_HELP_STRING([--enable-virtual-pnor], [Turn on virtual pnor])
+)
+AS_IF([test "x$enable_virtual_pnor" == "xyes"],
+   [
+   AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, true)
+   AC_DEFINE(VIRTUAL_PNOR_ENABLED,[],[Virtual Pnor Enabled])
+   ],[
+   AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, false)
+   ])
+
 AX_CODE_COVERAGE
 
 PKG_CHECK_MODULES(LIBSYSTEMD, libsystemd, , AC_MSG_ERROR([libsytemd not found]))
