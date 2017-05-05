@@ -41,12 +41,19 @@
 #include <inttypes.h>
 #include <mtd/mtd-abi.h>
 
-#include "mbox.h"
+
+#include "config.h"
 #include "common.h"
+#include "mbox.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
 #include "mboxd_flash.h"
 
+#ifdef VIRTUAL_PNOR_ENABLED
+
+extern int copy_pnor(struct mbox_context *context, uint32_t offset, void *mem,
+                     uint32_t size);
+#endif
 /* Initialisation Functions */
 
 /*
@@ -585,8 +592,13 @@ int create_map_window(struct mbox_context *context,
 		}
 	}
 
+#ifdef VIRTUAL_PNOR_ENABLED
+	/* Copy from virtual pnor into the window buffer */
+	rc = copy_pnor(context, offset, cur->mem, cur->size);
+#else
 	/* Copy from flash into the window buffer */
 	rc = copy_flash(context, offset, cur->mem, cur->size);
+#endif
 	if (rc < 0) {
 		/* We don't know how much we've copied -> better reset window */
 		reset_window(context, cur);
