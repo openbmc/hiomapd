@@ -14,7 +14,8 @@ mboxd_SOURCES = \
 	mtd.c \
 	mboxd_flash_partition.cpp \
 	mboxd_flash_partition_intf.cpp \
-        mboxd_memory_map.cpp
+        mboxd_memory_map.cpp \
+	mboxd_pnor.cpp
 else
 
 mboxd_SOURCES = \
