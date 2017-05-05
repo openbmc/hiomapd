@@ -25,11 +25,13 @@
 #define PREFIX ""
 #endif
 
-enum {
+enum verbose{
    MBOX_LOG_NONE = 0,
    MBOX_LOG_INFO = 1,
    MBOX_LOG_DEBUG = 2
-} verbosity;
+};
+
+extern enum verbose verbosity;
 
 /* Error Messages */
 #define MSG_ERR(f_, ...)	mbox_log(LOG_ERR, f_, ##__VA_ARGS__)
@@ -42,7 +44,7 @@ enum {
 					mbox_log(LOG_DEBUG, f_, ##__VA_ARGS__); \
 				} } while(0)
 
-void (*mbox_vlog)(int p, const char *fmt, va_list args);
+extern void (*mbox_vlog)(int p, const char *fmt, va_list args);
 
 #ifdef __cplusplus
 extern "C" {
