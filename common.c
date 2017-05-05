@@ -26,6 +26,10 @@
 
 #include "common.h"
 
+void (*mbox_vlog)(int p, const char *fmt, va_list args);
+
+enum verbose verbosity;
+
 void mbox_log_console(int p, const char *fmt, va_list args)
 {
 	struct timespec time;
