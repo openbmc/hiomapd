@@ -2,10 +2,16 @@
 
 #ifdef VIRTUAL_PNOR_ENABLED
 
+#include <limits.h>
 #include "pnor_partition_defs.h"
 
 struct mbox_context;
 struct vpnor_partition_table;
+
+struct vpnor_partition_paths
+{
+    char ro_loc[PATH_MAX];
+};
 
 #ifdef __cplusplus
 extern "C" {
