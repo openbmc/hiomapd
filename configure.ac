@@ -21,6 +21,7 @@ AS_IF([test "$HAVE_UAPI_LINUX_LPC_CTRL_H" != ""],
 
 # Checks for typedefs, structures, and compiler characteristics.
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CFLAGS])
+AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CXXFLAGS])
 
 # Checks for library functions.
 LT_INIT # Removes 'unrecognized options: --with-libtool-sysroot'
@@ -41,6 +42,20 @@ AS_IF([test "x$enable_oe_sdk" == "xyes"],
         testcase_flags="${testcase_flags} -Wl,-dynamic-linker,`find \${OECORE_TARGET_SYSROOT}/lib/ld-*.so | sort -r -n | head -n1`"
     ]
     AC_SUBST([OESDK_TESTCASE_FLAGS], [$testcase_flags])
+)
+
+AC_ARG_ENABLE([virtual-pnor],
+    AS_HELP_STRING([--enable-virtual-pnor], [Turn on virtual pnor])
+)
+AS_IF([test "x$enable_virtual_pnor" == "xno"],
+    [
+        AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, false)
+    ],
+    [
+        AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, true)
+        AX_APPEND_COMPILE_FLAGS([-DVIRTUAL_PNOR_ENABLED], [CXXFLAGS])
+        AX_APPEND_COMPILE_FLAGS([-DVIRTUAL_PNOR_ENABLED], [CFLAGS])
+    ]
 )
 
 AX_CODE_COVERAGE
