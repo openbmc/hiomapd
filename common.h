@@ -25,11 +25,13 @@
 #define PREFIX ""
 #endif
 
-enum {
+typedef  enum {
    MBOX_LOG_NONE = 0,
    MBOX_LOG_VERBOSE = 1,
    MBOX_LOG_DEBUG = 2
-} verbosity;
+} verbose;
+
+extern verbose verbosity;
 
 #define MSG_OUT(f_, ...)	do { if (verbosity >= MBOX_LOG_DEBUG) { \
 					mbox_log(LOG_INFO, f_, ##__VA_ARGS__); \
@@ -38,7 +40,7 @@ enum {
 					mbox_log(LOG_ERR, f_, ##__VA_ARGS__); \
 				} } while (0)
 
-void (*mbox_vlog)(int p, const char *fmt, va_list args);
+extern void (*mbox_vlog)(int p, const char *fmt, va_list args);
 
 void mbox_log_console(int p, const char *fmt, va_list args);
 
