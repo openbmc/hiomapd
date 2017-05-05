@@ -7,6 +7,13 @@
 struct mbox_context;
 struct vpnor_partition_table;
 
+#define SIZE 256
+
+struct vpnor_partition_paths
+{
+    char ro_loc[SIZE];
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
