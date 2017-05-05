@@ -41,12 +41,19 @@
 #include <inttypes.h>
 #include <mtd/mtd-abi.h>
 
-#include "mbox.h"
+#include "config.h"
 #include "common.h"
+#include "mbox.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
 #include "mboxd_flash.h"
+
+#ifdef VIRTUAL_PNOR_ENABLED
+
 #include "mboxd_pnor_partition_table.h"
+#include "mboxd_pnor.h"
+
+#endif
 
 /* Initialisation Functions */
 
@@ -635,16 +642,20 @@ int create_map_window(struct mbox_context *context,
 		       ((uint8_t *)table) + offset,
 		       min_u32(sz - offset, cur->size));
 		free(table);
-	}
+	} else {
+		/* Copy from virtual pnor into the window buffer */
+		rc = copy_pnor(context, offset, cur->mem, cur->size);
+
+    }
 #else
 	/* Copy from flash into the window buffer */
 	rc = copy_flash(context, offset, cur->mem, cur->size);
+#endif
 	if (rc < 0) {
 		/* We don't know how much we've copied -> better reset window */
 		reset_window(context, cur);
 		return rc;
 	}
-#endif
 
 	/*
 	 * Since for V1 windows aren't constrained to start at multiples of
