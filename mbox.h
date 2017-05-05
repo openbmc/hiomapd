@@ -170,6 +170,7 @@ struct mbox_context {
 #ifdef VIRTUAL_PNOR_ENABLED
 	/* Virtual PNOR partition table */
 	struct vpnor_partition_table *vpnor;
+	struct vpnor_partition_paths paths;
 #endif
 };
 

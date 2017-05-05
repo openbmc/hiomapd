@@ -10,6 +10,7 @@ mboxd_SOURCES = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mtd.c
+
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 

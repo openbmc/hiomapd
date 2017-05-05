@@ -314,6 +314,7 @@ int main(int argc, char **argv)
 
 #ifdef VIRTUAL_PNOR_ENABLED
 	vpnor_create_partition_table(context);
+	strcpy(context->paths.ro_loc,PARTITION_FILES_LOC);
 #endif
 
 	rc = init_signals(context, &set);
