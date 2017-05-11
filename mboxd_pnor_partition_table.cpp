@@ -9,14 +9,24 @@ struct vpnor_partition_table
 
 void vpnor_create_partition_table(struct mbox_context *context)
 {
-    if (context)
+    if (context && !context->vpnor)
     {
-        if (!context->vpnor)
-        {
-            context->vpnor = new vpnor_partition_table;
-            context->vpnor->table =
-                new openpower::virtual_pnor::partition::Table;
-        }
+        context->vpnor = new vpnor_partition_table;
+        context->vpnor->table =
+            new openpower::virtual_pnor::partition::Table;
+    }
+}
+
+void vpnor_create_partition_table_from_path(struct mbox_context *context,
+                                            const char *path)
+{
+    fs::path dir(path);
+
+    if (context && !context->vpnor)
+    {
+        context->vpnor = new vpnor_partition_table;
+        context->vpnor->table =
+            new openpower::virtual_pnor::partition::Table(std::move(dir));
     }
 }
 
