@@ -27,7 +27,7 @@ struct tmpf {
 	char path[PATH_MAX];
 };
 
-int tmpf_init(struct tmpf *tmpf, const char *template);
+int tmpf_init(struct tmpf *tmpf, const char *template_str);
 
 void tmpf_destroy(struct tmpf *tmpf);
 
