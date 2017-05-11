@@ -20,6 +20,23 @@ void vpnor_create_partition_table(struct mbox_context *context)
     }
 }
 
+void vpnor_create_partition_table_from_path(struct mbox_context *context,
+                                            const char*dir)
+{
+    fs::path directory(dir);
+
+    if (context)
+    {
+        if (!context->vpnor)
+        {
+            context->vpnor = new vpnor_partition_table;
+            context->vpnor->table =
+                new openpower::virtual_pnor::partition::Table(std::move(directory));
+        }
+    }
+}
+
+
 size_t vpnor_get_partition_table_size(const struct mbox_context *context)
 {
     return context && context->vpnor ?
