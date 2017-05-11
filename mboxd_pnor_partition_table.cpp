@@ -1,6 +1,7 @@
 #include "mboxd_pnor_partition_table.h"
 #include "mbox.h"
 #include "pnor_partition_table.hpp"
+#include <experimental/filesystem>
 
 struct vpnor_partition_table
 {
@@ -9,14 +10,24 @@ struct vpnor_partition_table
 
 void vpnor_create_partition_table(struct mbox_context *context)
 {
-    if (context)
+    if (context && !context->vpnor)
     {
-        if (!context->vpnor)
-        {
-            context->vpnor = new vpnor_partition_table;
-            context->vpnor->table =
-                new openpower::virtual_pnor::partition::Table;
-        }
+        context->vpnor = new vpnor_partition_table;
+        context->vpnor->table =
+            new openpower::virtual_pnor::partition::Table;
+    }
+}
+
+void vpnor_create_partition_table_from_path(struct mbox_context *context,
+                                            const char *path)
+{
+    std::experimental::filesystem::path dir(path);
+
+    if (context && !context->vpnor)
+    {
+        context->vpnor = new vpnor_partition_table;
+        context->vpnor->table =
+            new openpower::virtual_pnor::partition::Table(std::move(dir));
     }
 }
 

@@ -27,6 +27,18 @@ extern "C" {
  */
 void vpnor_create_partition_table(struct mbox_context *context);
 
+/** @brief Create a virtual PNOR partition table.
+ *
+ *  @param[in] context - mbox context pointer
+ *  @param[in] path - location of the partition file
+ *
+ *  This API is same as above one but it reads the partition file from
+ *  from the given location(path).
+ */
+
+void vpnor_create_partition_table_from_path(struct mbox_context *context,
+                                            const char* path);
+
 
 /** @brief Get partition table size, in blocks (1 block = 4KB)
  *
