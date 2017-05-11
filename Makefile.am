@@ -111,11 +111,25 @@ test_sequence_numbers_SOURCES = test/sequence_numbers.c \
 test_get_mbox_info_v2_timeout_SOURCES = test/get_mbox_info_v2_timeout.c \
 					$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+TEST_MBOX_VPNOR_SRCS = common.c pnor_partition_table.cpp
+
+TEST_MBOX_READ_VPNOR_SRCS = mboxd_msg.c \
+							mboxd_windows.c \
+							mboxd_lpc.c \
+							mboxd_flash.c \
+							mboxd_pnor_partition_table.cpp \
+							mboxd_flash_virtual.cpp \
+							test/create_read_window_vpnor.cpp
+
 test_create_pnor_partition_table_SOURCES = \
-	test/create_pnor_partition_table.cpp \
-	common.c \
-	pnor_partition_table.cpp
+	$(TEST_MBOX_VPNOR_SRCS) \
+	test/create_pnor_partition_table.cpp
 test_create_pnor_partition_table_LDFLAGS = -lstdc++fs
+
+test_create_read_window_vpnor_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \
+	$(TEST_MBOX_READ_VPNOR_SRCS)
+test_create_read_window_vpnor_LDFLAGS = -lstdc++fs
 
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
@@ -146,7 +160,8 @@ check_PROGRAMS = test/sanity \
 		 test/get_mbox_info_v2_timeout
 
 if VIRTUAL_PNOR_ENABLED
-check_PROGRAMS += test/create_pnor_partition_table
+check_PROGRAMS += test/create_pnor_partition_table test/create_read_window_vpnor
 endif
 
 TESTS = $(check_PROGRAMS)
+
