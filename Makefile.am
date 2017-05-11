@@ -117,6 +117,15 @@ test_create_pnor_partition_table_SOURCES = \
 	pnor_partition_table.cpp
 test_create_pnor_partition_table_LDFLAGS = -lstdc++fs
 
+test_create_read_window_pnor_SOURCES = \
+	$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS) \
+	mboxd_pnor.cpp \
+	mboxd_pnor_partition_table.cpp \
+	pnor_partition_table.cpp \
+	test/create_read_window_pnor.cpp
+
+test_create_read_window_pnor_LDFLAGS = -lstdc++fs
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -146,7 +155,7 @@ check_PROGRAMS = test/sanity \
 		 test/get_mbox_info_v2_timeout
 
 if VIRTUAL_PNOR_ENABLED
-check_PROGRAMS += test/create_pnor_partition_table
+check_PROGRAMS = test/create_pnor_partition_table test/create_read_window_pnor
 endif
 
 TESTS = $(check_PROGRAMS)
