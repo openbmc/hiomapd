@@ -37,28 +37,29 @@ extern "C" {
  *
  * Return:      0 on success otherwise negative error code
  */
-int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
-	       uint32_t size)
+int copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
+               uint32_t size)
 {
-	int rc = 0;
+    int rc = 0;
 
-	MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n",
-		mem, size, offset);
+    MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n",
+            mem, size, offset);
 
-	/* The virtual PNOR partition table starts at offset 0 in the virtual
-	 * pnor image. Check if host asked for an offset that lies within the
-	 * partition table.
-	 */
-	size_t sz =
-	vpnor_get_partition_table_size(context) << context->block_size_shift;
-	if (offset < sz) {
-		struct pnor_partition_table* table =
-			vpnor_get_partition_table(context);
-		memcpy(mem,
-		       ((uint8_t *)table) + offset,
-		       min_u32(sz - offset, size));
-		free(table);
-	}
+    /* The virtual PNOR partition table starts at offset 0 in the virtual
+     * pnor image. Check if host asked for an offset that lies within the
+     * partition table.
+     */
+    size_t sz =
+        vpnor_get_partition_table_size(context) << context->block_size_shift;
+    if (offset < sz)
+    {
+        struct pnor_partition_table* table =
+            vpnor_get_partition_table(context);
+        memcpy(mem,
+               ((uint8_t*)table) + offset,
+               min_u32(sz - offset, size));
+        free(table);
+    }
 
-	return rc;
+    return rc;
 }
