@@ -115,7 +115,8 @@ test_create_pnor_partition_table_SOURCES = \
 	test/create_pnor_partition_table.cpp \
 	common.c \
 	pnor_partition_table.cpp
-test_create_pnor_partition_table_LDFLAGS = -lstdc++fs
+test_create_pnor_partition_table_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_create_pnor_partition_table_LDADD = -lstdc++fs
 
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
