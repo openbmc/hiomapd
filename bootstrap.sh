@@ -17,12 +17,16 @@ esac
 
 autoreconf -i
 
-case $1 in
+BOOTSTRAP_MODE="$1"
+shift 1
+
+case "${BOOTSTRAP_MODE}" in
     dev)
         ./configure \
             CPPFLAGS="-UNDEBUG" \
             CFLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -Wall -Werror" \
-            --enable-code-coverage
+            --enable-code-coverage \
+            "$@"
         ;;
     *)
         echo 'Run "./configure ${CONFIGURE_FLAGS} && make"'
