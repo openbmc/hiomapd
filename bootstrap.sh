@@ -22,9 +22,11 @@ shift 1
 
 case "${BOOTSTRAP_MODE}" in
     dev)
+        FLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -Wall -Werror"
         ./configure \
             CPPFLAGS="-UNDEBUG" \
-            CFLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -Wall -Werror" \
+            CFLAGS="${FLAGS}" \
+            CXXFLAGS="${FLAGS}" \
             --enable-code-coverage \
             "$@"
         ;;
