@@ -119,3 +119,65 @@ int copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
     }
     return rc;
 }
+
+/*
+ * write_flash() - Write to the virtual pnor from a provided buffer
+ * @context: The mbox context pointer
+ * @offset:  The flash offset to write to (bytes)
+ * @buf:     The buffer to write from (must be of atleast size)
+ * @size:    The number of bytes to write
+ *
+ * Return:  0 on success otherwise negative error code
+ */
+
+int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
+                uint32_t count)
+{
+    using namespace phosphor::logging;
+    using namespace sdbusplus::xyz::openbmc_project::Common::Error;
+    using namespace std::string_literals;
+
+    int rc = 0;
+    MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count, buf);
+    try
+    {
+        openpower::virtual_pnor::RWRequest rwRequest;
+        auto partitionInfo = rwRequest.getPartitionInfo(context, offset);
+
+
+        auto mapped_mem = mmap(NULL, partitionInfo->data.actual,
+                               PROT_READ | PROT_WRITE,
+                               MAP_SHARED, rwRequest.fd(), 0);
+        if (mapped_mem == MAP_FAILED)
+        {
+            MSG_ERR("Failed to map partition=%s:Error=%s\n",
+                    partitionInfo->data.name, strerror(errno));
+
+            elog<InternalFailure>();
+        }
+        //copy to the mapped memory.
+
+        uint32_t baseOffset = partitionInfo->data.base << context->block_size_shift;
+
+        // if the asked offset + no of bytes to write is greater
+        // then size of the partition file then throw error.
+        if ((offset + count) > (baseOffset + partitionInfo->data.actual))
+        {
+            MSG_ERR("Offset is beyond the partition file length[0x%.8x]\n",
+                     partitionInfo->data.actual);
+            munmap(mapped_mem, partitionInfo->data.actual);
+            elog<InternalFailure>();
+        }
+
+        auto diffOffset = offset - baseOffset;
+        memcpy((char*)mapped_mem + diffOffset , buf, count);
+        munmap(mapped_mem, partitionInfo->data.actual);
+
+        set_flash_bytemap(context, offset, count, FLASH_DIRTY);
+    }
+    catch (InternalFailure & e)
+    {
+        rc = -1;
+    }
+    return rc;
+}

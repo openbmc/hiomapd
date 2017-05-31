@@ -69,3 +69,43 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 
 	return size ? -MBOX_R_SYSTEM_ERROR : 0;
 }
+
+/*
+ * write_flash() - Write the flash from a provided buffer
+ * @context:	The mbox context pointer
+ * @offset:	The flash offset to write to (bytes)
+ * @buf:	The buffer to write from (must be of atleast size)
+ * @size:	The number of bytes to write
+ *
+ * Return:	0 on success otherwise negative error code
+ */
+int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
+		uint32_t count)
+{
+	uint32_t buf_offset = 0;
+	int rc;
+
+	MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count, buf);
+
+	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
+		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
+			strerror(errno));
+		return -MBOX_R_SYSTEM_ERROR;
+	}
+
+	while (count) {
+		rc = write(context->fds[MTD_FD].fd, buf + buf_offset, count);
+		if (rc < 0) {
+			MSG_ERR("Couldn't write to flash, write lost: %s\n",
+				strerror(errno));
+			return -MBOX_R_WRITE_ERROR;
+		}
+		/* Mark *NOT* erased where we just wrote */
+		set_flash_bytemap(context, offset + buf_offset, rc,
+				  FLASH_DIRTY);
+		count -= rc;
+		buf_offset += rc;
+	}
+
+	return 0;
+}
