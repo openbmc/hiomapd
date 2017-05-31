@@ -164,6 +164,20 @@ test_create_read_window_vpnor_LDADD = -lstdc++fs \
 	$(PHOSPHOR_LOGGING_LIBS) \
 	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
 
+test_write_flash_vpnor_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) \
+	mboxd_flash.c \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	mtd.c \
+	pnor_partition.cpp \
+	test/write_flash_vpnor.cpp
+test_write_flash_vpnor_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_write_flash_vpnor_LDADD = -lstdc++fs \
+	$(SDBUSPLUS_LIBS) \
+	$(PHOSPHOR_LOGGING_LIBS) \
+	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -195,7 +209,8 @@ check_PROGRAMS = test/sanity \
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	test/create_pnor_partition_table \
-	test/create_read_window_vpnor
+	test/create_read_window_vpnor \
+	test/write_flash_vpnor
 endif
 
 TESTS = $(check_PROGRAMS)
