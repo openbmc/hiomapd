@@ -91,7 +91,6 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
                                                   uint32_t offset)
 {
     std::string path = getPartitionFilePath(context, offset);
-
     ReturnCode rc = Request::open(path, O_RDONLY);
     if (rc == ReturnCode::SUCCESS)
     {
@@ -111,6 +110,7 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     }
 
     MSG_DBG("Couldn't open the file[%s]", path.c_str());
+
     // we don't get the file in the respective partition(RW/PSRV)
     // try to open it from RO location.
 

@@ -13,7 +13,7 @@ extern "C" {
 #include <fstream>
 #include <experimental/filesystem>
 
-constexpr auto line = "partition01=HBB,00000000,00000400,ECC,PRESERVED";
+constexpr auto line = "partition01=HBB,00000000,0001000,ECC,PRESERVED";
 constexpr auto partition = "HBB";
 char tmplt[] = "/tmp/create_read_test.XXXXXX";
 uint8_t data[8] = { 0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab };
@@ -85,6 +85,10 @@ int main()
     // Compare the reserved memory to the pnor
     rc = memcmp(ctx->mem, data, 6);
     assert(rc == 0);
+
+    //TODO: Add few more test cases for read from multiple partitions(PRSV/RW)
+    //      Read beyond the partition file size.
+    //      openbmc/openbmc#1868
 
     fs::remove_all(fs::path{tmpdir});
     return rc;

@@ -31,11 +31,14 @@ extern "C" {
 #include "config.h"
 #include "mboxd_flash.h"
 #include "mboxd_pnor_partition_table.h"
+#include "pnor_partition.hpp"
+#include "xyz/openbmc_project/Common/error.hpp"
+#include <phosphor-logging/log.hpp>
+#include <phosphor-logging/elog-errors.hpp>
 
 #include <string>
 #include <exception>
 #include <stdexcept>
-#include <experimental/filesystem>
 
 /*
  * copy_flash() - Copy data from the virtual pnor into a provided buffer
@@ -49,7 +52,10 @@ extern "C" {
 int copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
                uint32_t size)
 {
-    namespace fs = std::experimental::filesystem;
+    using namespace phosphor::logging;
+    using namespace sdbusplus::xyz::openbmc_project::Common::Error;
+    using namespace std::string_literals;
+
     int rc = 0;
 
     MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n",
@@ -73,42 +79,42 @@ int copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
         }
         else
         {
-            /* Copy from virtual pnor into the window buffer */
-            auto partition = vpnor_get_partition(context, offset);
-            if (!partition)
-            {
-                std::string msg = "Couldn't get the partition info for offset " +
-                                  offset;
-                throw std::runtime_error(msg);
-            }
+            openpower::virtual_pnor::RORequest roRequest;
+            auto partitionInfo = roRequest.getPartitionInfo(context, offset);
 
-            fs::path partitionFilePath = context->paths.ro_loc;
-            partitionFilePath /= partition->data.name;
+            auto mapped_mem = mmap(NULL, partitionInfo->data.actual,
+                                   PROT_READ, MAP_PRIVATE, roRequest.fd(), 0);
 
-            auto fd = open(partitionFilePath.c_str(), O_RDONLY);
-            if (fd == -1)
-            {
-                throw std::runtime_error("Couldn't open the partition file");
-            }
-
-            auto mapped_mem = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
             if (mem == MAP_FAILED)
             {
-                std::string msg = "Failed to map" + partitionFilePath.string() + ":"
-                                  + strerror(errno);
-                close(fd);
-                throw std::runtime_error(msg);
+                MSG_ERR("Failed to map partition=%s:Error=%s\n",
+                        partitionInfo->data.name, strerror(errno));
+
+                elog<InternalFailure>();
+            }
+
+            // if the asked offset + no of bytes to read is greater
+            // then size of the partition file then throw error.
+
+            uint32_t baseOffset = partitionInfo->data.base << context->block_size_shift;
+
+            if ((offset + size) > (baseOffset + partitionInfo->data.actual))
+            {
+                MSG_ERR("Offset is beyond the partition file length[0x%.8x]\n",
+                        partitionInfo->data.actual);
+                munmap(mapped_mem, partitionInfo->data.actual);
+                elog<InternalFailure>();
             }
 
             //copy to the reserved memory area
-            memcpy(mem, mapped_mem, size);
-            munmap(mapped_mem, size);
-            close(fd);
+            auto diffOffset = offset - baseOffset;
+            memcpy(mem, (char*)mapped_mem + diffOffset , size);
+            munmap(mapped_mem, partitionInfo->data.actual);
         }
     }
-    catch (const std::exception& e)
+    catch (InternalFailure& e)
     {
-        MSG_ERR("%s", e.what());
+        commit<InternalFailure>();
         rc = -1;
     }
     return rc;
