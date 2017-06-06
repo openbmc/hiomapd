@@ -23,7 +23,7 @@ constexpr size_t size = 4096;
 } // namespace block
 
 Table::Table():
-    Table(fs::path(PARTITION_FILES_LOC))
+    Table(fs::path(PARTITION_FILES_RO_LOC))
 {
 }
 

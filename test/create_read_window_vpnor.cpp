@@ -66,6 +66,8 @@ int main()
 
     struct mbox_context *ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
     strcpy(ctx->paths.ro_loc,tmpdir);
+    strcpy(ctx->paths.rw_loc,tmpdir);
+    strcpy(ctx->paths.prsv_loc,tmpdir);
 
     vpnor_create_partition_table_from_path(ctx, tmpdir);
 

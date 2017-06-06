@@ -76,8 +76,9 @@ AC_SUBST([LIBSYSTEMD_CFLAGS])
 AC_SUBST([LIBSYSTEMD_LIBS])
 
 AC_DEFINE(PARTITION_TOC_FILE, "pnor.toc", [The basename of the PNOR Table of contents file.])
-AC_DEFINE(PARTITION_FILES_LOC, "/var/lib/phosphor-software-manager/pnor/ro", [The path to the directory containing PNOR partition files.])
-
+AC_DEFINE(PARTITION_FILES_RO_LOC, "/var/lib/phosphor-software-manager/pnor/ro", [The path to the directory containing PNOR read only partition files.])
+AC_DEFINE(PARTITION_FILES_RW_LOC, "/var/lib/phosphor-software-manager/pnor/rw", [The path to the directory containing PNOR read write partition files.])
+AC_DEFINE(PARTITION_FILES_PRSV_LOC, "/var/lib/phosphor-software-manager/pnor/prsv", [The path to the directory containing PNOR preserve partition files.])
 # Create configured output
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

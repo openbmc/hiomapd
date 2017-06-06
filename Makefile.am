@@ -16,7 +16,8 @@ mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 if VIRTUAL_PNOR_ENABLED
 mboxd_SOURCES += pnor_partition_table.cpp \
 	mboxd_pnor_partition_table.cpp \
-	mboxd_flash_virtual.cpp
+	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp
 
 mboxd_LDFLAGS += -lstdc++fs \
 	$(SDBUSPLUS_LIBS) \
@@ -39,13 +40,35 @@ AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 test_sanity_SOURCES = test/sanity.c
 
-test_copy_flash_SOURCES = test/copy_flash.c mboxd_flash.c mboxd_flash_physical.c common.c mtd.c test/tmpf.c
+test_copy_flash_SOURCES = \
+	test/copy_flash.c \
+	mboxd_flash.c \
+	mboxd_flash_physical.c \
+	common.c mtd.c \
+	test/tmpf.c
 
-test_erase_flash_SOURCES = test/erase_flash.c mboxd_flash.c common.c test/tmpf.c
+test_erase_flash_SOURCES = \
+	test/erase_flash.c \
+	mboxd_flash.c \
+	mboxd_flash_physical.c \
+	common.c \
+	test/tmpf.c
 
-test_write_flash_SOURCES = test/write_flash.c mboxd_flash.c common.c test/tmpf.c
+test_write_flash_SOURCES = \
+	test/write_flash.c \
+	mboxd_flash.c \
+	mboxd_flash_physical.c \
+	common.c \
+	test/tmpf.c
 
-TEST_MBOX_SRCS = mboxd_msg.c mboxd_windows.c mboxd_lpc.c mboxd_flash.c common.c mboxd_flash_physical.c
+TEST_MBOX_SRCS = \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mboxd_lpc.c \
+	mboxd_flash.c \
+	common.c \
+	mboxd_flash_physical.c
+
 TEST_MOCK_SRCS = test/tmpf.c test/mbox.c test/system.c
 
 test_get_mbox_info_v2_SOURCES = test/get_mbox_info_v2.c \
@@ -133,9 +156,13 @@ test_create_read_window_vpnor_SOURCES = \
 	mboxd_flash.c \
 	mboxd_pnor_partition_table.cpp \
 	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp \
 	test/create_read_window_vpnor.cpp
 test_create_read_window_vpnor_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
-test_create_read_window_vpnor_LDADD = -lstdc++fs
+test_create_read_window_vpnor_LDADD = -lstdc++fs \
+	$(SDBUSPLUS_LIBS) \
+	$(PHOSPHOR_LOGGING_LIBS) \
+	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
 
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
@@ -166,7 +193,9 @@ check_PROGRAMS = test/sanity \
 		 test/get_mbox_info_v2_timeout
 
 if VIRTUAL_PNOR_ENABLED
-check_PROGRAMS += test/create_pnor_partition_table test/create_read_window_vpnor
+check_PROGRAMS += \
+	test/create_pnor_partition_table \
+	test/create_read_window_vpnor
 endif
 
 TESTS = $(check_PROGRAMS)

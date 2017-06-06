@@ -11,6 +11,8 @@ struct vpnor_partition_table;
 struct vpnor_partition_paths
 {
     char ro_loc[PATH_MAX];
+    char rw_loc[PATH_MAX];
+    char prsv_loc[PATH_MAX];
 };
 
 #ifdef __cplusplus
