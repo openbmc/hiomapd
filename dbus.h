@@ -18,8 +18,8 @@
 #ifndef MBOX_DBUS_H
 #define MBOX_DBUS_H
 
-#define DBUS_NAME		"org.openbmc.mboxd"
-#define DOBJ_NAME		"/org/openbmc/mboxd"
+#define DBUS_NAME		"xyz.openbmc_project.mboxd"
+#define DOBJ_NAME		"/xyz/openbmc_project/mboxd"
 
 /* Commands */
 #define DBUS_C_PING		0x00
