@@ -206,12 +206,13 @@ int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
 /*
  * erase_flash() - Erase the flash
  * @context:	The mbox context pointer
- * @offset:	The flash offset to erase (bytes)
- * @size:	The number of bytes to erase
+ * @offset:	The flash offset to erase (bytes) MUST BE ERASE SIZE ALIGNED
+ * @size:	The number to erase (bytes) MUST BE ERASE SIZE ALIGNED
  *
  * Return:	0 on success otherwise negative error code
  */
-int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
+static int erase_flash(struct mbox_context *context, uint32_t offset,
+		       uint32_t count)
 {
 	const uint32_t erase_size = 1 << context->erase_size_shift;
 	struct erase_info_user erase_info = { 0 };
@@ -227,14 +228,15 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 	 * erased then there's nothing we need to do.
 	 */
 	while (count) {
-		if (!flash_is_erased(context, offset)) { /* Need to erase */
+		if (!flash_is_erased(context, offset, erase_size)) {
+			/* Need to erase */
 			if (!erase_info.length) { /* Start of not-erased run */
 				erase_info.start = offset;
 			}
 			erase_info.length += erase_size;
 		} else if (erase_info.length) { /* Already erased|end of run? */
 			/* Erase the previous run which just ended */
-			MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
+			MSG_DBG("Erase ioctl @ 0x%.8x for 0x%.8x\n",
 				erase_info.start, erase_info.length);
 			rc = ioctl(context->fds[MTD_FD].fd, MEMERASE,
 				   &erase_info);
@@ -255,7 +257,7 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 	}
 
 	if (erase_info.length) {
-		MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
+		MSG_DBG("Erase ioctl @ 0x%.8x for 0x%.8x\n",
 			erase_info.start, erase_info.length);
 		rc = ioctl(context->fds[MTD_FD].fd, MEMERASE, &erase_info);
 		if (rc < 0) {
@@ -276,7 +278,7 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
  * @context:	The mbox context pointer
  * @offset:	The flash offset to write to (bytes)
  * @buf:	The buffer to write from (must be of atleast size)
- * @size:	The number of bytes to write
+ * @count:	The number of bytes to write
  *
  * Return:	0 on success otherwise negative error code
  */
@@ -309,4 +311,97 @@ int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
 	}
 
 	return 0;
+}
+
+/*
+ * smart_erase_flash() - Erase the flash without alignment constraints
+ * @context:	The mbox context pointer
+ * @offset:	The flash offset to erase (bytes)
+ * @count:	The number to erase (bytes)
+ *
+ * Return:	0 on success otherwise negative error code
+ */
+int smart_erase_flash(struct mbox_context *context, uint32_t offset,
+		      uint32_t count)
+{
+	const uint32_t erase_size = 1 << context->erase_size_shift;
+	struct window_context low_mem = { 0 }, high_mem = { 0 };
+	int rc;
+
+	MSG_DBG("Smart erase flash @ 0x%.8x for 0x%.8x\n", offset, count);
+
+	/* Better to check than trust the caller */
+	if ((offset + count) > context->flash_size) {
+		MSG_ERR("Erase past end of flash @ 0x%.8x for 0x%.8x\n",
+			offset, count);
+		return -MBOX_R_PARAM_ERROR;
+	}
+
+	/* Aligned Erase - Call the erase function directly */
+	if (!((offset & (erase_size - 1)) || (count & (erase_size - 1)))) {
+		return erase_flash(context, offset, count);
+	}
+
+	/* Read */
+	/* Unaligned at base of erase */
+	if (offset & (erase_size - 1)) {
+		low_mem.flash_offset = align_down(offset, erase_size);
+		low_mem.size = offset - low_mem.flash_offset;
+		low_mem.mem = malloc(low_mem.size);
+		if (!low_mem.mem) {
+			MSG_ERR("Unable to allocate memory\n");
+			return -MBOX_R_SYSTEM_ERROR;
+		}
+		rc = copy_flash(context, low_mem.flash_offset, low_mem.mem,
+				low_mem.size);
+		if (rc < 0) {
+			goto out;
+		}
+		MSG_DBG("Aligning erase down: 0x%.8x\n", low_mem.flash_offset);
+	}
+	/* Unaligned at top of erase */
+	if ((offset + count) & (erase_size - 1)) {
+		high_mem.flash_offset = offset + count;
+		high_mem.size = align_up(high_mem.flash_offset, erase_size) -
+				high_mem.flash_offset;
+		high_mem.mem = malloc(high_mem.size);
+		if (!high_mem.mem) {
+			MSG_ERR("Unable to allocate memory\n");
+			rc = -MBOX_R_SYSTEM_ERROR;
+			goto out;
+		}
+		rc = copy_flash(context, high_mem.flash_offset, high_mem.mem,
+				high_mem.size);
+		if (rc < 0) {
+			goto out;
+		}
+		MSG_DBG("Aligning erase up: 0x%.8x\n", high_mem.flash_offset +
+							high_mem.size);
+	}
+
+	/* Erase */
+	rc = erase_flash(context, align_down(offset, erase_size),
+			 align_up(offset + count, erase_size) -
+			 align_down(offset, erase_size));
+	if (rc < 0) {
+		goto out;
+	}
+
+	/* Write */
+	if (low_mem.mem) { /* Only required if we allocated the memory */
+		rc = write_flash(context, low_mem.flash_offset, low_mem.mem,
+				 low_mem.size);
+		if (rc < 0) {
+			goto out;
+		}
+	}
+	if (high_mem.mem) { /* Only required if we allocated the memory */
+		rc = write_flash(context, high_mem.flash_offset, high_mem.mem,
+				 high_mem.size);
+	}
+
+out:
+	free(low_mem.mem);
+	free(high_mem.mem);
+	return rc;
 }

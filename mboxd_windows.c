@@ -156,137 +156,10 @@ void free_windows(struct mbox_context *context)
 /* Write from Window Functions */
 
 /*
- * write_from_window_v1() - Handle writing when erase and block size differ
- * @context:		The mbox context pointer
- * @offset_bytes:	The offset in the current window to write from (bytes)
- * @count_bytes:	Number of bytes to write
- *
- * Handle a write_from_window for dirty memory when block_size is less than the
- * flash erase size
- * This requires us to be a bit careful because we might have to erase more
- * than we want to write which could result in data loss if we don't have the
- * entire portion of flash to be erased already saved in memory (for us to
- * write back after the erase)
- *
- * Return:	0 on success otherwise negative error code
- */
-int write_from_window_v1(struct mbox_context *context,
-			 uint32_t offset_bytes, uint32_t count_bytes)
-{
-	int rc;
-	uint32_t flash_offset;
-	struct window_context low_mem = { 0 }, high_mem = { 0 };
-
-	/* Find where in phys flash this is based on the window.flash_offset */
-	flash_offset = context->current->flash_offset + offset_bytes;
-
-	/*
-	 * low_mem.flash_offset = erase boundary below where we're writing
-	 * low_mem.size = size from low_mem.flash_offset to where we're writing
-	 *
-	 * high_mem.flash_offset = end of where we're writing
-	 * high_mem.size = size from end of where we're writing to next erase
-	 * 		   boundary
-	 */
-	low_mem.flash_offset = align_down(flash_offset,
-					  context->mtd_info.erasesize);
-	low_mem.size = flash_offset - low_mem.flash_offset;
-	high_mem.flash_offset = flash_offset + count_bytes;
-	high_mem.size = align_up(high_mem.flash_offset,
-				 context->mtd_info.erasesize) -
-			high_mem.flash_offset;
-
-	/*
-	 * Check if we already have a copy of the required flash areas in
-	 * memory as part of the existing window
-	 */
-	if (low_mem.flash_offset < context->current->flash_offset) {
-		/* Before the start of our current window */
-		low_mem.mem = malloc(low_mem.size);
-		if (!low_mem.mem) {
-			MSG_ERR("Unable to allocate memory\n");
-			return -MBOX_R_SYSTEM_ERROR;
-		}
-		rc = copy_flash(context, low_mem.flash_offset,
-				low_mem.mem, low_mem.size);
-		if (rc < 0) {
-			goto out;
-		}
-	}
-	if ((high_mem.flash_offset + high_mem.size) >
-	    (context->current->flash_offset + context->current->size)) {
-		/* After the end of our current window */
-		high_mem.mem = malloc(high_mem.size);
-		if (!high_mem.mem) {
-			MSG_ERR("Unable to allocate memory\n");
-			rc = -MBOX_R_SYSTEM_ERROR;
-			goto out;
-		}
-		rc = copy_flash(context, high_mem.flash_offset,
-				high_mem.mem, high_mem.size);
-		if (rc < 0) {
-			goto out;
-		}
-	}
-
-	/*
-	 * We need to erase the flash from low_mem.flash_offset->
-	 * high_mem.flash_offset + high_mem.size
-	 */
-	rc = erase_flash(context, low_mem.flash_offset,
-			 (high_mem.flash_offset - low_mem.flash_offset) +
-			 high_mem.size);
-	if (rc < 0) {
-		MSG_ERR("Couldn't erase flash\n");
-		goto out;
-	}
-
-	/* Write back over the erased area */
-	if (low_mem.mem) {
-		/* Exceed window at the start */
-		rc = write_flash(context, low_mem.flash_offset, low_mem.mem,
-				 low_mem.size);
-		if (rc < 0) {
-			goto out;
-		}
-	}
-	rc = write_flash(context, flash_offset,
-			 context->current->mem + offset_bytes, count_bytes);
-	if (rc < 0) {
-		goto out;
-	}
-	/*
-	 * We still need to write the last little bit that we erased - it's
-	 * either in the current window or the high_mem window.
-	 */
-	if (high_mem.mem) {
-		/* Exceed window at the end */
-		rc = write_flash(context, high_mem.flash_offset, high_mem.mem,
-				 high_mem.size);
-		if (rc < 0) {
-			goto out;
-		}
-	} else {
-		/* Write from the current window - it's atleast that big */
-		rc = write_flash(context, high_mem.flash_offset,
-				 context->current->mem + offset_bytes +
-				 count_bytes, high_mem.size);
-		if (rc < 0) {
-			goto out;
-		}
-	}
-
-out:
-	free(low_mem.mem);
-	free(high_mem.mem);
-	return rc;
-}
-
-/*
  * write_from_window() - Write back to the flash from the current window
  * @context:		The mbox context pointer
  * @offset_bytes:	The offset in the current window to write from (blocks)
- * @count_bytes:	Number of blocks to write
+ * @count_bytes:	Number to write (blocks)
  * @type:		Whether this is an erase & write or just an erase
  *
  * Return:	0 on success otherwise negative error code
@@ -295,33 +168,23 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t type)
 {
 	int rc;
-	uint32_t flash_offset, count_bytes = count << context->block_size_shift;
+	uint32_t count_bytes = count << context->block_size_shift;
 	uint32_t offset_bytes = offset << context->block_size_shift;
+	uint32_t flash_offset = context->current->flash_offset +
+				offset_bytes;
 
 	switch (type) {
-	case WINDOW_ERASED: /* >= V2 ONLY -> block_size == erasesize */
-		flash_offset = context->current->flash_offset + offset_bytes;
-		rc = erase_flash(context, flash_offset, count_bytes);
+	case WINDOW_ERASED:
+		/* Erase the flash */
+		rc = smart_erase_flash(context, flash_offset, count_bytes);
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash\n");
 			return rc;
 		}
 		break;
 	case WINDOW_DIRTY:
-		/*
-		 * For protocol V1, block_size may be smaller than erase size
-		 * so we have a special function to make sure that we do this
-		 * correctly without losing data.
-		 */
-		if (log_2(context->mtd_info.erasesize) !=
-						context->block_size_shift) {
-			return write_from_window_v1(context, offset_bytes,
-						    count_bytes);
-		}
-		flash_offset = context->current->flash_offset + offset_bytes;
-
 		/* Erase the flash */
-		rc = erase_flash(context, flash_offset, count_bytes);
+		rc = smart_erase_flash(context, flash_offset, count_bytes);
 		if (rc < 0) {
 			return rc;
 		}

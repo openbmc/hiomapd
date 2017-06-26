@@ -32,5 +32,7 @@ int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
 int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count);
 int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
 		uint32_t count);
+int smart_erase_flash(struct mbox_context *context, uint32_t offset,
+		      uint32_t count);
 
 #endif /* MBOXD_FLASH_H */
