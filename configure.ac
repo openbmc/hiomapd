@@ -1,6 +1,6 @@
 # Initialization
 AC_PREREQ([2.69])
-AC_INIT([mboxd], [2.1.0], [https://github.com/openbmc/mboxbridge/issues])
+AC_INIT([mboxd], [2.2.0], [https://github.com/openbmc/mboxbridge/issues])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([subdir-objects -Wall foreign dist-xz])
 AM_SILENT_RULES([yes])

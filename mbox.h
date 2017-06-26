@@ -26,11 +26,12 @@
 enum api_version {
 	API_VERSION_INVAL	= 0,
 	API_VERSION_1		= 1,
-	API_VERSION_2		= 2
+	API_VERSION_2		= 2,
+	API_VERSION_3		= 3
 };
 
 #define API_MIN_VERSION			API_VERSION_1
-#define API_MAX_VERSION			API_VERSION_2
+#define API_MAX_VERSION			API_VERSION_3
 
 #define THIS_NAME			"Mailbox Daemon"
 
