@@ -194,6 +194,7 @@ struct mbox_test_context {
 	struct tmpf mbox;
 	struct tmpf flash;
 	struct tmpf lpc;
+	struct tmpf locked;
 	struct mbox_context context;
 } test;
 
@@ -202,10 +203,12 @@ void cleanup(void)
 	tmpf_destroy(&test.mbox);
 	tmpf_destroy(&test.flash);
 	tmpf_destroy(&test.lpc);
+	tmpf_destroy(&test.locked);
 }
 
 int __init_mbox_dev(struct mbox_context *context, const char *path);
 int __init_lpc_dev(struct mbox_context *context, const char *path);
+int __init_flash_lock_file(struct mbox_context *context, const char *path);
 
 struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 {
@@ -223,6 +226,9 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	assert(rc == 0);
 
 	rc = tmpf_init(&test.lpc, "lpcXXXXXX");
+	assert(rc == 0);
+
+	rc = tmpf_init(&test.locked, "lockedXXXXXX");
 	assert(rc == 0);
 
 	test.context.windows.num = n_windows;
@@ -251,6 +257,8 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 
 	rc = __init_lpc_dev(&test.context, test.lpc.path);
 	assert(rc == 0);
+
+	rc = __init_flash_lock_file(&test.context, test.locked.path);
 
 	rc = init_windows(&test.context);
 	assert(rc == 0);

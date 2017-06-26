@@ -95,6 +95,9 @@ test_sequence_numbers_SOURCES = test/sequence_numbers.c \
 test_get_mbox_info_v2_timeout_SOURCES = test/get_mbox_info_v2_timeout.c \
 					$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_lock_flash_v3_SOURCES = test/lock_flash_v3.c \
+			     $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS = test/sanity \
 		 test/copy_flash \
 		 test/erase_flash \
@@ -121,6 +124,7 @@ check_PROGRAMS = test/sanity \
 		 test/invalid_command \
 		 test/read_window_cycle \
 		 test/sequence_numbers \
-		 test/get_mbox_info_v2_timeout
+		 test/get_mbox_info_v2_timeout \
+		 test/lock_flash_v3
 
 TESTS = $(check_PROGRAMS)
