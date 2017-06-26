@@ -22,8 +22,10 @@ this described below.
 
 ## Version
 
-Both version 1 and version 2 of the protocol are described below with version 2
-specificities represented with V2 in brackets - (V2).
+Version specific protocol functionalities are represented by the version number
+in brackets next to the definition of the functionality. (e.g. (V2) for version
+2 specific funtionality). All version specific functionality must also be
+implemeted by proceeding versions.
 
 ## Problem Overview
 
@@ -280,6 +282,14 @@ The host is not required to perform an erase before a write command and the
 BMC must ensure that a write performs as expected - that is if an erase is
 required before a write then the BMC must perform this itself.
 
+The host may lock an area of flash using the MARK_LOCKED command. Any attempt
+to mark dirty or erased this area of flash must fail with the LOCKED_ERROR
+response code. The host may open a write window which contains a locked area
+of flash however changes to a locked area of flash must never be written back
+to the backing data source (i.e. that area of flash must be treated as read
+only). An attempt to lock an area of flash which is not clean in the current
+window must fail with PARAM_ERROR. (V3)
+
 ### BMC Events
 
 The BMC can raise events with the host asynchronously to communicate to the
@@ -316,6 +326,7 @@ MARK_WRITE_DIRTY     0x07
 WRITE_FLUSH          0x08
 BMC_EVENT_ACK        0x09
 MARK_WRITE_ERASED    0x0a	(V2)
+MARK_LOCKED          0x0b	(V3)
 ```
 
 ### Responses
@@ -329,6 +340,7 @@ TIMEOUT		5
 BUSY		6	(V2)
 WINDOW_ERROR	7	(V2)
 SEQ_ERROR	8	(V2)
+LOCKED_ERROR	9	(V3)
 ```
 
 ### Sequence Numbers
@@ -368,6 +380,10 @@ BUSY		- Daemon in suspended state (currently unable to access flash)
 WINDOW_ERROR	- Command not valid for active window or no active window
 		- Try opening an appropriate window and retrying the command
 
+SEQ_ERROR	- Invalid sequence number supplied with command
+
+LOCKED_ERROR	- Tried to mark dirty or erased locked area of flash
+
 ### Information
 - All multibyte messages are LSB first (little endian)
 - All responses must have a valid return code in byte 13
@@ -394,9 +410,7 @@ Sizes and addresses specified in blocks must be converted to bytes by
 multiplying by the block size.
 ```
 Command:
-	RESET_STATE
-	Implemented in Versions:
-		V1, V2
+	RESET_STATE (V1)
 	Arguments:
 		-
 	Response:
@@ -408,15 +422,17 @@ Command:
 		pre mailbox protocol. Final behavour is still TBD.
 
 Command:
-	GET_MBOX_INFO
-	Implemented in Versions:
-		V1, V2
+	GET_MBOX_INFO (V1)
 	Arguments:
 		V1:
 		Args 0: API version
 
 		V2:
 		Args 0: API version
+
+		V3:
+		Args 0: API version
+		Args 1: Requested block size (shift)
 
 	Response:
 		V1:
@@ -439,10 +455,15 @@ Command:
 		the BMC	does not wish to provide a hint in which case the host
 		must choose some reasonable value.
 
+		The host may require a specific block size and thus can request
+		this by giving a hint to the daemon (may be zero). The daemon
+		may use this to select the block size which it will use however
+		is free to ignore this. The value in the response is the block
+		size which must be used for all further requests until a new
+		size is	negotiated by another call to GET_MBOX_INFO. (V3)
+
 Command:
-	GET_FLASH_INFO
-	Implemented in Versions:
-		V1, V2
+	GET_FLASH_INFO (V1)
 	Arguments:
 		-
 	Response:
@@ -455,9 +476,7 @@ Command:
 		Args 2-3: Erase granule (blocks)
 
 Command:
-	CREATE_{READ/WRITE}_WINDOW
-	Implemented in Versions:
-		V1, V2
+	CREATE_{READ/WRITE}_WINDOW (V1)
 	Arguments:
 		V1:
 		Args 0-1: Requested flash offset (blocks)
@@ -504,9 +523,7 @@ Command:
 		window.
 
 Command:
-	CLOSE_WINDOW
-	Implemented in Versions:
-		V1, V2
+	CLOSE_WINDOW (V1)
 	Arguments:
 		V1:
 		-
@@ -533,9 +550,7 @@ Command:
 				evicted from the cache.
 
 Command:
-	MARK_WRITE_DIRTY
-	Implemented in Versions:
-		V1, V2
+	MARK_WRITE_DIRTY (V1)
 	Arguments:
 		V1:
 		Args 0-1: Flash offset to mark from base of flash (blocks)
@@ -559,9 +574,7 @@ Command:
 		window then the command must not succeed.
 
 Command
-	WRITE_FLUSH
-	Implemented in Versions:
-		V1, V2
+	WRITE_FLUSH (V1)
 	Arguments:
 		V1:
 		Args 0-1: Flash offset to mark from base of flash (blocks)
@@ -585,9 +598,7 @@ Command
 
 
 Command:
-	BMC_EVENT_ACK
-	Implemented in Versions:
-		V1, V2
+	BMC_EVENT_ACK (V1)
 	Arguments:
 		Args 0:	Bits in the BMC status byte (mailbox data
 			register 15) to ack
@@ -598,9 +609,7 @@ Command:
 		supplied in mailbox register 15.
 
 Command:
-	MARK_WRITE_ERASED
-	Implemented in Versions:
-		V2
+	MARK_WRITE_ERASED (V2)
 	Arguments:
 		V2:
 		Args 0-1: Window offset to erase (blocks)
@@ -617,6 +626,20 @@ Command:
 		number is the number of blocks of the active window to erase
 		starting at offset. If the offset + number exceeds the size of
 		the active window then the command must not succeed.
+
+Command:
+	MARK_LOCKED (V3)
+	Arguments:
+		Args 0-1: Flash offset to lock (blocks)
+		Args 2-3: Number to lock at offset (blocks)
+	Response:
+		-
+	Notes:
+		Lock an area of flash so that the host can't mark it dirty or
+		erased. If the requested area is within the current window and
+		that area is currently marked dirty or erased then this command
+		must fail.
+
 ```
 
 ### BMC Events in Detail:
