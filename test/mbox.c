@@ -236,6 +236,12 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 
 	rc = init_flash_dev(&test.context);
 	assert(rc == 0);
+	/* Fixup flash_size_shift -> for tests we want == erase_size_shift */
+	free(test.context.flash_bmap);
+	test.context.flash_size_shift = test.context.erase_size_shift;
+	test.context.flash_bmap = calloc(test.context.flash_size >>
+					 test.context.flash_size_shift,
+					 sizeof(*test.context.flash_bmap));
 
 	rc = fallocate(test.flash.fd, 0, 0, test.context.mtd_info.size);
 	assert(rc == 0);
