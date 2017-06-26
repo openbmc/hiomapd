@@ -45,6 +45,7 @@
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
 #include "mboxd_lpc.h"
+#include "mboxd_flash.h"
 
 static int mbox_handle_flush_window(struct mbox_context *context, union mbox_regs *req,
 			     struct mbox_msg *resp);
@@ -143,6 +144,13 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 static int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
+	/* If the flash has been locked then we can't let the host access it */
+	if (search_flash_bytemap(context, 0, context->flash_size, FLASH_LOCKED,
+				 NULL)) {
+		MSG_ERR("Reset command invalid when flash locked\n");
+		return -MBOX_R_LOCKED_ERROR;
+	}
+
 	/* Host requested it -> No BMC Event */
 	reset_all_windows(context, NO_BMC_EVENT);
 	return point_to_flash(context);
@@ -374,11 +382,23 @@ static int mbox_handle_read_window(struct mbox_context *context,
 	/* Offset the host has requested */
 	flash_offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
 	MSG_INFO("Host requested flash @ 0x%.8x\n", flash_offset);
+
 	/* Check if we have an existing window */
 	context->current = search_windows(context, flash_offset,
 					  context->version == API_VERSION_1);
 
-	if (!context->current) { /* No existing window */
+	/* If it contains locked areas reload it to ensure data integrity */
+	if (context->current && search_flash_bytemap(context,
+						     context->current->flash_offset,
+						     context->current->size,
+						     FLASH_LOCKED, NULL)) {
+		MSG_DBG("Matching window contains locked regions, reloading\n");
+		reset_window(context, context->current);
+		context->current = NULL;
+	}
+
+	/* Map a new window if no existing window */
+	if (!context->current) {
 		MSG_DBG("No existing window which maps that flash offset\n");
 		rc = create_map_window(context, &context->current, flash_offset,
 				       context->version == API_VERSION_1);
@@ -462,7 +482,7 @@ static int mbox_handle_write_window(struct mbox_context *context,
 static int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	uint32_t offset, size;
+	uint32_t offset, size, off;
 
 	if (!(context->current && context->current_is_write)) {
 		MSG_ERR("Tried to call mark dirty without open write window\n");
@@ -470,20 +490,16 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
 							 : -MBOX_R_PARAM_ERROR;
 	}
 
-	offset = get_u16(&req->msg.args[0]);
+	offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
 
-	if (context->version >= API_VERSION_2) {
-		size = get_u16(&req->msg.args[2]);
-	} else {
-		uint32_t off;
+	switch (context->version) {
+	case API_VERSION_1:
 		/* For V1 offset given relative to flash - we want the window */
-		off = offset - ((context->current->flash_offset) >>
-				context->block_size_shift);
+		off = offset - context->current->flash_offset;
 		if (off > offset) { /* Underflow - before current window */
 			MSG_ERR("Tried to mark dirty before start of window\n");
 			MSG_ERR("requested offset: 0x%x window start: 0x%x\n",
-				offset << context->block_size_shift,
-				context->current->flash_offset);
+				offset, context->current->flash_offset);
 			return -MBOX_R_PARAM_ERROR;
 		}
 		offset = off;
@@ -494,12 +510,24 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
 		 * block dirty.
 		 */
 		size = align_up(size, 1 << context->block_size_shift);
-		size >>= context->block_size_shift;
+		break;
+	case API_VERSION_2:
+		size = get_u16(&req->msg.args[2]) << context->block_size_shift;
+		break;
+	case API_VERSION_3:
+		size = get_u16(&req->msg.args[2]) << context->block_size_shift;
+		/* Check if region locked */
+		if (search_window_bytemap(context, context->current, offset,
+					  size, FLASH_LOCKED, &off)) {
+			MSG_ERR("Can't dirty locked region @ 0x%.8x\n", off);
+			return -MBOX_R_LOCKED_ERROR;
+		}
+		break;
+	default:
+		return -MBOX_R_SYSTEM_ERROR;
 	}
 
-	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
-		 offset << context->block_size_shift,
-		 size << context->block_size_shift);
+	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n", offset, size);
 
 	return set_window_bytemap(context, context->current, offset, size,
 				  WINDOW_DIRTY);
@@ -534,12 +562,21 @@ static int mbox_handle_erase_window(struct mbox_context *context,
 		return -MBOX_R_WINDOW_ERROR;
 	}
 
-	offset = get_u16(&req->msg.args[0]);
-	size = get_u16(&req->msg.args[2]);
+	offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
+	size = get_u16(&req->msg.args[2]) << context->block_size_shift;
 
-	MSG_INFO("Erase window @ 0x%.8x for 0x%.8x\n",
-		 offset << context->block_size_shift,
-		 size << context->block_size_shift);
+	MSG_INFO("Erase window @ 0x%.8x for 0x%.8x\n", offset, size);
+
+	if (context->version >= API_VERSION_3) {
+		/* Check if region locked */
+		uint32_t off;
+
+		if (search_window_bytemap(context, context->current, offset,
+					  size, FLASH_LOCKED, &off)) {
+			MSG_ERR("Can't erase locked region @ 0x%.8x\n", off);
+			return -MBOX_R_LOCKED_ERROR;
+		}
+	}
 
 	rc = set_window_bytemap(context, context->current, offset, size,
 				WINDOW_ERASED);
@@ -548,10 +585,72 @@ static int mbox_handle_erase_window(struct mbox_context *context,
 	}
 
 	/* Write 0xFF to mem -> This ensures consistency between flash & ram */
-	memset(context->current->mem + (offset << context->block_size_shift),
-	       0xFF, size << context->block_size_shift);
+	memset(context->current->mem + offset, 0xFF, size);
 
 	return 0;
+}
+
+/*
+ * Commands: MARK_LOCKED
+ * Locks a portion of the flash
+ *
+ * V3:
+ * ARGS[0:1]: Flash offset (blocks)
+ * ARGS[2:3]: Size (blocks)
+ */
+static int mbox_handle_lock_flash(struct mbox_context *context,
+				  union mbox_regs *req, struct mbox_msg *resp)
+{
+	uint32_t offset, size;
+
+	if (context->version < API_VERSION_3) {
+		MSG_ERR("Lock Flash Command Requires Protocol Version 3\n");
+		return -MBOX_R_PARAM_ERROR;
+	}
+
+	offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
+	size = get_u16(&req->msg.args[2]) << context->block_size_shift;
+
+	MSG_INFO("Lock flash @ 0x%.8x for 0x%.8x\n", offset, size);
+
+	if ((offset + size) > context->flash_size) {
+		MSG_ERR("Tried to lock past the end of flash\n");
+		return -MBOX_R_PARAM_ERROR;
+	}
+
+	/*
+	 * Can't lock that area if it's dirty or erased, we know that all
+	 * windows except the current window are clean (any changes would
+	 * have been written back before we closed the window) so only check
+	 * if we have a current window and it's a write window
+	 */
+	if (context->current && context->current_is_write) {
+		int32_t window_offset = offset - context->current->flash_offset;
+
+		if ((window_offset >= 0) &&
+		    (window_offset < context->current->size)) {
+			uint32_t window_size = size;
+			if (search_window_bytemap(context, context->current,
+						  window_offset, window_size,
+						  WINDOW_DIRTY, NULL) ||
+			    search_window_bytemap(context, context->current,
+						  window_offset, window_size,
+						  WINDOW_ERASED, NULL)) {
+				MSG_ERR("Error can't lock dirty/erased area\n");
+				return -MBOX_R_PARAM_ERROR;
+			}
+			/* Set the window byte map to locked */
+			if ((window_offset + size) > context->current->size) {
+				window_size = context->current->size -
+					      window_offset;
+			}
+			set_window_bytemap(context, context->current,
+					   window_offset, window_size,
+					   WINDOW_LOCKED);
+		}
+	}
+
+	return save_flash_lock(context, offset, size);
 }
 
 /*
@@ -608,15 +707,17 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 	/*
 	 * We look for streaks of the same type and keep a count, when the type
 	 * (dirty/erased) changes we perform the required action on the backing
-	 * store and update the current streak-type
+	 * store and update the current streak-type.
+	 * Note: We look for DIRTY/ERASED since we treat LOCKED as CLEAN
 	 */
 	for (i = 0; i < (context->current->size >> context->block_size_shift);
 			i++) {
 		uint8_t cur = context->current->dirty_bmap[i];
-		if (cur != WINDOW_CLEAN) {
+		if (cur & (WINDOW_DIRTY | WINDOW_ERASED)) {
 			if (cur == prev) { /* Same as previous block, incrmnt */
 				count++;
-			} else if (prev == WINDOW_CLEAN) { /* Start of run */
+			} else if (!(prev & (WINDOW_DIRTY | WINDOW_ERASED))) {
+				/* Start of run */
 				offset = i;
 				count++;
 			} else { /* Change in streak type */
@@ -629,7 +730,8 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 				count = 1;
 			}
 		} else {
-			if (prev != WINDOW_CLEAN) { /* End of a streak */
+			if (prev & (WINDOW_DIRTY | WINDOW_ERASED)) {
+				/* End of a streak */
 				rc = write_from_window(context, offset, count,
 						       prev);
 				if (rc < 0) {
@@ -642,7 +744,8 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 		prev = cur;
 	}
 
-	if (prev != WINDOW_CLEAN) { /* Still the last streak to write */
+	if (prev & (WINDOW_DIRTY | WINDOW_ERASED)) {
+		/* Still the last streak to write */
 		rc = write_from_window(context, offset, count, prev);
 		if (rc < 0) {
 			return rc;
@@ -650,10 +753,13 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 	}
 
 	/* Clear the dirty bytemap since we have written back all changes */
-	return set_window_bytemap(context, context->current, 0,
-				  context->current->size >>
-				  context->block_size_shift,
-				  WINDOW_CLEAN);
+	set_window_bytemap(context, context->current, 0,
+			   context->current->size, WINDOW_CLEAN);
+	/* Add back the lock information */
+	if (context->version >= API_VERSION_3) {
+		set_window_locked_bytemap(context, context->current);
+	}
+	return 0;
 }
 
 /*
@@ -763,7 +869,8 @@ static const mboxd_mbox_handler mbox_handlers[] = {
 	mbox_handle_dirty_window,
 	mbox_handle_flush_window,
 	mbox_handle_ack,
-	mbox_handle_erase_window
+	mbox_handle_erase_window,
+	mbox_handle_lock_flash
 };
 
 /*

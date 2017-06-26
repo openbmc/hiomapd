@@ -172,6 +172,16 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 	uint32_t offset_bytes = offset << context->block_size_shift;
 	uint32_t flash_offset = context->current->flash_offset +
 				offset_bytes;
+	uint32_t locked;
+
+	/* Shouldn't be able to trigger this, better to be safe though */
+	if (search_flash_bytemap(context, flash_offset, count_bytes,
+				 FLASH_LOCKED, &locked)) {
+		MSG_ERR("Tried to modify flash @ 0x%.8x for 0x%.8x\n",
+			flash_offset, count_bytes);
+		MSG_ERR("Error flash locked @ 0x%.8x\n", locked);
+		return -MBOX_R_PARAM_ERROR;
+	}
 
 	switch (type) {
 	case WINDOW_ERASED:
@@ -233,8 +243,8 @@ void alloc_window_dirty_bytemap(struct mbox_context *context)
  * set_window_bytemap() - Set the window bytemap
  * @context:	The mbox context pointer
  * @cur:	The window to set the bytemap of
- * @offset:	Where in the window to set the bytemap (blocks)
- * @size:	The number of blocks to set
+ * @offset:	Where in the window to set the bytemap (bytes)
+ * @size:	The number of to set (bytes)
  * @val:	The value to set the bytemap to
  *
  * Return:	0 on success otherwise negative error code
@@ -242,17 +252,77 @@ void alloc_window_dirty_bytemap(struct mbox_context *context)
 int set_window_bytemap(struct mbox_context *context, struct window_context *cur,
 		       uint32_t offset, uint32_t size, uint8_t val)
 {
-	if (offset + size > (cur->size >> context->block_size_shift)) {
+	if ((offset + size) > cur->size) {
 		MSG_ERR("Tried to set window bytemap past end of window\n");
 		MSG_ERR("Requested offset: 0x%x size: 0x%x window size: 0x%x\n",
-			offset << context->block_size_shift,
-			size << context->block_size_shift,
-			cur->size << context->block_size_shift);
+			offset, size, cur->size);
 		return -MBOX_R_PARAM_ERROR;
 	}
 
-	memset(cur->dirty_bmap + offset, val, size);
+	memset(cur->dirty_bmap + (offset >> context->block_size_shift), val,
+	       size >> context->block_size_shift);
 	return 0;
+}
+
+/* get_window_bytemap() - Get the window bytemap value at offset
+ * @context:    The mbox context pointer
+ * @cur:        The window to get the bytemap of
+ * @offset:     Where in the window to get the bytemap (bytes)
+ *
+ * Return:	value of the bytemap at offset
+ */
+uint8_t get_window_bytemap(struct mbox_context *context,
+			   struct window_context *cur, uint32_t offset)
+{
+	if (cur->dirty_bmap) {
+		return cur->dirty_bmap[offset >> context->block_size_shift];
+	}
+
+	return 0;
+}
+
+/*
+ * search_window_bytemap() - Find the first occurance of a value in the bytemap
+ * @context:    The mbox context pointer
+ * @cur:        The window to search the bytemap of
+ * @offset:	Offset to search from (bytes)
+ * @size:       Size of range to search (bytes)
+ * @val:	The value to search for
+ * @loc:	Pointer to variable to store location of the first occurance of
+ * 		val in the range from offset -> offset + size
+ *
+ * Return:	If there is an occurance of val in the range
+ */
+bool search_window_bytemap(struct mbox_context *context,
+			   struct window_context *cur, uint32_t offset,
+			   uint32_t size, uint8_t val, uint32_t *loc)
+{
+	uint8_t *found = NULL;
+
+	if (!size || (offset >= cur->size)) {
+		return false;
+	}
+
+	if ((offset + size) > cur->size) {
+		/* Trucate search to the size of the window */
+		size = cur->size - offset;
+	}
+
+	if (cur->dirty_bmap) { /* Might not have been allocated */
+		uint8_t *search = cur->dirty_bmap +
+				  (offset >> context->block_size_shift);
+		found = memchr(search, val, size >>
+					    context->block_size_shift);
+	}
+
+	if (found) {
+		if (loc) {
+			*loc = (found - cur->dirty_bmap)
+				<< context->block_size_shift;
+		}
+		return true;
+	}
+	return false;
 }
 
 /*
@@ -295,8 +365,7 @@ void reset_window(struct mbox_context *context, struct window_context *window)
 	window->flash_offset = FLASH_OFFSET_UNINIT;
 	window->size = context->windows.default_size;
 	if (window->dirty_bmap) { /* Might not have been allocated */
-		set_window_bytemap(context, window, 0,
-				   window->size >> context->block_size_shift,
+		set_window_bytemap(context, window, 0, window->size,
 				   WINDOW_CLEAN);
 	}
 	window->age = 0;
@@ -416,6 +485,42 @@ struct window_context *search_windows(struct mbox_context *context,
 	return NULL;
 }
 
+void set_window_locked_bytemap(struct mbox_context *context,
+			       struct window_context *cur)
+{
+	uint32_t offset, size;
+
+	if (cur->flash_offset == FLASH_OFFSET_UNINIT) {
+		return;
+	}
+
+	MSG_DBG("Synchronising window locked bytemap with flash bytemap\n");
+
+	/*
+	 * From the start of the window we look for the next locked section
+	 * of flash and update the window bytemap accordingly. We then
+	 * increment the search base by block size and repeat until we reach
+	 * the end of the window. Note we can do this by block size even if it
+	 * is smaller than the flash_block_size since block size is fixed once
+	 * we allow flash to be locked and thus an entire block will contain
+	 * the same value (either all FLASH_LOCKED or NOT).
+	 */
+	offset = cur->flash_offset;
+	while (offset < (cur->flash_offset + cur->size)) {
+		size = cur->flash_offset + cur->size - offset;
+		if (search_flash_bytemap(context, offset, size, FLASH_LOCKED,
+					 &offset)) {
+			set_window_bytemap(context, cur,
+					   offset - cur->flash_offset,
+					   1 << context->block_size_shift,
+					   WINDOW_LOCKED);
+			offset += (1 << context->block_size_shift);
+			continue;
+		}
+		break;
+	}
+}
+
 /*
  * create_map_window() - Create a window mapping which maps the requested offset
  * @context:		The mbox context pointer
@@ -516,14 +621,17 @@ int create_map_window(struct mbox_context *context,
 	}
 
 	/* Clear the bytemap of the window just loaded -> we know it's clean */
-	set_window_bytemap(context, cur, 0,
-			   cur->size >> context->block_size_shift,
-			   WINDOW_CLEAN);
+	set_window_bytemap(context, cur, 0, cur->size, WINDOW_CLEAN);
 
 	/* Update so we know what's in the window */
 	cur->flash_offset = offset;
 	cur->age = ++(context->windows.max_age);
 	*this_window = cur;
+
+	/* Add the lock information from the flash bytemap */
+	if (context->version >= API_VERSION_3) {
+		set_window_locked_bytemap(context, cur);
+	}
 
 	return 0;
 }

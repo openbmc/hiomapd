@@ -143,6 +143,11 @@ static int dbus_handle_reset(struct mbox_context *context,
 		return -E_DBUS_HARDWARE;
 	}
 
+	rc = clear_flash_lock(context);
+	if (rc < 0) {
+		return -E_DBUS_HARDWARE;
+	}
+
 	return 0;
 }
 

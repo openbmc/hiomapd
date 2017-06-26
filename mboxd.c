@@ -337,6 +337,11 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
+	rc = init_flash_lock_file(context);
+	if (rc) {
+		goto finish;
+	}
+
 	rc = init_mboxd_dbus(context);
 	if (rc) {
 		goto finish;
@@ -363,6 +368,7 @@ finish:
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
 	free_mboxd_dbus(context);
+	close_flash_lock_file(context);
 	free_flash_dev(context);
 	free_lpc_dev(context);
 	free_mbox_dev(context);
