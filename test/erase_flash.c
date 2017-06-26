@@ -121,14 +121,21 @@ int main(void)
 		return rc;
 
 	mbox_vlog = &mbox_log_console;
+	verbosity = 2;
 
 	n_ioctls = 0;
 	recorded = NULL;
 
 	init_flash_dev(&context);
+	/* Fixup flash_size_shift -> for tests we want == erase_size_shift */
+	free(context.flash_bmap);
+	context.flash_size_shift = context.erase_size_shift;
+	context.flash_bmap = calloc(context.flash_size >>
+				    context.flash_size_shift,
+				    sizeof(*context.flash_bmap));
 
 	/* Erase from an unknown state */
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -140,7 +147,7 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase an erased flash */
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 0);
@@ -150,7 +157,7 @@ int main(void)
 	/* Erase written flash */
 	rc = write_flash(&context, 0, data, sizeof(data));
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -164,7 +171,7 @@ int main(void)
 	/* Erase the start of flash */
 	rc = write_flash(&context, 0, data, sizeof(data) - 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -178,7 +185,7 @@ int main(void)
 	/* Erase the end of flash */
 	rc = write_flash(&context, 1, data, sizeof(data) - 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -193,7 +200,7 @@ int main(void)
 	rc = write_flash(&context, 0, data, 1);
 	rc = write_flash(&context, 2, data, 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 2);
@@ -209,7 +216,7 @@ int main(void)
 	/* Erase the middle of flash */
 	rc = write_flash(&context, 1, data, 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = smart_erase_flash(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
