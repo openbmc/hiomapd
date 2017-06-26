@@ -45,7 +45,8 @@ enum api_version {
 #define MBOX_C_WRITE_FLUSH		0x08
 #define MBOX_C_ACK			0x09
 #define MBOX_C_WRITE_ERASE		0x0a
-#define NUM_MBOX_CMDS			MBOX_C_WRITE_ERASE
+#define MBOX_C_LOCK			0x0b
+#define NUM_MBOX_CMDS			MBOX_C_LOCK
 
 /* Response Values */
 #define MBOX_R_SUCCESS			0x01
@@ -56,6 +57,7 @@ enum api_version {
 #define MBOX_R_BUSY			0x06
 #define MBOX_R_WINDOW_ERROR		0x07
 #define MBOX_R_SEQ_ERROR		0x08
+#define MBOX_R_LOCKED_ERROR		0x09
 
 /* Argument Flags */
 #define FLAGS_NONE			0x00
@@ -88,6 +90,7 @@ enum api_version {
 #define WINDOW_CLEAN			0x00
 #define WINDOW_DIRTY			0x01
 #define WINDOW_ERASED			0x02
+#define WINDOW_LOCKED			0x04
 
 /* Put polled file descriptors first */
 #define DBUS_FD			0
@@ -96,7 +99,8 @@ enum api_version {
 #define POLL_FDS		3 /* Number of FDs we poll on */
 #define LPC_CTRL_FD		3
 #define MTD_FD			4
-#define TOTAL_FDS		5
+#define LOCK_FD			5
+#define TOTAL_FDS		6
 
 #define MAPS_FLASH		(1 << 0)
 #define MAPS_MEM		(1 << 1)

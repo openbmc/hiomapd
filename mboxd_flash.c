@@ -45,6 +45,9 @@
 #include "common.h"
 #include "mboxd_flash.h"
 
+static void __set_flash_bytemap(struct mbox_context *context, uint32_t offset,
+				uint32_t count, uint8_t val);
+
 int init_flash_dev(struct mbox_context *context)
 {
 	char *filename = get_dev_mtd();
@@ -120,6 +123,46 @@ void free_flash_dev(struct mbox_context *context)
 	close(context->fds[MTD_FD].fd);
 }
 
+int __init_flash_lock_file(struct mbox_context *context, const char *path)
+{
+	uint32_t buf[2];
+	int fd, rc;
+
+	MSG_DBG("Opening %s\n", path);
+
+	/* Open the flash locked file which is used to store the locked bmap */
+	fd = open(path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+	if (fd < 0) {
+		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n", path,
+			strerror(errno));
+		return -errno;
+	}
+	context->fds[LOCK_FD].fd = fd;
+
+	MSG_DBG("Parsing lock file\n");
+	/* Lock file is in the format [32-bit offset][32-bit count] */
+	while ((rc = read(fd, buf, 8)) > 0) {
+		MSG_DBG("Lock flash @ 0x%.8x for 0x%.8x\n", buf[0], buf[1]);
+		__set_flash_bytemap(context, buf[0], buf[1], FLASH_LOCKED);
+	}
+	if (rc < 0) {
+		MSG_ERR("Failed to read lock file: %s\n", strerror(errno));
+		return -errno;
+	}
+
+	return 0;
+}
+
+int init_flash_lock_file(struct mbox_context *context)
+{
+	return __init_flash_lock_file(context, FLASH_LOCKED_FILE);
+}
+
+void close_flash_lock_file(struct mbox_context *context)
+{
+	close(context->fds[LOCK_FD].fd);
+}
+
 /* Flash Functions */
 
 #define CHUNKSIZE (64 * 1024)
@@ -185,36 +228,150 @@ static inline bool flash_is_erased(struct mbox_context *context,
 }
 
 /*
- * set_flash_bytemap() - Set the flash erased bytemap
- * @context:	The mbox context pointer
- * @offset:	The flash offset to set (bytes)
- * @count:	Number of bytes to set
- * @val:	Value to set the bytemap to
+ * search_flash_bytemap() - Find the first occurance of a value in the bytemap
+ * @context:    The mbox context pointer
+ * @offset:     Offset to search from (bytes)
+ * @size:       Size of range to search (bytes)
+ * @val:        The value to search for
+ * @loc:	Pointer to variable to store location of the first occurance of
+ * 		val in the range from offset -> offset + size
  *
- * The flash bytemap only tracks the erased status at the erase block level so
- * this will update the erased state for an (or many) erase blocks
+ * Return:	If there is an occurance of val in the range
+ */
+bool search_flash_bytemap(struct mbox_context *context, uint32_t offset,
+			  uint32_t size, uint8_t val, uint32_t *loc)
+{
+	uint8_t *found = NULL;
+
+	if (!size || (offset >= context->flash_size)) {
+		return false;
+	}
+
+	if ((offset + size) > context->flash_size) {
+		/* Trucate search to the size of flash */
+		size = context->flash_size - offset;
+	}
+
+	if (context->flash_bmap) { /* Might not have been allocated */
+		uint8_t *search = context->flash_bmap +
+				  (offset >> context->flash_size_shift);
+		found = memchr(search, val, size >>
+					    context->flash_size_shift);
+	}
+
+	if (found) {
+		if (loc) {
+			*loc = (found - context->flash_bmap)
+				<< context->flash_size_shift;
+		}
+		return true;
+	}
+	return false;
+}
+
+static void __set_flash_bytemap(struct mbox_context *context, uint32_t offset,
+				uint32_t count, uint8_t val)
+{
+	memset(context->flash_bmap + (offset >> context->flash_size_shift),
+	       val, align_up(count, 1 << context->flash_size_shift) >>
+		    context->flash_size_shift);
+}
+
+/*
+ * set_flash_bytemap() - Set the flash erased bytemap
+ * @context:		The mbox context pointer
+ * @offset:		The flash offset to set (bytes)
+ * @count:		Number to set (bytes)
+ * @val:		Value to set the bytemap to
  *
  * Return:	0 if success otherwise negative error code
  */
 int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val)
 {
+	uint32_t locked;
+
 	if ((offset + count) > context->flash_size) {
 		return -MBOX_R_PARAM_ERROR;
 	}
 
-	memset(context->flash_bmap + (offset >> context->flash_size_shift),
-	       val, align_up(count, 1 << context->flash_size_shift) >>
-		    context->flash_size_shift);
+	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
+		offset, count, val ? (val & FLASH_LOCKED ? "LOCKED" : "ERASED")
+				   : "DIRTY");
+
+	if (val != FLASH_LOCKED) {
+		while (search_flash_bytemap(context, offset, count,
+					    FLASH_LOCKED, &locked)) {
+			/* Set up to the locked bit and then skip over it */
+			__set_flash_bytemap(context, offset, (locked - offset),
+					    val);
+			locked += 1 << context->flash_size_shift;
+			count -= (locked - offset);
+			offset = locked;
+		}
+	}
+
+	__set_flash_bytemap(context, offset, count, val);
+	return 0;
 }
 
-	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
-		offset, count, val ? "ERASED" : "DIRTY");
-	memset(context->flash_bmap + (offset >> context->erase_size_shift),
-	       val,
-	       align_up(count, 1 << context->erase_size_shift) >>
-	       context->erase_size_shift);
+/*
+ * save_flash_lock() - Update the flash bytemap and save to storage
+ * @context:            The mbox context pointer
+ * @offset:             The flash offset to set (bytes)
+ * @count:              Number to set (bytes)
+ *
+ * Return:      0 if success otherwise negative error code
+ */
+int save_flash_lock(struct mbox_context *context, uint32_t offset,
+		    uint32_t count)
+{
+	uint32_t buf[2] = { offset, count };
+	int rc;
 
+	MSG_DBG("Writing lock file @ 0x%.8x for 0x%.8x\n", offset, count);
+
+	rc = lseek(context->fds[LOCK_FD].fd, 0, SEEK_END);
+	if (rc < 0) {
+		MSG_ERR("Failed to seek lock file: %s\n", strerror(errno));
+		return -MBOX_R_SYSTEM_ERROR;
+	}
+
+	rc = ftruncate(context->fds[LOCK_FD].fd, rc + 8);
+	if (rc < 0) {
+		MSG_ERR("Failed to increase size of lock file: %s\n",
+			strerror(errno));
+		return -MBOX_R_SYSTEM_ERROR;
+	}
+
+	rc = write(context->fds[LOCK_FD].fd, buf, 8);
+	if (rc != 8) {
+		MSG_ERR("Failed to write lock file: %s\n", strerror(errno));
+		return -MBOX_R_SYSTEM_ERROR;
+	}
+
+	__set_flash_bytemap(context, offset, count, FLASH_LOCKED);
+	return 0;
+}
+
+/*
+ * clear_flash_lock() - Clear locked bits from flash bytemap and from storage
+ * @context:            The mbox context pointer
+ *
+ * Return:      0 if success otherwise negative error code
+ */
+int clear_flash_lock(struct mbox_context *context)
+{
+	MSG_DBG("Erasing the flash lock file\n");
+
+	/* Clear the lock file */
+	if (ftruncate(context->fds[LOCK_FD].fd, 0)) {
+		MSG_ERR("Failed to clear lock file: %s\n", strerror(errno));
+		return -MBOX_R_SYSTEM_ERROR;
+	}
+
+	/* We don't know if the locked areas were dirty or erased, set dirty */
+	__set_flash_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 	return 0;
 }
 
