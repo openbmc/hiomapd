@@ -100,12 +100,14 @@ int init_flash_dev(struct mbox_context *context)
 		context->flash_size = context->mtd_info.size;
 	}
 
-	/* We know the erase size so we can allocate the flash_erased bytemap */
 	context->erase_size_shift = log_2(context->mtd_info.erasesize);
+	/* Hard code to the minimum for ease if block size changes */
+	context->flash_size_shift = 12;
 	context->flash_bmap = calloc(context->flash_size >>
-				     context->erase_size_shift,
+				     context->flash_size_shift,
 				     sizeof(*context->flash_bmap));
-	MSG_DBG("Flash erase size: 0x%.8x\n", context->mtd_info.erasesize);
+	MSG_DBG("Flash erase size: 0x%.8x (shift: %d)\n",
+		context->mtd_info.erasesize, context->erase_size_shift);
 
 out:
 	free(filename);
@@ -161,17 +163,25 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 }
 
 /*
- * flash_is_erased() - Check if an offset into flash is erased
+ * flash_is_erased() - Check if a flash region is erased
  * @context:	The mbox context pointer
  * @offset:	The flash offset to check (bytes)
+ * @size:	Size to check (bytes)
  *
- * Return:	true if erased otherwise false
+ * Return:	true if erased from offset -> offset + size, otherwise false
  */
 static inline bool flash_is_erased(struct mbox_context *context,
-				   uint32_t offset)
+				   uint32_t offset, uint32_t size)
 {
-	return context->flash_bmap[offset >> context->erase_size_shift]
-			== FLASH_ERASED;
+	uint8_t val = FLASH_ERASED;
+	offset >>= context->flash_size_shift;
+	size >>= context->flash_size_shift;
+
+	for (; size; offset++, size--) {
+		val &= context->flash_bmap[offset];
+	}
+
+	return !!(val & FLASH_ERASED);
 }
 
 /*
@@ -192,6 +202,11 @@ int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
 	if ((offset + count) > context->flash_size) {
 		return -MBOX_R_PARAM_ERROR;
 	}
+
+	memset(context->flash_bmap + (offset >> context->flash_size_shift),
+	       val, align_up(count, 1 << context->flash_size_shift) >>
+		    context->flash_size_shift);
+}
 
 	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
 		offset, count, val ? "ERASED" : "DIRTY");

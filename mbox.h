@@ -158,6 +158,8 @@ struct mbox_context {
 	uint32_t lpc_base;
 	/* Flash size from command line (bytes) */
 	uint32_t flash_size;
+	/* Flash block size (as a shift) */
+	uint32_t flash_size_shift;
 	/* Bytemap of the erased state of the entire flash */
 	uint8_t *flash_bmap;
 	/* Erase size (as a shift) */

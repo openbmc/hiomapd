@@ -183,16 +183,19 @@ static uint16_t get_suggested_timeout(struct mbox_context *context)
  *
  * V2:
  * ARGS[0]: API Version
+ * ARGS[1]: Requested block size (as shift) (V3)
  *
  * RESP[0]: API Version
  * RESP[1:2]: Default read window size (number of blocks)
  * RESP[3:4]: Default write window size (number of blocks)
  * RESP[5]: Block size (as shift)
+ * RESP[6:7]: Suggested Timeout (seconds)
  */
 static int mbox_handle_mbox_info(struct mbox_context *context,
 				 union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint8_t mbox_api_version = req->msg.args[0];
+	uint8_t block_size_shift = req->msg.args[1];
 	uint8_t old_api_version = context->version;
 	int rc;
 
@@ -219,19 +222,21 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 
 	switch (context->version) {
 	case API_VERSION_1:
-		context->block_size_shift = BLOCK_SIZE_SHIFT_V1;
+		block_size_shift = BLOCK_SIZE_SHIFT_V1;
+		break;
+	case API_VERSION_2:
+		block_size_shift = context->erase_size_shift;
 		break;
 	default:
-		context->block_size_shift = log_2(context->mtd_info.erasesize);
+		if ((block_size_shift < 12) || (block_size_shift >
+						context->erase_size_shift)) {
+			block_size_shift = context->erase_size_shift;
+		} /* Else use value that the host requested */
 		break;
 	}
 	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
-		 1 << context->block_size_shift, context->block_size_shift);
+		 1 << block_size_shift, block_size_shift);
 
-	/* Now we know the blocksize we can allocate the window dirty_bytemap */
-	if (mbox_api_version != old_api_version) {
-		alloc_window_dirty_bytemap(context);
-	}
 	/* Reset if we were V1 since this required exact window mapping */
 	if (old_api_version == API_VERSION_1) {
 		/*
@@ -240,6 +245,24 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 		 * host.
 		 */
 		reset_all_windows(context, SET_BMC_EVENT);
+	} else if (old_api_version != 0 && context->current) {
+		/* Don't preserve unflushed changes across GET_INFO calls */
+		if (context->current_is_write &&
+		    (search_window_bytemap(context, context->current, 0,
+					   context->current->size, WINDOW_DIRTY,
+					   NULL) ||
+		     search_window_bytemap(context, context->current, 0,
+					   context->current->size, WINDOW_ERASED
+					   , NULL))) {
+			reset_window(context, context->current);
+		}
+		close_current_window(context, SET_BMC_EVENT, 0);
+	}
+	/* If block size changes we have to (re)alloc window dirty_bytemap */
+	if ((!context->block_size_shift) || context->block_size_shift !=
+					    block_size_shift) {
+		context->block_size_shift = block_size_shift;
+		alloc_window_dirty_bytemap(context);
 	}
 
 	resp->args[0] = mbox_api_version;
@@ -277,7 +300,7 @@ static int mbox_handle_flash_info(struct mbox_context *context,
 		put_u32(&resp->args[0], context->flash_size);
 		put_u32(&resp->args[4], context->mtd_info.erasesize);
 		break;
-	case API_VERSION_2:
+	default:
 		/* Both Sizes in Block Size */
 		put_u16(&resp->args[0],
 			context->flash_size >> context->block_size_shift);
@@ -285,9 +308,6 @@ static int mbox_handle_flash_info(struct mbox_context *context,
 			context->mtd_info.erasesize >>
 					context->block_size_shift);
 		break;
-	default:
-		MSG_ERR("API Version Not Valid - Invalid System State\n");
-		return -MBOX_R_SYSTEM_ERROR;
 	}
 
 	return 0;
