@@ -25,6 +25,15 @@ AX_CXX_COMPILE_STDCXX_14([noext])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CFLAGS])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CXXFLAGS])
 
+PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus],,\
+AC_MSG_ERROR(["Requires sdbusplus package."]))
+
+PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging],,\
+AC_MSG_ERROR(["Requires phosphor-logging package."]))
+
+AX_PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [],[phosphor-dbus-interfaces],\
+[], [AC_MSG_ERROR(["phosphor-dbus-interfaces required and not found."])])
+
 # Checks for library functions.
 LT_INIT # Removes 'unrecognized options: --with-libtool-sysroot'
 

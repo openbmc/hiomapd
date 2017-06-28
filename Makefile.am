@@ -14,8 +14,14 @@ mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 if VIRTUAL_PNOR_ENABLED
-mboxd_SOURCES += pnor_partition_table.cpp mboxd_pnor_partition_table.cpp mboxd_flash_virtual.cpp
-mboxd_LDFLAGS += -lstdc++fs
+mboxd_SOURCES += pnor_partition_table.cpp \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp
+
+mboxd_LDFLAGS += -lstdc++fs \
+	$(SDBUSPLUS_LIBS) \
+	$(PHOSPHOR_LOGGING_LIBS) \
+	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
 else
 mboxd_SOURCES += mboxd_flash_physical.c
 endif
