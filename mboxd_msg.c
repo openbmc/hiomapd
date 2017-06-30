@@ -135,6 +135,21 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 	return write_back ? write_bmc_event_reg(context) : 0;
 }
 
+static bool cur_window_is_dirty(struct mbox_context *context, uint32_t offset,
+				uint32_t size)
+{
+	if (!context->current || !context->current_is_write) {
+		return false;
+	}
+
+	return (search_window_bytemap(context, context->current, offset,
+				      size, WINDOW_DIRTY, NULL) ||
+		search_window_bytemap(context, context->current, offset,
+				      size, WINDOW_ERASED, NULL) ||
+		search_window_bytemap(context, context->current, offset,
+				      size, WINDOW_DIRTY_NO_ERASE, NULL));
+}
+
 /* Command Handlers */
 
 /*
@@ -255,13 +270,7 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 		reset_all_windows(context, SET_BMC_EVENT);
 	} else if (old_api_version != 0 && context->current) {
 		/* Don't preserve unflushed changes across GET_INFO calls */
-		if (context->current_is_write &&
-		    (search_window_bytemap(context, context->current, 0,
-					   context->current->size, WINDOW_DIRTY,
-					   NULL) ||
-		     search_window_bytemap(context, context->current, 0,
-					   context->current->size, WINDOW_ERASED
-					   , NULL))) {
+		if (cur_window_is_dirty(context, 0, context->current->size)) {
 			reset_window(context, context->current);
 		}
 		close_current_window(context, SET_BMC_EVENT, 0);
@@ -483,6 +492,7 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint32_t offset, size, off;
+	bool no_erase = false;
 
 	if (!(context->current && context->current_is_write)) {
 		MSG_ERR("Tried to call mark dirty without open write window\n");
@@ -516,6 +526,7 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
 		break;
 	case API_VERSION_3:
 		size = get_u16(&req->msg.args[2]) << context->block_size_shift;
+		no_erase = !!req->msg.args[4];
 		/* Check if region locked */
 		if (search_window_bytemap(context, context->current, offset,
 					  size, FLASH_LOCKED, &off)) {
@@ -528,9 +539,11 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
 	}
 
 	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n", offset, size);
+	MSG_INFO("With%s Erase\n", no_erase ? "out" : "");
 
 	return set_window_bytemap(context, context->current, offset, size,
-				  WINDOW_DIRTY);
+				  no_erase ? WINDOW_DIRTY_NO_ERASE :
+					     WINDOW_DIRTY);
 }
 
 /*
@@ -630,12 +643,8 @@ static int mbox_handle_lock_flash(struct mbox_context *context,
 		if ((window_offset >= 0) &&
 		    (window_offset < context->current->size)) {
 			uint32_t window_size = size;
-			if (search_window_bytemap(context, context->current,
-						  window_offset, window_size,
-						  WINDOW_DIRTY, NULL) ||
-			    search_window_bytemap(context, context->current,
-						  window_offset, window_size,
-						  WINDOW_ERASED, NULL)) {
+			if (cur_window_is_dirty(context, window_offset,
+						window_size)) {
 				MSG_ERR("Error can't lock dirty/erased area\n");
 				return -MBOX_R_PARAM_ERROR;
 			}
@@ -704,6 +713,10 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 		 context->current->mem, context->current->size,
 		 context->current->flash_offset);
 
+	if (!cur_window_is_dirty(context, 0, context->current->size)) {
+		/* Nothing to do */
+		return 0;
+	}
 	/*
 	 * We look for streaks of the same type and keep a count, when the type
 	 * (dirty/erased) changes we perform the required action on the backing
@@ -713,10 +726,10 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 	for (i = 0; i < (context->current->size >> context->block_size_shift);
 			i++) {
 		uint8_t cur = context->current->dirty_bmap[i];
-		if (cur & (WINDOW_DIRTY | WINDOW_ERASED)) {
+		if (cur & WINDOW_NEED_WRITE) {
 			if (cur == prev) { /* Same as previous block, incrmnt */
 				count++;
-			} else if (!(prev & (WINDOW_DIRTY | WINDOW_ERASED))) {
+			} else if (!(prev & WINDOW_NEED_WRITE)) {
 				/* Start of run */
 				offset = i;
 				count++;
@@ -730,7 +743,7 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 				count = 1;
 			}
 		} else {
-			if (prev & (WINDOW_DIRTY | WINDOW_ERASED)) {
+			if (prev & WINDOW_NEED_WRITE) {
 				/* End of a streak */
 				rc = write_from_window(context, offset, count,
 						       prev);
@@ -744,7 +757,7 @@ static int mbox_handle_flush_window(struct mbox_context *context,
 		prev = cur;
 	}
 
-	if (prev & (WINDOW_DIRTY | WINDOW_ERASED)) {
+	if (prev & WINDOW_NEED_WRITE) {
 		/* Still the last streak to write */
 		rc = write_from_window(context, offset, count, prev);
 		if (rc < 0) {

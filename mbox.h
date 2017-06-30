@@ -91,6 +91,9 @@ enum api_version {
 #define WINDOW_DIRTY			0x01
 #define WINDOW_ERASED			0x02
 #define WINDOW_LOCKED			0x04
+#define WINDOW_DIRTY_NO_ERASE		0x10
+#define WINDOW_NEED_WRITE		(WINDOW_DIRTY | WINDOW_ERASED | \
+					 WINDOW_DIRTY_NO_ERASE)
 
 /* Put polled file descriptors first */
 #define DBUS_FD			0

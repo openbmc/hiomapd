@@ -198,8 +198,8 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 		if (rc < 0) {
 			return rc;
 		}
-
-		/* Write to the erased flash */
+	case WINDOW_DIRTY_NO_ERASE:
+		/* Write to the flash */
 		rc = write_flash(context, flash_offset,
 				 context->current->mem + offset_bytes,
 				 count_bytes);
