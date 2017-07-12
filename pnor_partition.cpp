@@ -109,15 +109,13 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
         elog<InternalFailure>();
     }
 
-    MSG_DBG("Couldn't open the file[%s]", path.c_str());
-
     // we don't get the file in the respective partition(RW/PSRV)
     // try to open it from RO location.
 
     fs::path partitionFilePath = context->paths.ro_loc;
     partitionFilePath /= partition->data.name;
 
-    rc = Request::open(path, O_RDONLY);
+    rc = Request::open(partitionFilePath, O_RDONLY);
     if (rc != ReturnCode::SUCCESS)
     {
         elog<InternalFailure>();
