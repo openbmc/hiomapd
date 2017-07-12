@@ -212,7 +212,7 @@ PartitionTable endianFixup(const PartitionTable& in)
     dst->data.entry_count = htobe32(src->data.entry_count);
     dst->data.block_size = htobe32(src->data.block_size);
     dst->data.block_count = htobe32(src->data.block_count);
-    dst->checksum = htobe32(src->checksum);
+    dst->checksum = details::checksum(dst->data);
 
     for (decltype(src->data.entry_count) i{}; i < src->data.entry_count; ++i)
     {
@@ -232,7 +232,7 @@ PartitionTable endianFixup(const PartitionTable& in)
         {
             pdst->data.user.data[j] = htobe32(psrc->data.user.data[j]);
         }
-        pdst->checksum = htobe32(psrc->checksum);
+        pdst->checksum = details::checksum(pdst->data);
     }
 
     return out;
