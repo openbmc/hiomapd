@@ -75,10 +75,23 @@ class Table
          *         that houses the PNOR partition files.
          *
          *  @param[in] directory - path of the directory housing PNOR partitions
+         *  @param[in] blockSize - PNOR block size, in bytes. See
+         *             open-power/hostboot/blob/master/src/usr/pnor/ffs.h for
+         *             the PNOR FFS structure.
+         *  @param[in] pnorSize - PNOR size, in bytes
          */
-        Table(fs::path&& directory);
+        Table(fs::path&& directory,
+              size_t blockSize,
+              size_t pnorSize);
 
-        Table();
+        /** @brief Constructor - creates partition table
+         *
+         *  @param[in] blockSize - PNOR block size, in bytes
+         *  @param[in] pnorSize - PNOR size, in bytes
+         */
+        Table(size_t blockSize,
+              size_t pnorSize);
+
         Table(const Table&) = delete;
         Table& operator=(const Table&) = delete;
         Table(Table&&) = delete;
@@ -207,6 +220,12 @@ class Table
 
         /** @brief Number of partitions */
         size_t numParts;
+
+        /** @brief PNOR block size, in bytes */
+        size_t blockSize;
+
+        /** @brief PNOR size, in bytes */
+        size_t pnorSize;
 };
 
 } // namespace partition

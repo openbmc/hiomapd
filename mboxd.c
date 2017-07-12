@@ -312,14 +312,6 @@ int main(int argc, char **argv)
 
 	MSG_INFO("Starting Daemon\n");
 
-#ifdef VIRTUAL_PNOR_ENABLED
-	vpnor_create_partition_table(context);
-
-	strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
-	strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
-	strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
-#endif
-
 	rc = init_signals(context, &set);
 	if (rc) {
 		goto finish;
@@ -361,6 +353,14 @@ int main(int argc, char **argv)
 	if (rc) {
 		goto finish;
 	}
+
+#ifdef VIRTUAL_PNOR_ENABLED
+	vpnor_create_partition_table(context);
+
+	strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
+	strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
+	strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
+#endif
 
 	MSG_INFO("Entering Polling Loop\n");
 	rc = poll_loop(context);

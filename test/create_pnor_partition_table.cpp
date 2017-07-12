@@ -30,7 +30,8 @@ int main()
     partitionFile.write(empty.data(), empty.size());
     partitionFile.close();
 
-    const openpower::virtual_pnor::partition::Table table(fs::path{tmpdir});
+    const openpower::virtual_pnor::partition::Table
+        table(fs::path{tmpdir}, 4 * 1024, 64 * 1024 * 1024);
 
     pnor_partition_table expectedTable{};
     expectedTable.data.magic = PARTITION_HEADER_MAGIC;
@@ -39,7 +40,8 @@ int main()
     expectedTable.data.entry_size = sizeof(pnor_partition);
     expectedTable.data.entry_count = 1; // 1 partition
     expectedTable.data.block_size = 4096;
-    expectedTable.data.block_count = 2; // 1 table block and 1 partition block
+    expectedTable.data.block_count =
+        (64 * 1024 * 1024) / expectedTable.data.block_size;
     expectedTable.checksum =
         openpower::virtual_pnor::details::checksum(expectedTable.data);
 

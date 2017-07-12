@@ -14,7 +14,9 @@ void vpnor_create_partition_table(struct mbox_context *context)
     {
         context->vpnor = new vpnor_partition_table;
         context->vpnor->table =
-            new openpower::virtual_pnor::partition::Table;
+            new openpower::virtual_pnor::partition::Table(
+                    1 << context->erase_size_shift,
+                    context->flash_size);
     }
 }
 
@@ -27,7 +29,10 @@ void vpnor_create_partition_table_from_path(struct mbox_context *context,
     {
         context->vpnor = new vpnor_partition_table;
         context->vpnor->table =
-            new openpower::virtual_pnor::partition::Table(std::move(dir));
+            new openpower::virtual_pnor::partition::Table(
+                    std::move(dir),
+                    1 << context->erase_size_shift,
+                    context->flash_size);
     }
 }
 

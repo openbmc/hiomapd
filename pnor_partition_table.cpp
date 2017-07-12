@@ -14,24 +14,20 @@ namespace virtual_pnor
 
 namespace partition
 {
-namespace block
-{
 
-// The PNOR erase-block size is 4 KB
-constexpr size_t size = 4096;
-
-} // namespace block
-
-Table::Table():
-    Table(fs::path(PARTITION_FILES_RO_LOC))
+Table::Table(size_t blockSize, size_t pnorSize):
+    Table(fs::path(PARTITION_FILES_RO_LOC), blockSize, pnorSize)
 {
 }
 
-Table::Table(fs::path&& directory):
+Table::Table(fs::path&& directory,
+             size_t blockSize, size_t pnorSize):
     szBlocks(0),
     imgBlocks(0),
     directory(std::move(directory)),
-    numParts(0)
+    numParts(0),
+    blockSize(blockSize),
+    pnorSize(pnorSize)
 {
     preparePartitions();
     prepareHeader();
@@ -46,8 +42,8 @@ void Table::prepareHeader()
     table.data.size = szBlocks;
     table.data.entry_size = sizeof(pnor_partition);
     table.data.entry_count = numParts;
-    table.data.block_size = block::size;
-    table.data.block_count = imgBlocks;
+    table.data.block_size = blockSize;
+    table.data.block_count = pnorSize / blockSize;
     table.checksum = details::checksum(table.data);
 }
 
@@ -73,8 +69,8 @@ inline void Table::allocateMemory(const fs::path& tocFile)
 
     size_t totalSizeBytes = sizeof(pnor_partition_table) +
                             (num * sizeof(pnor_partition));
-    size_t totalSizeAligned = align_up(totalSizeBytes, block::size);
-    szBlocks = totalSizeAligned / block::size;
+    size_t totalSizeAligned = align_up(totalSizeBytes, blockSize);
+    szBlocks = totalSizeAligned / blockSize;
     imgBlocks = szBlocks;
     tbl.resize(totalSizeAligned);
 }
@@ -83,7 +79,7 @@ inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
 {
     size_t size = end - start;
     part.data.base = imgBlocks;
-    size_t sizeInBlocks = align_up(size, block::size) / block::size;
+    size_t sizeInBlocks = align_up(size, blockSize) / blockSize;
     imgBlocks += sizeInBlocks;
     part.data.size = sizeInBlocks;
     part.data.actual = size;
@@ -180,7 +176,7 @@ void Table::preparePartitions()
 const pnor_partition& Table::partition(size_t offset) const
 {
     const decltype(auto) table = getNativeTable();
-    size_t offt = offset / block::size;
+    size_t offt = offset / blockSize;
 
     for (decltype(numParts) i{}; i < numParts; ++i)
     {
