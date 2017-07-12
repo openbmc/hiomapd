@@ -85,13 +85,14 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
     memcpy(&local.paths, &context->paths, sizeof(local.paths));
 
     size_t tocOffset = 0;
+    uint32_t tocSize = blTable.size() * eraseSize;
     // Copy TOC
     copy_flash(&local, tocOffset,
                static_cast<uint8_t*>(context->mem) + tocStart,
-               blTable.size() * eraseSize);
+               tocSize);
     const pnor_partition& partition = blTable.partition(blPartitionName);
     size_t hbbOffset = partition.data.base * eraseSize;
-    size_t hbbSize = partition.data.actual;
+    uint32_t hbbSize = partition.data.actual;
     // Copy HBB
     copy_flash(&local, hbbOffset,
                static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);

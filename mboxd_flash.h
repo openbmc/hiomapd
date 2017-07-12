@@ -29,8 +29,8 @@ extern "C" {
 
 int init_flash_dev(struct mbox_context *context);
 void free_flash_dev(struct mbox_context *context);
-int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
-	       uint32_t size);
+int64_t copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
+		   uint32_t size);
 int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val);
 int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count);

@@ -417,7 +417,6 @@ void close_current_window(struct mbox_context *context, bool set_bmc_event,
 		context->current->age = 0;
 	}
 
-	context->current->size = context->windows.default_size;
 	context->current = NULL;
 	context->current_is_write = false;
 }
@@ -627,6 +626,7 @@ int create_map_window(struct mbox_context *context,
 		reset_window(context, cur);
 		return rc;
 	}
+	cur->size = rc;
 
 	/*
 	 * Since for V1 windows aren't constrained to start at multiples of

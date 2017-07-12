@@ -24,6 +24,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
+#include <algorithm>
 
 extern "C" {
 #include "common.h"
@@ -124,17 +125,18 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
  * @offset:     The pnor offset to copy from (bytes)
  * @mem:        The buffer to copy into (must be of atleast 'size' bytes)
  * @size:       The number of bytes to copy
- *
- * Return:      0 on success otherwise negative error code
+ * Return:      Number of bytes copied on success, otherwise negative error
+ *              code. copy_flash will copy at most 'size' bytes, but it may
+ *              copy less.
  */
-int copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
-               uint32_t size)
+int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
+                   uint32_t size)
 {
     using namespace phosphor::logging;
     using namespace sdbusplus::xyz::openbmc_project::Common::Error;
     using namespace std::string_literals;
 
-    int rc = 0;
+    int rc = size;
 
     MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n",
             mem, size, offset);
@@ -151,9 +153,8 @@ int copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
         {
             const struct pnor_partition_table* table =
                 vpnor_get_partition_table(context);
-            memcpy(mem,
-                   ((uint8_t*)table) + offset,
-                   min_u32(sz - offset, size));
+            rc = std::min(sz - offset, static_cast<size_t>(size));
+            memcpy(mem, ((uint8_t*)table) + offset, rc);
         }
         else
         {

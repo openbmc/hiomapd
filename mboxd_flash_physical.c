@@ -240,13 +240,15 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
  * @offset:	The flash offset to copy from (bytes)
  * @mem:	The buffer to copy into (must be of atleast 'size' bytes)
  * @size:	The number of bytes to copy
- *
- * Return:	0 on success otherwise negative error code
+ * Return:	Number of bytes copied on success, otherwise negative error
+ *		code. copy_flash will copy at most 'size' bytes, but it may
+ *		copy less.
  */
-int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
-	       uint32_t size)
+int64_t copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
+		   uint32_t size)
 {
 	int32_t size_read;
+	void *start = mem;
 
 	MSG_DBG("Copy flash to %p for size 0x%.8x from offset 0x%.8x\n",
 		mem, size, offset);
@@ -269,7 +271,7 @@ int copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 		mem += size_read;
 	} while (size && size_read);
 
-	return size ? -MBOX_R_SYSTEM_ERROR : 0;
+	return size_read ? mem - start : -MBOX_R_SYSTEM_ERROR;
 }
 
 /*
