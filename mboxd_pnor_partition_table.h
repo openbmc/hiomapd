@@ -78,11 +78,16 @@ const struct pnor_partition* vpnor_get_partition(
 				const size_t offset);
 
 
+/** @brief Copy bootloader partition (alongwith TOC) to LPC memory
+ *
+ *  @param[in] context - mbox context pointer
+ */
+void vpnor_copy_bootloader_partition(const struct mbox_context *context);
+
 /** @brief Destroy partition table, if it exists.
  *
  *  @param[in] context - mbox context pointer
  */
-
 void vpnor_destroy_partition_table(struct mbox_context *context);
 
 #ifdef __cplusplus

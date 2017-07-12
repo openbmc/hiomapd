@@ -1,5 +1,7 @@
 /*
- * Copyright 2016 IBM
+ * Mailbox Daemon LPC Helpers
+ *
+ * Copyright 2017 IBM
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +17,18 @@
  *
  */
 
-#ifndef MBOXD_LPC_H
-#define MBOXD_LPC_H
+#define _GNU_SOURCE
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "mbox.h"
+#include "mboxd_lpc.h"
 
-int init_lpc_dev(struct mbox_context *context);
-void free_lpc_dev(struct mbox_context *context);
-int point_to_flash(struct mbox_context *context);
-int point_to_memory(struct mbox_context *context);
-int reset_lpc(struct mbox_context *context);
-
-#ifdef __cplusplus
+/*
+ * reset_lpc() - Reset the lpc bus mapping
+ * @context:	The mbox context pointer
+ *
+ * Return:	0 on success otherwise negative error code
+ */
+int reset_lpc(struct mbox_context *context)
+{
+	return point_to_flash(context);
 }
-#endif
-
-#endif /* MBOXD_LPC_H */

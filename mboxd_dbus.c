@@ -133,12 +133,12 @@ static int dbus_handle_reset(struct mbox_context *context,
 	}
 
 	/*
-	 * This will close (and flush) the current window and point the lpc bus
-	 * mapping back to flash. Better set the bmc event to notify the host
-	 * of this.
+	 * This will close (and flush) the current window and reset the lpc bus
+	 * mapping back to flash, or memory in case we're using a virtual pnor.
+	 * Better set the bmc event to notify the host of this.
 	 */
 	reset_all_windows(context, SET_BMC_EVENT);
-	rc = point_to_flash(context);
+	rc = reset_lpc(context);
 	if (rc < 0) {
 		return -E_DBUS_HARDWARE;
 	}

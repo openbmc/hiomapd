@@ -138,14 +138,15 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 
 /*
  * Command: RESET_STATE
- * Reset the LPC mapping to point back at the flash
+ * Reset the LPC mapping to point back at the flash, or memory in case we're
+ * using a virtual pnor.
  */
 static int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
 	/* Host requested it -> No BMC Event */
 	reset_all_windows(context, NO_BMC_EVENT);
-	return point_to_flash(context);
+	return reset_lpc(context);
 }
 
 /*

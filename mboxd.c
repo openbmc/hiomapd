@@ -104,7 +104,7 @@ static int poll_loop(struct mbox_context *context)
 			case SIGHUP:
 				/* Host didn't request reset -> Notify it */
 				reset_all_windows(context, SET_BMC_EVENT);
-				rc = point_to_flash(context);
+				rc = reset_lpc(context);
 				if (rc < 0) {
 					MSG_ERR("WARNING: Failed to point the "
 						"LPC bus back to flash on "
@@ -139,10 +139,10 @@ static int poll_loop(struct mbox_context *context)
 		}
 	}
 
-	/* Best to reset windows and point back to flash for safety */
+	/* Best to reset windows and the lpc mapping for safety */
 	/* Host didn't request reset -> Notify it */
 	reset_all_windows(context, SET_BMC_EVENT);
-	rc = point_to_flash(context);
+	rc = reset_lpc(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {
 		MSG_ERR("WARNING: Failed to point the LPC bus back to flash\n"
@@ -343,8 +343,16 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	/* Set the LPC bus mapping to point to the physical flash device */
-	rc = point_to_flash(context);
+#ifdef VIRTUAL_PNOR_ENABLED
+	vpnor_create_partition_table(context);
+
+	strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
+	strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
+	strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
+#endif
+
+	/* Set the LPC bus mapping */
+	rc = reset_lpc(context);
 	if (rc) {
 		goto finish;
 	}
@@ -353,14 +361,6 @@ int main(int argc, char **argv)
 	if (rc) {
 		goto finish;
 	}
-
-#ifdef VIRTUAL_PNOR_ENABLED
-	vpnor_create_partition_table(context);
-
-	strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
-	strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
-	strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
-#endif
 
 	MSG_INFO("Entering Polling Loop\n");
 	rc = poll_loop(context);

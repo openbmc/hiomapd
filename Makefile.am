@@ -16,14 +16,16 @@ if VIRTUAL_PNOR_ENABLED
 mboxd_SOURCES += pnor_partition_table.cpp \
 	mboxd_pnor_partition_table.cpp \
 	mboxd_flash_virtual.cpp \
-	pnor_partition.cpp
+	pnor_partition.cpp \
+	mboxd_lpc_virtual.cpp
 
 mboxd_LDFLAGS += -lstdc++fs \
 	$(SDBUSPLUS_LIBS) \
 	$(PHOSPHOR_LOGGING_LIBS) \
 	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
 else
-mboxd_SOURCES += mboxd_flash_physical.c
+mboxd_SOURCES += mboxd_flash_physical.c \
+	mboxd_lpc_physical.c
 endif
 
 mboxctl_SOURCES = mboxctl.c
@@ -61,6 +63,7 @@ TEST_MBOX_SRCS = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mboxd_lpc.c \
+	mboxd_lpc_physical.c \
 	common.c \
 	mboxd_flash_physical.c
 
@@ -151,6 +154,7 @@ test_create_read_window_vpnor_SOURCES = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mboxd_lpc.c \
+	mboxd_lpc_virtual.cpp \
 	mboxd_pnor_partition_table.cpp \
 	mboxd_flash_virtual.cpp \
 	pnor_partition.cpp \
