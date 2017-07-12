@@ -176,18 +176,10 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
             // then size of the partition file then throw error.
 
             uint32_t baseOffset = partitionInfo->data.base << context->block_size_shift;
-
-            if ((offset + size) > (baseOffset + partitionInfo->data.actual))
-            {
-                MSG_ERR("Offset is beyond the partition file length[0x%.8x]\n",
-                        partitionInfo->data.actual);
-                munmap(mapped_mem, partitionInfo->data.actual);
-                elog<InternalFailure>();
-            }
-
             //copy to the reserved memory area
             auto diffOffset = offset - baseOffset;
-            memcpy(mem, (char*)mapped_mem + diffOffset , size);
+            rc = std::min(partitionInfo->data.actual - diffOffset, size);
+            memcpy(mem, (char*)mapped_mem + diffOffset , rc);
             munmap(mapped_mem, partitionInfo->data.actual);
         }
     }
