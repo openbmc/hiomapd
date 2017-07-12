@@ -139,6 +139,15 @@ class Table
          */
         const pnor_partition& partition(size_t offset) const;
 
+        /** @brief Return partition corresponding to input partition name.
+         *
+         *  @param[in] name - PNOR partition name
+         *
+         *  @returns const reference to pnor_partition, if found, else an
+         *           exception will be thrown.
+         */
+        const pnor_partition& partition(const std::string& name) const;
+
     private:
         /** @brief Prepares a vector of PNOR partition structures.
          */

@@ -141,7 +141,10 @@ test_create_pnor_partition_table_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
 	test/create_pnor_partition_table.cpp
 test_create_pnor_partition_table_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
-test_create_pnor_partition_table_LDADD = -lstdc++fs
+test_create_pnor_partition_table_LDADD = -lstdc++fs \
+	$(SDBUSPLUS_LIBS) \
+	$(PHOSPHOR_LOGGING_LIBS) \
+	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
 
 test_create_read_window_vpnor_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \

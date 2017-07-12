@@ -1,6 +1,8 @@
 #include "pnor_partition_table.hpp"
 #include "common.h"
 #include "config.h"
+#include "xyz/openbmc_project/Common/error.hpp"
+#include <phosphor-logging/elog-errors.hpp>
 #include <syslog.h>
 #include <endian.h>
 #include <regex>
@@ -11,6 +13,9 @@ namespace openpower
 {
 namespace virtual_pnor
 {
+
+using namespace phosphor::logging;
+using namespace sdbusplus::xyz::openbmc_project::Common::Error;
 
 namespace partition
 {
@@ -188,6 +193,24 @@ const pnor_partition& Table::partition(size_t offset) const
         }
     }
 
+    static pnor_partition p{};
+    return p;
+}
+
+const pnor_partition& Table::partition(const std::string& name) const
+{
+    const decltype(auto) table = getNativeTable();
+
+    for (decltype(numParts) i{}; i < numParts; ++i)
+    {
+        if (name == table.partitions[i].data.name)
+        {
+            return table.partitions[i];
+        }
+    }
+
+    MSG_ERR("Partition %s not found", name.c_str());
+    elog<InternalFailure>();
     static pnor_partition p{};
     return p;
 }
