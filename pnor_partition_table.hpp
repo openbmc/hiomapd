@@ -177,10 +177,13 @@ class Table
          *         pnor_partition structure.
          *
          *  @param[in/out] part - pnor_partition structure
+         *  @param[in] version - partition version check algorithm to be used
+         *                       (see pnor_partition_defs.h)
          *  @param[in] data - string having userdata fields in a
          *             comma-separated line.
          */
-        void writeUserdata(pnor_partition& part, const std::string& data);
+        void writeUserdata(pnor_partition& part, uint32_t version,
+                           const std::string& data);
 
         /** @brief Populate the name and id fields for the input
          *         pnor_partition structure.

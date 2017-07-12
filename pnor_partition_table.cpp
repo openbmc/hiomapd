@@ -90,12 +90,15 @@ inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
     part.data.actual = size;
 }
 
-inline void Table::writeUserdata(pnor_partition& part, const std::string& data)
+inline void Table::writeUserdata(pnor_partition& part,
+                                 uint32_t version,
+                                 const std::string& data)
 {
     if (std::string::npos != data.find("ECC"))
     {
         part.data.user.data[0] = PARTITION_ECC_PROTECTED;
     }
+
     auto perms = 0;
     if (std::string::npos != data.find("READONLY"))
     {
@@ -106,6 +109,8 @@ inline void Table::writeUserdata(pnor_partition& part, const std::string& data)
         perms |= PARTITION_PRESERVED;
     }
     part.data.user.data[1] = perms;
+
+    part.data.user.data[1] |= version;
 }
 
 inline void Table::writeDefaults(pnor_partition& part)
@@ -136,16 +141,19 @@ void Table::preparePartitions()
     static constexpr auto NAME_MATCH = 2;
     static constexpr auto START_ADDR_MATCH = 3;
     static constexpr auto END_ADDR_MATCH = 4;
+    static constexpr auto VERSION_MATCH = 5;
     // Parse PNOR toc (table of contents) file, which has lines like :
-    // partition01=HBB,00010000,000a0000,ECC,PRESERVED, to indicate partitions
+    // partition01=HBB,00010000,000a0000,80,ECC,PRESERVED, to indicate
+    // partition information
     std::regex regex
     {
         "^partition([0-9]+)=([A-Za-z0-9_]+),"
-        "([0-9a-fA-F]+),([0-9a-fA-F]+)",
+        "([0-9a-fA-F]+),([0-9a-fA-F]+),([A-Fa-f0-9]{2})",
         std::regex::extended
     };
     std::smatch match;
     std::string line;
+    constexpr auto versionShift = 24;
 
     decltype(auto) table = getNativeTable();
 
@@ -169,7 +177,11 @@ void Table::preparePartitions()
             writeSizes(table.partitions[numParts],
                        std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16),
                        std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16));
-            writeUserdata(table.partitions[numParts], match.suffix().str());
+            writeUserdata(
+                table.partitions[numParts],
+                std::stoul(match[VERSION_MATCH].str(), nullptr, 16) <<
+                    versionShift, // For eg, convert "80" to 0x80000000
+                match.suffix().str());
             table.partitions[numParts].checksum =
                 details::checksum(table.partitions[numParts].data);
 

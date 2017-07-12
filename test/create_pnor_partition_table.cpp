@@ -6,7 +6,7 @@
 #include <fstream>
 #include <experimental/filesystem>
 
-constexpr auto line = "partition01=HBB,00000000,00000400,ECC,PRESERVED";
+constexpr auto line = "partition01=HBB,00000000,00000400,80,ECC,PRESERVED";
 constexpr auto partitionName = "HBB";
 char tmplt[] = "/tmp/vpnor_partitions.XXXXXX";
 
@@ -56,6 +56,7 @@ int main()
     expectedPartition.data.flags = 0;
     expectedPartition.data.user.data[0] = PARTITION_ECC_PROTECTED;
     expectedPartition.data.user.data[1] |= PARTITION_PRESERVED;
+    expectedPartition.data.user.data[1] |= PARTITION_VERSION_CHECK_SHA512;
     expectedPartition.checksum =
         openpower::virtual_pnor::details::checksum(expectedPartition.data);
 
