@@ -586,6 +586,14 @@ int create_map_window(struct mbox_context *context,
 		cur = find_oldest_window(context);
 	}
 
+/*
+ * In case of the virtual pnor, as of now it's possible that a window may
+ * have content less than it's max size. We basically copy one flash partition
+ * per window, and some partitions are smaller than the max size. An offset
+ * right after such a small partition ends should lead to new mapping. The code
+ * below prevents that.
+ */
+#ifndef VIRTUAL_PNOR_ENABLED
 	if (!exact) {
 		/*
 		 * It would be nice to align the offsets which we map to window
@@ -597,6 +605,7 @@ int create_map_window(struct mbox_context *context,
 		 */
 		offset &= ~(cur->size - 1);
 	}
+#endif
 
 	if ((offset + cur->size) > context->flash_size) {
 		/*
