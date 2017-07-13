@@ -23,6 +23,7 @@
 #include <syslog.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 extern "C" {
 #include "common.h"
@@ -36,9 +37,86 @@ extern "C" {
 #include <phosphor-logging/log.hpp>
 #include <phosphor-logging/elog-errors.hpp>
 
+#include <memory>
 #include <string>
 #include <exception>
 #include <stdexcept>
+
+/** @brief unique_ptr functor to release a char* reference. */
+struct StringDeleter
+{
+    void operator()(char* ptr) const
+    {
+        free(ptr);
+    }
+};
+using StringPtr = std::unique_ptr<char, StringDeleter>;
+
+int init_flash_dev(struct mbox_context *context)
+{
+    StringPtr filename(get_dev_mtd());
+    int fd = 0;
+    int rc = 0;
+
+    if (!filename)
+    {
+        MSG_ERR("Couldn't find the flash /dev/mtd partition\n");
+        return -1;
+    }
+
+    MSG_DBG("Opening %s\n", filename.get());
+
+    fd = open(filename.get(), O_RDWR);
+    if (fd < 0)
+    {
+        MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
+                filename.get(), strerror(errno));
+        return -errno;
+    }
+
+    // Read the Flash Info
+    if (ioctl(fd, MEMGETINFO, &context->mtd_info) == -1)
+    {
+        MSG_ERR("Couldn't get information about MTD: %s\n",
+                strerror(errno));
+        close(fd);
+        return -errno;
+    }
+
+    if (context->flash_size == 0)
+    {
+        // See comment in mboxd_flash_physical.c on why
+        // this is needed.
+        context->flash_size = context->mtd_info.size;
+    }
+
+    // Hostboot requires a 4K block-size to be used in the FFS flash structure
+    context->mtd_info.erasesize = 4096;
+    context->erase_size_shift = log_2(context->mtd_info.erasesize);
+    context->flash_bmap = NULL;
+    context->fds[MTD_FD].fd = -1;
+
+    close(fd);
+    return rc;
+}
+
+void free_flash_dev(struct mbox_context *context)
+{
+    // No-op
+}
+
+int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
+                      uint32_t count, uint8_t val)
+{
+    // No-op
+    return 0;
+}
+
+int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
+{
+    // No-op
+    return 0;
+}
 
 /*
  * copy_flash() - Copy data from the virtual pnor into a provided buffer

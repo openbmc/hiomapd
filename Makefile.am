@@ -5,7 +5,6 @@ mboxd_SOURCES = \
 	mboxd.c \
 	common.c \
 	mboxd_dbus.c \
-	mboxd_flash.c \
 	mboxd_lpc.c \
 	mboxd_msg.c \
 	mboxd_windows.c \
@@ -42,21 +41,18 @@ test_sanity_SOURCES = test/sanity.c
 
 test_copy_flash_SOURCES = \
 	test/copy_flash.c \
-	mboxd_flash.c \
 	mboxd_flash_physical.c \
 	common.c mtd.c \
 	test/tmpf.c
 
 test_erase_flash_SOURCES = \
 	test/erase_flash.c \
-	mboxd_flash.c \
 	mboxd_flash_physical.c \
 	common.c \
 	test/tmpf.c
 
 test_write_flash_SOURCES = \
 	test/write_flash.c \
-	mboxd_flash.c \
 	mboxd_flash_physical.c \
 	common.c \
 	test/tmpf.c
@@ -65,7 +61,6 @@ TEST_MBOX_SRCS = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mboxd_lpc.c \
-	mboxd_flash.c \
 	common.c \
 	mboxd_flash_physical.c
 
@@ -153,7 +148,6 @@ test_create_read_window_vpnor_SOURCES = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mboxd_lpc.c \
-	mboxd_flash.c \
 	mboxd_pnor_partition_table.cpp \
 	mboxd_flash_virtual.cpp \
 	pnor_partition.cpp \
@@ -166,7 +160,6 @@ test_create_read_window_vpnor_LDADD = -lstdc++fs \
 
 test_write_flash_vpnor_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
-	mboxd_flash.c \
 	mboxd_pnor_partition_table.cpp \
 	mboxd_flash_virtual.cpp \
 	mtd.c \
