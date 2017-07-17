@@ -186,7 +186,7 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
     catch (InternalFailure& e)
     {
         commit<InternalFailure>();
-        rc = -1;
+        rc = -MBOX_R_SYSTEM_ERROR;
     }
     return rc;
 }
