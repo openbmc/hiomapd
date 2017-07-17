@@ -344,11 +344,7 @@ int main(int argc, char **argv)
 	}
 
 #ifdef VIRTUAL_PNOR_ENABLED
-	vpnor_create_partition_table(context);
-
-	strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
-	strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
-	strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
+	init_vpnor(context);
 #endif
 
 	/* Set the LPC bus mapping */
@@ -377,7 +373,7 @@ finish:
 	free_mbox_dev(context);
 	free_windows(context);
 #ifdef VIRTUAL_PNOR_ENABLED
-	vpnor_destroy_partition_table(context);
+	destroy_vpnor(context);
 #endif
 	free(context);
 

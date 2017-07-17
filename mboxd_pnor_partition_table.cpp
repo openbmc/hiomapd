@@ -3,6 +3,7 @@
 #include "mbox.h"
 #include "mboxd_flash.h"
 #include "pnor_partition_table.hpp"
+#include "config.h"
 #include <experimental/filesystem>
 
 struct vpnor_partition_table
@@ -10,10 +11,14 @@ struct vpnor_partition_table
     openpower::virtual_pnor::partition::Table* table = nullptr;
 };
 
-void vpnor_create_partition_table(struct mbox_context *context)
+void init_vpnor(struct mbox_context *context)
 {
     if (context && !context->vpnor)
     {
+        strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
+        strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
+        strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
+
         context->vpnor = new vpnor_partition_table;
         context->vpnor->table =
             new openpower::virtual_pnor::partition::Table(
@@ -98,7 +103,7 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
                static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
 }
 
-void vpnor_destroy_partition_table(struct mbox_context *context)
+void destroy_vpnor(struct mbox_context *context)
 {
     if(context && context->vpnor)
     {

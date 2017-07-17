@@ -27,7 +27,7 @@ extern "C" {
  *  already exists, this function will not do anything further. This function
  *  will not do anything if the context is NULL.
  */
-void vpnor_create_partition_table(struct mbox_context *context);
+void init_vpnor(struct mbox_context *context);
 
 /** @brief Create a virtual PNOR partition table.
  *
@@ -88,7 +88,7 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context);
  *
  *  @param[in] context - mbox context pointer
  */
-void vpnor_destroy_partition_table(struct mbox_context *context);
+void destroy_vpnor(struct mbox_context *context);
 
 #ifdef __cplusplus
 }
