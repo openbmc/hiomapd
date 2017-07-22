@@ -69,6 +69,14 @@ std::string Request::getPartitionFilePath(struct mbox_context* context,
 
     fs::path partitionFilePath;
 
+    // Check if partition exists in patch location
+    partitionFilePath = context->paths.patch_loc;
+    partitionFilePath /= partition->data.name;
+    if (fs::is_regular_file(partitionFilePath))
+    {
+        return partitionFilePath.string();
+    }
+
     switch (partition->data.user.data[1] &
             (PARTITION_PRESERVED | PARTITION_READONLY))
     {

@@ -18,6 +18,7 @@ void init_vpnor(struct mbox_context *context)
         strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
         strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
         strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
+        strcpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC);
 
         context->vpnor = new vpnor_partition_table;
         context->vpnor->table =

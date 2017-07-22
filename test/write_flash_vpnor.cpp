@@ -60,7 +60,8 @@ void init(struct mbox_context* ctx)
 
     std::vector<std::string> templatePaths = { "/tmp/ro.XXXXXX",
                                                "/tmp/rw.XXXXXX" ,
-                                               "/tmp/prsv.XXXXXX"
+                                               "/tmp/prsv.XXXXXX",
+                                               "/tmp/patch.XXXXXX"
                                              };
 
     std::vector<std::string>partitions = { "TEST1", "TEST2", "TEST3" };
@@ -76,6 +77,9 @@ void init(struct mbox_context* ctx)
 
     std::string tmpPRSVdir = mkdtemp(const_cast<char*>(templatePaths[2].c_str()));
     assert(tmpPRSVdir.length() != 0);
+
+    std::string tmpPATCHdir = mkdtemp(const_cast<char*>(templatePaths[3].c_str()));
+    assert(tmpPATCHdir.length() != 0);
 
     // create the toc file
     fs::path tocFilePath = tmpROdir;
@@ -114,6 +118,7 @@ void init(struct mbox_context* ctx)
     strcpy(ctx->paths.ro_loc, tmpROdir.c_str());
     strcpy(ctx->paths.rw_loc, tmpRWdir.c_str());
     strcpy(ctx->paths.prsv_loc, tmpPRSVdir.c_str());
+    strcpy(ctx->paths.patch_loc, tmpPATCHdir.c_str());
 
 }
 
@@ -134,6 +139,7 @@ int main(void)
     std::string tmpROdir = ctx->paths.ro_loc;
     std::string tmpRWdir = ctx->paths.rw_loc;
     std::string tmpPRSVdir = ctx->paths.prsv_loc;
+    std::string tmpPATCHdir = ctx->paths.patch_loc;
 
     // create the partition table
     vpnor_create_partition_table_from_path(ctx, tmpROdir.c_str());
@@ -209,9 +215,53 @@ int main(void)
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
 
+    munmap(map, MEM_SIZE);
+    close(fd);
+
+    // START Test patch location - Patch dir has preference over other locations
+    // Copy partition2 file from ro to patch to simulate a patch file that is
+    // different from the one in rw (partition2 in rw was modified with the
+    // previous write test)
+    fs::path roFile(tmpROdir);
+    roFile /= "TEST2";
+    fs::path patchFile(tmpPATCHdir);
+    patchFile /= "TEST2";
+    assert(fs::copy_file(roFile, patchFile) == true);
+
+    // Write arbitrary data
+    char srcPatch[DATA_SIZE] {0};
+    memset(srcPatch, 0x33, sizeof(srcPatch));
+    rc = write_flash(ctx, (OFFSET * 2), srcPatch, sizeof(srcPatch));
+    assert(rc == 0);
+
+    // Check that partition file in RW location still contains the original data
+    fs::path rwFile(tmpRWdir);
+    rwFile /= "TEST2";
+    fd = open(rwFile.c_str(), O_RDONLY);
+    map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, fd, 0);
+    assert(map != MAP_FAILED);
+    rc = memcmp(src, map, sizeof(src));
+    assert(rc == 0);
+    munmap(map, MEM_SIZE);
+    close(fd);
+
+    // Check that partition file in PATCH location was written with the new data
+    fd = open(patchFile.c_str(), O_RDONLY);
+    map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, fd, 0);
+    assert(map != MAP_FAILED);
+    rc = memcmp(srcPatch, map, sizeof(srcPatch));
+    assert(rc == 0);
+    munmap(map, MEM_SIZE);
+    close(fd);
+
+    // Remove patch file so that subsequent tests don't use it
+    fs::remove(patchFile);
+    // END Test patch location
+
     fs::remove_all(fs::path {tmpROdir});
     fs::remove_all(fs::path {tmpRWdir});
     fs::remove_all(fs::path {tmpPRSVdir});
+    fs::remove_all(fs::path {tmpPATCHdir});
 
     return rc;
 }
