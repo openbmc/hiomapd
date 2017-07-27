@@ -47,7 +47,7 @@ Makefile.in
 Makefile
 .deps
 arm-openbmc-linux-gnueabi-libtool
-mboxd
+/mboxd
 mboxctl
 cscope.out
 /test/*.o
