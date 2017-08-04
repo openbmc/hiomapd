@@ -87,7 +87,20 @@ inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
     size_t sizeInBlocks = align_up(size, blockSize) / blockSize;
     imgBlocks += sizeInBlocks;
     part.data.size = sizeInBlocks;
-    part.data.actual = size;
+
+    // If a a patch partition file exists, populate actual size with its file
+    // size if it is smaller than the total size.
+    fs::path patchFile(PARTITION_FILES_PATCH_LOC);
+    patchFile /= part.data.name;
+    if (fs::is_regular_file(patchFile))
+    {
+        part.data.actual = std::min(
+                size, static_cast<size_t>(fs::file_size(patchFile)));
+    }
+    else
+    {
+        part.data.actual = size;
+    }
 }
 
 inline void Table::writeUserdata(pnor_partition& part,
