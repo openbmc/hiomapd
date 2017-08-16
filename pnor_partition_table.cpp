@@ -152,16 +152,16 @@ void Table::preparePartitions()
     std::ifstream file(tocFile.c_str());
     static constexpr auto ID_MATCH = 1;
     static constexpr auto NAME_MATCH = 2;
-    static constexpr auto START_ADDR_MATCH = 3;
-    static constexpr auto END_ADDR_MATCH = 4;
-    static constexpr auto VERSION_MATCH = 5;
+    static constexpr auto START_ADDR_MATCH = 4;
+    static constexpr auto END_ADDR_MATCH = 6;
+    static constexpr auto VERSION_MATCH = 8;
     // Parse PNOR toc (table of contents) file, which has lines like :
-    // partition01=HBB,00010000,000a0000,80,ECC,PRESERVED, to indicate
+    // partition01=HBB,0x00010000,0x000a0000,0x80,ECC,PRESERVED, to indicate
     // partition information
     std::regex regex
     {
         "^partition([0-9]+)=([A-Za-z0-9_]+),"
-        "([0-9a-fA-F]+),([0-9a-fA-F]+),([A-Fa-f0-9]{2})",
+        "(0x)?([0-9a-fA-F]+),(0x)?([0-9a-fA-F]+),(0x)?([A-Fa-f0-9]{2})",
         std::regex::extended
     };
     std::smatch match;
