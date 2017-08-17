@@ -78,8 +78,8 @@ window and which offset into the flash it maps.
 
 * A read window can be a direct window to the flash controller space (ie.
   0x3000\_0000) or it can be a window to a RAM image of a flash. It doesn't have
-  to be the full size of the flash per protocol (commands can be use to "slide"
-  it to various parts of the flash) but if its set to map the actual flash
+  to be the full size of the flash per protocol (commands can be used to "slide"
+  it to various parts of the flash) but if it's set to map the actual flash
   controller space at 0x3000\_0000, it's probably simpler to make it the full
   flash. The host makes no assumption, it's your choice what to provide. The
   simplest implementation is to just route to the flash read/only.
@@ -94,7 +94,7 @@ window and which offset into the flash it maps.
 The host can then write to that window directly (updating the BMC memory) and
 send a command to "commit" those updates to flash.
 
-Finally there is a `RESET_STATE`. It's the state in which the bootloader in the
+Finally, there is a `RESET_STATE`. It's the state in which the bootloader in the
 SEEPROM of the POWER9 chip will find what it needs to load HostBoot. The
 details are still being ironed out: either mapping the full flash read only or
 reset to a "window" that is either at the bottom or top of the flash. The
@@ -112,7 +112,7 @@ https://github.com/openbmc/linux/commit/85770a7d1caa6a1fa1a291c33dfe46e05755a2ef
 
 ## Building
 
-The autotools of this requires the autoconf-archive package for your
+The Autotools of this requires the autoconf-archive package for your
 system
 
 ## The Hardware
@@ -121,7 +121,7 @@ The Aspeed mailbox consists of 16 (8 bit) data registers see Layout for their
 use. Mailbox interrupt enabling, masking and triggering is done using a pair
 of control registers, one accessible by the host the other by the BMC.
 Interrupts can also be raised per write to each data register, for BMC and
-host. Write tiggered interrupts are configured using two 8 bit registers where
+host. Write triggered interrupts are configured using two 8 bit registers where
 each bit represents a data register and if an interrupt should fire on write.
 Two 8 bit registers are present to act as a mask for write triggered
 interrupts.
@@ -141,7 +141,7 @@ Note: when the BMC is writing a response to the mbox registers (as described
 above), the "Response Code" (Register 13) must be the last register written to.
 Writing register 13 will trigger an interrupt to the host indicating a complete
 response has been written. Triggering the interrupt by writing register 13
-prior to completing the response may lead to a data race, and must therefore
+prior to completing the response may lead to a data race, and must, therefore,
 be avoided.
 
 ## Low Level Protocol Flow
@@ -152,7 +152,7 @@ There are 3 basic types of communication.
 
 1. Commands sent from the Host to the BMC
 2. Responses sent from the BMC to the Host in response to commands
-3. Asyncronous events raised by the BMC
+3. Asynchronous events raised by the BMC
 
 ### General Use
 
@@ -193,10 +193,10 @@ BMC_EVENT_ACK command.
 
 When a host wants to communicate with the BMC via the mbox protocol the first
 thing it should do it call MBOX_GET_INFO in order to establish the protocol
-version which each understands. Before this the only other commands which are
+version which each understands. Before this, the only other commands which are
 allowed are RESET_STATE and BMC_EVENT_ACK.
 
-After this the host can open and close windows with the CREATE_READ_WINDOW,
+After this, the host can open and close windows with the CREATE_READ_WINDOW,
 CREATE_WRITE_WINDOW and CLOSE_WINDOW commands. Creating a window is how the
 host requests access to a section of flash. It is worth noting that the host
 can only ever have one window that it is accessing at a time - hence forth
@@ -207,7 +207,7 @@ MARK_WRITE_ERASED and WRITE_FLUSH commands to identify changed blocks and
 control when the changed blocks are written to flash.
 
 Independently, and at any point not during an existing mbox command
-transaction, the BMC may raise raise asynchronous events with the host to
+transaction, the BMC may raise asynchronous events with the host to
 communicate a change in state.
 
 ### Version Negotiation
@@ -230,10 +230,10 @@ version by issuing a subsequent `MBOX_GET_INFO` command.
 
 ### Window Management
 
-In order to access flash contents the host must request a window be opened at
+In order to access flash contents, the host must request a window be opened at
 the flash offset it would like to access. The host may give a hint as to how
 much data it would like to access or otherwise set this argument to zero. The
-BMC must respond with the lpc bus address to access this window and the
+BMC must respond with the LPC bus address to access this window and the
 window size. The host must not access past the end of the active window.
 
 There is only ever one active window which is the window created by the most
@@ -250,9 +250,9 @@ implicit flush. If the host tries to open a new window with an already active
 window then the active window is closed (and implicitly flushed if it was a
 write window). If the new window is successfully opened then it is the new
 active window, if the command fails then there is no active window and the
-previous active window must no longer be accessed.
+previously active window must no longer be accessed.
 
-The host must not access an lpc address other than that which is contained by
+The host must not access an LPC address other than that which is contained by
 the active window. The host must not use write management functions (see below)
 if the active window is a read window or if there is no active window.
 
@@ -260,7 +260,7 @@ if the active window is a read window or if there is no active window.
 
 The BMC has no method for intercepting writes that occur over the LPC bus. Thus
 the host must explicitly notify the BMC of where and when a write has
-occured. The host must use the MARK_WRITE_DIRTY command to tell the BMC where
+occurred. The host must use the MARK_WRITE_DIRTY command to tell the BMC where
 within the write window it has modified. The host may also use the
 MARK_WRITE_ERASED command to erase large parts of the active window without the
 need to write 0xFF. The BMC must ensure that if the host
@@ -344,7 +344,7 @@ valid. The BMC's response to a command must contain the same sequence number
 issued by the host as found in the relevant command.
 
 Sequence numbers may be reused in accordance with the constraints outlined
-above, however it is not an error if the BMC receives a `GET_MBOX_INFO` with an
+above, however, it is not an error if the BMC receives a `GET_MBOX_INFO` with an
 invalid sequence number. For all other cases, the BMC must respond with
 `SEQ_ERROR` if the constraints are violated. If the host receives a `SEQ_ERROR`
 response it must consider any in-progress commands to have failed. The host may
@@ -404,8 +404,8 @@ Command:
 	Notes:
 		This command is designed to inform the BMC that it should put
 		host LPC mapping back in a state where the SBE will be able to
-		use it. Currently this means pointing back to BMC flash
-		pre mailbox protocol. Final behavour is still TBD.
+		use it. Currently, this means pointing back to BMC flash
+		pre mailbox protocol. Final behavior is still TBD.
 
 Command:
 	GET_MBOX_INFO
@@ -550,7 +550,7 @@ Command:
 	Notes:
 		The BMC has no method for intercepting writes that
 		occur over the LPC bus. The host must explicitly notify
-		the daemon of where and when a write has occured so it
+		the daemon of where and when a write has occurred so it
 		can be flushed to backing storage.
 
 		Offsets are given as an absolute (either into flash (V1) or the
@@ -647,8 +647,8 @@ The host should acknowledge these events with BMC_EVENT_ACK to
 let the BMC know that they have been received and understood.
 ```
 0x01 - BMC Reboot:
-	Used to inform the host that a BMC reboot has occured.
-	The host must perform protocol verison negotiation again and
+	Used to inform the host that a BMC reboot has occurred.
+	The host must perform protocol version negotiation again and
 	must assume it has no active window. The host must not assume
 	that any commands which didn't respond as such succeeded.
 0x02 - BMC Windows Reset: (V2)
