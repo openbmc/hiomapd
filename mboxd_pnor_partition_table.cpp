@@ -4,6 +4,8 @@
 #include "mboxd_flash.h"
 #include "pnor_partition_table.hpp"
 #include "config.h"
+#include "xyz/openbmc_project/Common/error.hpp"
+#include <phosphor-logging/elog-errors.hpp>
 #include <experimental/filesystem>
 
 struct vpnor_partition_table
@@ -92,16 +94,25 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
 
     size_t tocOffset = 0;
     uint32_t tocSize = blTable.size() * eraseSize;
-    // Copy TOC
-    copy_flash(&local, tocOffset,
-               static_cast<uint8_t*>(context->mem) + tocStart,
-               tocSize);
-    const pnor_partition& partition = blTable.partition(blPartitionName);
-    size_t hbbOffset = partition.data.base * eraseSize;
-    uint32_t hbbSize = partition.data.actual;
-    // Copy HBB
-    copy_flash(&local, hbbOffset,
-               static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
+    using namespace phosphor::logging;
+    using namespace sdbusplus::xyz::openbmc_project::Common::Error;
+    try
+    {
+        // Copy TOC
+        copy_flash(&local, tocOffset,
+                   static_cast<uint8_t*>(context->mem) + tocStart,
+                   tocSize);
+        const pnor_partition& partition = blTable.partition(blPartitionName);
+        size_t hbbOffset = partition.data.base * eraseSize;
+        uint32_t hbbSize = partition.data.actual;
+        // Copy HBB
+        copy_flash(&local, hbbOffset,
+                   static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
+    }
+    catch (InternalFailure& e)
+    {
+        commit<InternalFailure>();
+    }
 }
 
 void destroy_vpnor(struct mbox_context *context)
