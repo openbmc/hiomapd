@@ -241,15 +241,12 @@ static int dbus_handle_resume(struct mbox_context *context,
 	}
 
 	if (req->args[0] == RESUME_FLASH_MODIFIED) {
-		/* Clear the bit and call the flash modified handler */
-		clr_bmc_events(context, BMC_EVENT_FLASH_CTRL_LOST,
-			       NO_BMC_EVENT);
-		rc = dbus_handle_modified(context, req, resp);
-	} else {
-		/* Flash wasn't modified - just clear the bit with writeback */
-		rc = clr_bmc_events(context, BMC_EVENT_FLASH_CTRL_LOST,
-				    SET_BMC_EVENT);
+		/* Call the flash modified handler */
+		dbus_handle_modified(context, req, resp);
 	}
+
+	/* Clear the bit and send the BMC Event to the host */
+	rc = clr_bmc_events(context, BMC_EVENT_FLASH_CTRL_LOST, SET_BMC_EVENT);
 
 	if (rc < 0) {
 		rc = -E_DBUS_HARDWARE;
