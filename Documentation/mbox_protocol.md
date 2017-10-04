@@ -17,19 +17,22 @@ limitations under the License.
 This document describes a protocol for host to BMC communication via the
 mailbox registers present on the Aspeed 2400 and 2500 chips.
 This protocol is specifically designed to allow a host to request and manage
-access to the flash with the specifics of how the host is required to control
-this described below.
+access to a flash device(s) with the specifics of how the host is required to
+control this described below.
 
 ## Version
 
-Both version 1 and version 2 of the protocol are described below with version 2
-specificities represented with V2 in brackets - (V2).
+Version specific protocol functionalities are represented by the version number
+in brackets next to the definition of the functionality. (e.g. (V2) for version
+2 specific funtionality). All version specific functionality must also be
+implemented by proceeding versions up to and not including the version a command
+was removed.
 
 ## Problem Overview
 
 "mbox" is the name we use to represent a protocol we have established between
 the host and the BMC via the Aspeed mailbox registers. This protocol is used
-for the host to control the flash.
+for the host to control access to the flash device(s).
 
 Prior to the mbox protocol, the host uses a backdoor into the BMC address space
 (the iLPC-to-AHB bridge) to directly manipulate the BMCs own flash controller.
@@ -215,9 +218,11 @@ communicate a change in state.
 Given that a majority of command and response arguments are specified as a
 multiple of block size it is necessary for the host and BMC to agree on a
 protocol version as this determines the block size. In V1 it is hard coded at
-4K and in V2 the BMC chooses and specifies this to the host as a response
-argument to `MBOX_GET_INFO`. Thus the host must always call `MBOX_GET_INFO`
-before any other command which specifies an argument in block size.
+4K, in V2 the BMC chooses and in V3 the host is allowed to request a specific
+block size with the actual size chosen communicated back to the host as a
+response argument to `MBOX_GET_INFO`. Thus the host must always call
+`MBOX_GET_INFO` before any other command which specifies an argument in block
+size.
 
 When invoking `MBOX_GET_INFO` the host must provide the BMC its highest
 supported version of the protocol. The BMC must respond with a protocol version
@@ -231,10 +236,13 @@ version by issuing a subsequent `MBOX_GET_INFO` command.
 ### Window Management
 
 In order to access flash contents, the host must request a window be opened at
-the flash offset it would like to access. The host may give a hint as to how
-much data it would like to access or otherwise set this argument to zero. The
-BMC must respond with the LPC bus address to access this window and the
-window size. The host must not access past the end of the active window.
+the flash offset it would like to access with the CREATE_{READ,WRITE}_WINDOW
+commands. The host may give a hint as to how much data it would like to access
+or otherwise set this argument to zero. The BMC must respond with the LPC bus
+address to access this window and the window size. The host must not access
+past the end of the active window. On returning success to either of the create
+window commands the BMC must guarantee that the window provided contains data
+which correctly represents the state of flash at the time the response is given.
 
 There is only ever one active window which is the window created by the most
 recent CREATE_READ_WINDOW or CREATE_WRITE_WINDOW call which succeeded. Even
@@ -278,7 +286,19 @@ contents cannot be guaranteed.
 
 The host is not required to perform an erase before a write command and the
 BMC must ensure that a write performs as expected - that is if an erase is
-required before a write then the BMC must perform this itself.
+required before a write then the BMC must perform this itself (unless the
+no_erase flag is set in the MARK_WRITE_DIRTY command in which case the BMC will
+blindly write without a prior erase (V3)).
+
+The host may lock an area of flash using the MARK_LOCKED command. Any attempt
+to mark dirty or erased this area of flash must fail with the LOCKED_ERROR
+response code. The host may open a write window which contains a locked area
+of flash however changes to a locked area of flash must never be written back
+to the backing data source (i.e. that area of flash must be treated as read
+only with respect to the backing store at all times). An attempt to lock an area
+of flash which is not clean in the current window must fail with PARAM_ERROR.
+Locked flash regions must persist across a BMC reboot or daemon restart. It is
+only possible to clear the lock state through a clear_locked dbus command. (V3)
 
 ### BMC Events
 
@@ -316,6 +336,8 @@ MARK_WRITE_DIRTY     0x07
 WRITE_FLUSH          0x08
 BMC_EVENT_ACK        0x09
 MARK_WRITE_ERASED    0x0a	(V2)
+GET_FLASH_NAME       0x0b	(V3)
+MARK_LOCKED          0x0c	(V3)
 ```
 
 ### Responses
@@ -329,13 +351,14 @@ TIMEOUT		5
 BUSY		6	(V2)
 WINDOW_ERROR	7	(V2)
 SEQ_ERROR	8	(V2)
+LOCKED_ERROR	9	(V3)
 ```
 
 ### Sequence Numbers
 
 Sequence numbers are included in messages for correlation of commands and
-responses. V1 and V2 of the protocol permit either zero or one commands to be
-in progress (yet to receive a response).
+responses. V1, V2 and V3 of the protocol permit either zero or one commands to
+be in progress (yet to receive a response).
 
 For generality, the host must generate a sequence number that is unique with
 respect to the previous command (one that has received a response) and any
@@ -368,6 +391,10 @@ BUSY		- Daemon in suspended state (currently unable to access flash)
 WINDOW_ERROR	- Command not valid for active window or no active window
 		- Try opening an appropriate window and retrying the command
 
+SEQ_ERROR	- Invalid sequence number supplied with command
+
+LOCKED_ERROR	- Tried to mark dirty or erased locked area of flash
+
 ### Information
 - All multibyte messages are LSB first (little endian)
 - All responses must have a valid return code in byte 13
@@ -381,6 +408,12 @@ allows us to specify larger values with fewer command and response fields.
 
 In V1 block size is hard coded to 4K.
 In V2 it is variable and must be queried with the GET_MBOX_INFO command.
+In V3 the host can request a given block size however it is ultimately up to
+the daemon to choose a block size which is returned as part of the GET_MBOX_INFO
+command response. The host must respect the daemons choice. The ability for the
+host to request a block size is provided such that it can choose an appropriate
+size to be able to utilise commands which only operate at the block level.
+
 Note that for simplicity block size must always be a power-of-2.
 Block size must also be greater than or equal to 4K. This is due to the
 fact that we have a 28-bit LPC address space and commands which return an
@@ -395,8 +428,7 @@ multiplying by the block size.
 ```
 Command:
 	RESET_STATE
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		-
 	Response:
@@ -409,14 +441,17 @@ Command:
 
 Command:
 	GET_MBOX_INFO
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		V1:
 		Args 0: API version
 
 		V2:
 		Args 0: API version
+
+		V3:
+		Args 0: API version
+		Args 1: Requested block size (shift)
 
 	Response:
 		V1:
@@ -430,6 +465,14 @@ Command:
 		Args 3-4: reserved
 		Args 5: Block size as power of two (encoded as a shift)
 		Args 6-7: Suggested Timeout (seconds)
+
+		V3:
+		Args 0: API version
+		Args 1-2: reserved
+		Args 3-4: reserved
+		Args 5: Block size as power of two (encoded as a shift)
+		Args 6-7: Suggested Timeout (seconds)
+		Args 8: Num Allocated Flash IDs
 	Notes:
 		The suggested timeout is a hint to the host as to how long
 		it should wait after issuing a command to the BMC before it
@@ -439,25 +482,34 @@ Command:
 		the BMC	does not wish to provide a hint in which case the host
 		must choose some reasonable value.
 
+		The host may desire a specific block size and thus can request
+		this by giving a hint to the daemon (may be zero). The daemon
+		may use this to select the block size which it will use however
+		is free to ignore it. The value in the response is the block
+		size which must be used for all further requests until a new
+		size is	negotiated by another call to GET_MBOX_INFO. (V3)
+
 Command:
 	GET_FLASH_INFO
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
+		V1, V2:
 		-
+
+		V3:
+		Args 0: Flash ID
 	Response:
 		V1:
 		Args 0-3: Flash size (bytes)
 		Args 4-7: Erase granule (bytes)
 
-		V2:
+		V2, V3:
 		Args 0-1: Flash size (blocks)
 		Args 2-3: Erase granule (blocks)
 
 Command:
 	CREATE_{READ/WRITE}_WINDOW
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		V1:
 		Args 0-1: Requested flash offset (blocks)
@@ -466,11 +518,15 @@ Command:
 		Args 0-1: Requested flash offset (blocks)
 		Args 2-3: Requested flash size to access (blocks)
 
+		V3:
+		Args 0-1: Requested flash offset (blocks)
+		Args 2-3: Requested flash size to access (blocks)
+		Args 4: Flash ID
 	Response:
 		V1:
 		Args 0-1: LPC bus address of window (blocks)
 
-		V2:
+		V2, V3:
 		Args 0-1: LPC bus address of window (blocks)
 		Args 2-3: Window size (blocks)
 		Args 4-5: Flash offset mapped by window (blocks)
@@ -505,8 +561,7 @@ Command:
 
 Command:
 	CLOSE_WINDOW
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		V1:
 		-
@@ -534,8 +589,7 @@ Command:
 
 Command:
 	MARK_WRITE_DIRTY
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		V1:
 		Args 0-1: Flash offset to mark from base of flash (blocks)
@@ -544,6 +598,7 @@ Command:
 		V2:
 		Args 0-1: Window offset to mark (blocks)
 		Args 2-3: Number to mark dirty at offset (blocks)
+		Args 4  : Don't Erase Before Write (V3)
 
 	Response:
 		-
@@ -558,10 +613,16 @@ Command:
 		block. If the offset + number exceeds the size of the active
 		window then the command must not succeed.
 
+		The host can give a hint to the daemon that is doesn't have to
+		erase a flash area before writing to it by setting ARG[4]. This
+		means that the daemon will blindly perform a write to that area
+		and will not try to erase it before hand. This can be used if
+		the host knows that a large area has already been erased for
+		example but then wants to perform many small writes.
+
 Command
 	WRITE_FLUSH
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		V1:
 		Args 0-1: Flash offset to mark from base of flash (blocks)
@@ -586,8 +647,7 @@ Command
 
 Command:
 	BMC_EVENT_ACK
-	Implemented in Versions:
-		V1, V2
+	Added in:	V1
 	Arguments:
 		Args 0:	Bits in the BMC status byte (mailbox data
 			register 15) to ack
@@ -599,8 +659,7 @@ Command:
 
 Command:
 	MARK_WRITE_ERASED
-	Implemented in Versions:
-		V2
+	Added in:	V2
 	Arguments:
 		V2:
 		Args 0-1: Window offset to erase (blocks)
@@ -617,6 +676,38 @@ Command:
 		number is the number of blocks of the active window to erase
 		starting at offset. If the offset + number exceeds the size of
 		the active window then the command must not succeed.
+
+Command:
+	GET_FLASH_NAME
+	Added in:	V3
+	Arguments:
+		Args 0: Flash ID
+	Response:
+		Args 0   : Flash Name Length (bytes)
+		Args 1-10: Flash Name / UID
+	Notes:
+		Describes a flash with some kind of identifier useful to the
+		host system. This is typically a null-padded string.
+
+		The length in the response is the number of response arguments
+		as part of the flash name field which the host should expect to
+		have been populated.
+
+Command:
+	MARK_LOCKED
+	Added in:	V3
+	Arguments:
+		Args 0-1: Flash offset to lock (blocks)
+		Args 2-3: Number to lock at offset (blocks)
+		Args 4: Flash ID
+	Response:
+		-
+	Notes:
+		Lock an area of flash so that the host can't mark it dirty or
+		erased. If the requested area is within the current window and
+		that area is currently marked dirty or erased then this command
+		must fail with PARAM_ERROR.
+
 ```
 
 ### BMC Events in Detail:
@@ -627,7 +718,7 @@ on that register, or otherwise be polling it.
 
 #### Bit Definitions:
 
-Events which should be ACKed:
+Events which must be ACKed:
 ```
 0x01: BMC Reboot
 0x02: BMC Windows Reset (V2)
