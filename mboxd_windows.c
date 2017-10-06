@@ -635,7 +635,10 @@ int create_map_window(struct mbox_context *context,
 		reset_window(context, cur);
 		return rc;
 	}
-	cur->size = rc;
+	/* rc isn't guaranteed to be aligned, so align up */
+	cur->size = align_up(rc, (1ULL << context->block_size_shift));
+	/* Would like a known value, pick 0xFF to it looks like erased flash */
+	memset(cur->mem + rc, 0xFF, cur->size - rc);
 
 	/*
 	 * Since for V1 windows aren't constrained to start at multiples of
