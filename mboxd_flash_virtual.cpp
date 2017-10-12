@@ -164,7 +164,7 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
             auto mapped_mem = mmap(NULL, partitionInfo->data.actual,
                                    PROT_READ, MAP_PRIVATE, roRequest.fd(), 0);
 
-            if (mem == MAP_FAILED)
+            if (mapped_mem == MAP_FAILED)
             {
                 MSG_ERR("Failed to map partition=%s:Error=%s\n",
                         partitionInfo->data.name, strerror(errno));
