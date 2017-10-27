@@ -134,8 +134,8 @@ class Table
          *
          *  @param[in] offset - PNOR offset in bytes
          *
-         *  @returns const reference to pnor_partition, if found, else a
-         *           reference to a zeroed out pnor_partition structure.
+         *  @returns const reference to pnor_partition, if found, else an
+         *           exception will be thrown.
          */
         const pnor_partition& partition(size_t offset) const;
 
