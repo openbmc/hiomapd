@@ -238,6 +238,8 @@ const pnor_partition& Table::partition(const std::string& name) const
     }
 
     MSG_ERR("Partition %s not found", name.c_str());
+    log<level::ERR>("Table::partition partition not found ",
+        entry("PARTITION_NAME=%s", name.c_str()));
     elog<InternalFailure>();
     static pnor_partition p{};
     return p;

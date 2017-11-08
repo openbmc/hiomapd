@@ -64,6 +64,9 @@ std::string Request::getPartitionFilePath(struct mbox_context* context,
     if (!partition)
     {
         MSG_ERR("Couldn't get the partition info for offset[0x%.8x]",offset);
+        log<level::ERR>("Request::getPartitionFilePath error in call to "
+                "vpnor_get_partition",
+                entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
 
@@ -107,6 +110,11 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     // not interested in any other error except FILE_NOT_FOUND
     if (rc != ReturnCode::FILE_NOT_FOUND)
     {
+        log<level::ERR>("RORequest::getPartitionInfo error in opening "
+                "partition file",
+                entry("RC=%d", rc),
+                entry("FILE_NAME=%s", path.c_str()),
+                entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
 
@@ -114,6 +122,11 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     if (partition->data.user.data[1] & PARTITION_READONLY)
     {
         MSG_ERR("Can't open the partition file");
+        log<level::ERR>("RORequest::getPartitionInfo error offset is "
+                "in read only partition",
+                entry("FILE_NAME=%s", path.c_str()),
+                entry("OFFSET=%d", offset),
+                entry("USER_DATA=%s", partition->data.user.data[1]));
         elog<InternalFailure>();
     }
 
@@ -126,6 +139,10 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     rc = Request::open(partitionFilePath, O_RDONLY);
     if (rc != ReturnCode::SUCCESS)
     {
+        log<level::ERR>("RORequest::getPartitionInfo error in opening "
+                "partition file from read only location",
+                entry("RC=%d", rc),
+                entry("FILE_NAME=%s", partitionFilePath.c_str()));
         elog<InternalFailure>();
     }
 
@@ -146,6 +163,11 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
     // not interested in any other error except FILE_NOT_FOUND
     if (rc != ReturnCode::FILE_NOT_FOUND)
     {
+        log<level::ERR>("RWRequest::getPartitionInfo error in opening "
+                "partition file",
+                entry("RC=%d", rc),
+                entry("FILE_NAME=%s", path.c_str()),
+                entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
 
@@ -158,6 +180,10 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
     if (!fs::exists(fromPath))
     {
         MSG_ERR("Couldn't find the file[%s]",fromPath.c_str());
+        log<level::ERR>("RWRequest::getPartitionInfo error in opening "
+                "partition file from read only location",
+                entry("FILE_NAME=%s", fromPath.c_str()),
+                entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
     //copy the file from ro to respective partition
@@ -183,6 +209,10 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
 
     if (rc != ReturnCode::SUCCESS)
     {
+        log<level::ERR>("RWRequest::getPartitionInfo error in opening "
+                "partition file from read write location",
+                entry("RC=%d", rc),
+                entry("FILE_NAME=%s", toPath.c_str()));
         elog<InternalFailure>();
     }
 
