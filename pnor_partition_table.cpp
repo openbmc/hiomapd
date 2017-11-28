@@ -28,7 +28,6 @@ Table::Table(size_t blockSize, size_t pnorSize):
 Table::Table(fs::path&& directory,
              size_t blockSize, size_t pnorSize):
     szBlocks(0),
-    imgBlocks(0),
     directory(std::move(directory)),
     numParts(0),
     blockSize(blockSize),
@@ -76,16 +75,14 @@ inline void Table::allocateMemory(const fs::path& tocFile)
                             (num * sizeof(pnor_partition));
     size_t totalSizeAligned = align_up(totalSizeBytes, blockSize);
     szBlocks = totalSizeAligned / blockSize;
-    imgBlocks = szBlocks;
     tbl.resize(totalSizeAligned);
 }
 
 inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
 {
     size_t size = end - start;
-    part.data.base = imgBlocks;
+    part.data.base = align_up(start, blockSize) / blockSize;
     size_t sizeInBlocks = align_up(size, blockSize) / blockSize;
-    imgBlocks += sizeInBlocks;
     part.data.size = sizeInBlocks;
 
     // If a a patch partition file exists, populate actual size with its file

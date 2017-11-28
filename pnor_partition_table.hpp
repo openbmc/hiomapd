@@ -218,9 +218,6 @@ class Table
          */
         size_t szBlocks;
 
-        /** @brief Size of virtual PNOR image, measured in erase-blocks */
-        size_t imgBlocks;
-
         /** @brief Partition table */
         PartitionTable tbl;
 

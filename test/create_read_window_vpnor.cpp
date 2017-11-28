@@ -13,7 +13,9 @@ extern "C" {
 #include <fstream>
 #include <experimental/filesystem>
 
-constexpr auto line = "partition01=HBB,00000000,0001000,ECC,PRESERVED";
+// A read window assumes that the toc is located at offset 0,
+// so create dummy partition at arbitrary offset 0x100.
+constexpr auto line = "partition01=HBB,00000100,0001000,ECC,PRESERVED";
 constexpr auto partition = "HBB";
 char tmplt[] = "/tmp/create_read_test.XXXXXX";
 uint8_t data[8] = { 0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab };
@@ -28,7 +30,7 @@ static const uint8_t get_info[] = {
         0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-// offset 1 and size 6
+// offset 0x100 and size 6
 static const uint8_t create_read_window[] = {
         0x04, 0x01, 0x01, 0x00, 0x06, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00

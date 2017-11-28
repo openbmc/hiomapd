@@ -47,7 +47,7 @@ int main()
 
     pnor_partition expectedPartition{};
     strcpy(expectedPartition.data.name, partitionName);
-    expectedPartition.data.base = 1; // starts after 1 block
+    expectedPartition.data.base = 0; // starts at offset 0
     expectedPartition.data.size = 1; // 1 block
     expectedPartition.data.actual = 0x400; // 1024 bytes
     expectedPartition.data.id = 1;
@@ -71,7 +71,7 @@ int main()
                 sizeof(pnor_partition));
     assert(rc == 0);
 
-    const pnor_partition& first = table.partition(4096);
+    const pnor_partition& first = table.partition(0); // Partition at offset 0
     rc = memcmp(&first, &result.partitions[0], sizeof(pnor_partition));
     assert(rc == 0);
 

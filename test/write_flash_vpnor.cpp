@@ -54,9 +54,9 @@ void init(struct mbox_context* ctx)
     namespace fs = std::experimental::filesystem;
     using namespace std::string_literals;
 
-    std::string  tocData = "partition01=TEST1,00000000,00000400,ECC,READONLY\n"s
-                           + "partition02=TEST2,00000000,00000008,ECC,READWRITE\n"s
-                           + "partition03=TEST3,00000000,00000400,ECC,PRESERVED"s;
+    std::string  tocData = "partition01=TEST1,00001000,00001400,ECC,READONLY\n"s
+                           + "partition02=TEST2,00002000,00002008,ECC,READWRITE\n"s
+                           + "partition03=TEST3,00003000,00003400,ECC,PRESERVED"s;
 
     std::vector<std::string> templatePaths = { "/tmp/ro.XXXXXX",
                                                "/tmp/rw.XXXXXX" ,
