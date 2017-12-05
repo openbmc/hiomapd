@@ -104,20 +104,38 @@ inline void Table::writeUserdata(pnor_partition& part,
                                  uint32_t version,
                                  const std::string& data)
 {
-    if (std::string::npos != data.find("ECC"))
+    std::istringstream stream(data);
+    std::string flag {};
+    auto perms = 0;
+
+    while (std::getline(stream, flag, ','))
     {
-        part.data.user.data[0] = PARTITION_ECC_PROTECTED;
+        if (flag == "ECC")
+        {
+            part.data.user.data[0] = PARTITION_ECC_PROTECTED;
+        }
+        else if (flag == "READONLY")
+        {
+            perms |= PARTITION_READONLY;
+        }
+        else if (flag == "PRESERVED")
+        {
+            perms |= PARTITION_PRESERVED;
+        }
+        else if (flag == "REPROVISION")
+        {
+            perms |= PARTITION_REPROVISION;
+        }
+        else if (flag == "VOLATILE")
+        {
+            perms |= PARTITION_VOLATILE;
+        }
+        else if (flag == "CLEARECC")
+        {
+            perms |= PARTITION_CLEARECC;
+        }
     }
 
-    auto perms = 0;
-    if (std::string::npos != data.find("READONLY"))
-    {
-        perms |= PARTITION_READONLY;
-    }
-    if (std::string::npos != data.find("PRESERVED"))
-    {
-        perms |= PARTITION_PRESERVED;
-    }
     part.data.user.data[1] = perms;
 
     part.data.user.data[1] |= version;

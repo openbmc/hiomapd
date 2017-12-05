@@ -28,11 +28,22 @@
 /* The partition structure has 16 'user data' words, which can be used to store
  * miscellaneous information. This is typically used to store bits that state
  * whether a partition is ECC protected, is read-only, is preserved across
- * updates, etc. */
+ * updates, etc.
+ *
+ * TODO: Replace with libflash (!) or at least refactor the data structures to
+ * better match hostboot's layout[1]. The latter would avoid the headache of
+ * verifying these flags match the expected functionality (taking into account
+ * changes in endianness).
+ *
+ * [1] https://github.com/open-power/hostboot/blob/9acfce99596f12dcc60952f8506a77e542609cbf/src/usr/pnor/common/ffs_hb.H#L81
+ */
 #define PARTITION_USER_WORDS 16
 #define PARTITION_ECC_PROTECTED 0x8000
 #define PARTITION_PRESERVED 0x00800000
 #define PARTITION_READONLY 0x00400000
+#define PARTITION_REPROVISION 0x00100000
+#define PARTITION_VOLATILE 0x00080000
+#define PARTITION_CLEARECC 0x00040000
 #define PARTITION_VERSION_CHECK_SHA512 0x80000000
 #define PARTITION_VERSION_CHECK_SHA512_PER_EC 0x40000000
 
