@@ -233,7 +233,7 @@ const pnor_partition& Table::partition(size_t offset) const
         }
     }
 
-    MSG_ERR("Partition corresponding to offset %x not found", offset);
+    MSG_ERR("Partition corresponding to offset %zu not found", offset);
     elog<InternalFailure>();
 
     static pnor_partition p{};
