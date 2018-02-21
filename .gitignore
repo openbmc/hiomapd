@@ -51,6 +51,7 @@ arm-openbmc-linux-gnueabi-libtool
 mboxctl
 /cscope.*
 /test/*.o
+/test/vpnor/*.o
 
 # Autotools test infrastructure
 *.log

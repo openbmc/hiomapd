@@ -34,6 +34,9 @@ mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 @CODE_COVERAGE_RULES@
 
+check_PROGRAMS =
+
 include test/Makefile.am.include
+include test/vpnor/Makefile.am.include
 
 TESTS = $(check_PROGRAMS)

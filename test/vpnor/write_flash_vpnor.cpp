@@ -17,13 +17,13 @@
  *
  */
 
-#include "config.h"
-#include "mboxd_pnor_partition_table.h"
-
 extern "C" {
+#include "config.h"
+#include "common.h"
+#include "mboxd_flash.h"
+#include "mboxd_pnor_partition_table.h"
 #include "mbox.h"
 #include "test/tmpf.h"
-#include "mboxd_flash.h"
 }
 
 #include <assert.h>
