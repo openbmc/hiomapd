@@ -8,6 +8,8 @@
 #include <fstream>
 #include <experimental/filesystem>
 
+#include "test/vpnor/tmpd.hpp"
+
 static const auto BLOCK_SIZE = 4 * 1024;
 static const auto PNOR_SIZE = 64 * 1024 * 1024;
 
@@ -18,36 +20,6 @@ constexpr auto partitionName = "HBB";
 
 namespace fs = std::experimental::filesystem;
 
-template <std::size_t N>
-static void createVpnorTree(fs::path& root, const std::string (&toc)[N],
-                            size_t blockSize)
-{
-    fs::path tocFilePath{root};
-    tocFilePath /= PARTITION_TOC_FILE;
-    std::ofstream tocFile(tocFilePath.c_str());
-
-    for (const std::string& line : toc)
-    {
-        pnor_partition part;
-
-        openpower::virtual_pnor::parseTocLine(line, blockSize, part);
-
-        /* Populate the partition in the tree */
-        fs::path partitionFilePath{root};
-        partitionFilePath /= part.data.name;
-        std::ofstream partitionFile(partitionFilePath.c_str());
-        std::vector<char> empty(part.data.size, 0);
-        partitionFile.write(empty.data(), empty.size());
-        partitionFile.close();
-
-        /* Update the ToC if the partition file was created */
-        tocFile.write(line.c_str(), line.length());
-        tocFile.write("\n", 1);
-    }
-
-    tocFile.close();
-}
-
 int main()
 {
     char tmplt[] = "/tmp/vpnor_partitions.XXXXXX";
@@ -55,7 +27,7 @@ int main()
     assert(tmpdir != nullptr);
     fs::path root{tmpdir};
 
-    createVpnorTree(root, toc, BLOCK_SIZE);
+    openpower::virtual_pnor::test::createVpnorTree(root, toc, BLOCK_SIZE);
 
     const openpower::virtual_pnor::partition::Table table(
         fs::path{tmpdir}, BLOCK_SIZE, PNOR_SIZE);
