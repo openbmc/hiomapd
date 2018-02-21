@@ -136,7 +136,7 @@ inline void Table::writeUserdata(pnor_partition& part, uint32_t version,
     part.data.user.data[1] |= version;
 }
 
-inline void Table::writeDefaults(pnor_partition& part)
+static inline void writeDefaults(pnor_partition& part)
 {
     part.data.pid = PARENT_PATITION_ID;
     part.data.type = PARTITION_TYPE_DATA;

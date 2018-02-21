@@ -194,13 +194,6 @@ class Table
     void writeUserdata(pnor_partition& part, uint32_t version,
                        const std::string& data);
 
-    /** @brief Populate default/unused fields for the input
-     *         pnor_partition structure.
-     *
-     *  @param[in/out] part - pnor_partition structure
-     */
-    void writeDefaults(pnor_partition& part);
-
     /** @brief Return a little-endian partition table
      *
      *  @returns reference to native partition table
