@@ -263,5 +263,8 @@ int main(void)
     fs::remove_all(fs::path {tmpPRSVdir});
     fs::remove_all(fs::path {tmpPATCHdir});
 
+    destroy_vpnor(ctx);
+    free(ctx->flash_bmap);
+
     return rc;
 }
