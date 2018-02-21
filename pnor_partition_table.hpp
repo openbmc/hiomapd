@@ -170,15 +170,6 @@ class Table
      */
     void allocateMemory(const fs::path& tocFile);
 
-    /** @brief Populate fields related to sizes for the input
-     *         pnor_partition structure.
-     *
-     *  @param[in/out] part - pnor_partition structure
-     *  @param[in] start - partition start address
-     *  @param[in] end - partition end address
-     */
-    void writeSizes(pnor_partition& part, size_t start, size_t end);
-
     /** @brief Return a little-endian partition table
      *
      *  @returns reference to native partition table

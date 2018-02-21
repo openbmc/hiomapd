@@ -74,7 +74,8 @@ inline void Table::allocateMemory(const fs::path& tocFile)
     tbl.resize(totalSizeAligned);
 }
 
-inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
+static inline void writeSizes(pnor_partition& part, size_t start, size_t end,
+                              size_t blockSize)
 {
     size_t size = end - start;
     part.data.base = align_up(start, blockSize) / blockSize;
@@ -180,7 +181,7 @@ bool Table::parseTocLine(const std::string& line, pnor_partition& part)
     unsigned long start =
         std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
     unsigned long end = std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
-    writeSizes(part, start, end);
+    writeSizes(part, start, end, blockSize);
 
     // Use the shift to convert "80" to 0x80000000
     unsigned long version = std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
