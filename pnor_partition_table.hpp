@@ -147,16 +147,13 @@ class Table
     /** @brief Parse a ToC line (entry) into the corresponding FFS partition
      * object.
      *
-     * @param[in] dir - The parent directory of the FFS partition files
-     *                  described in the ToC.
      * @param[in] line - The ToC line to parse
      * @param[out] part - The partition object to populate with the information
      *                    parsed from the provided ToC line
      *
      * @returns True on success, false on failure.
      */
-    bool parseTocLine(fs::path& dir, const std::string& line,
-                      pnor_partition& part);
+    bool parseTocLine(const std::string& line, pnor_partition& part);
 
     /** @brief Prepares a vector of PNOR partition structures.
      */

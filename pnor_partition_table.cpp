@@ -151,8 +151,7 @@ static inline void writeNameAndId(pnor_partition& part, std::string&& name,
     part.data.id = std::stoul(id);
 }
 
-bool Table::parseTocLine(fs::path& dir, const std::string& line,
-                         pnor_partition& part)
+bool Table::parseTocLine(const std::string& line, pnor_partition& part)
 {
     static constexpr auto ID_MATCH = 1;
     static constexpr auto NAME_MATCH = 2;
@@ -172,14 +171,6 @@ bool Table::parseTocLine(fs::path& dir, const std::string& line,
     std::smatch match;
     if (!std::regex_search(line, match, regex))
     {
-        return false;
-    }
-
-    fs::path partitionFile = dir;
-    partitionFile /= match[NAME_MATCH].str();
-    if (!fs::exists(partitionFile))
-    {
-        MSG_ERR("Partition file %s does not exist", partitionFile.c_str());
         return false;
     }
 
@@ -211,9 +202,23 @@ void Table::preparePartitions()
 
     while (std::getline(file, line))
     {
-        if (parseTocLine(directory, line, table.partitions[numParts]))
+        pnor_partition& part = table.partitions[numParts];
+        fs::path file;
+
+        if (!parseTocLine(line, part))
+        {
+            continue;
+        }
+
+        file = directory;
+        file /= part.data.name;
+        if (fs::exists(file))
         {
             ++numParts;
+        }
+        else
+        {
+            MSG_ERR("Partition file %s does not exist", file.c_str());
         }
     }
 }
