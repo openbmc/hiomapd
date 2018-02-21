@@ -151,18 +151,16 @@ inline void Table::writeNameAndId(pnor_partition& part, std::string&& name,
     part.data.id = std::stoul(id);
 }
 
-void Table::preparePartitions()
+bool Table::parseTocLine(fs::path& dir, const std::string& line,
+                         pnor_partition& part)
 {
-    fs::path tocFile = directory;
-    tocFile /= PARTITION_TOC_FILE;
-    allocateMemory(tocFile);
-
-    std::ifstream file(tocFile.c_str());
     static constexpr auto ID_MATCH = 1;
     static constexpr auto NAME_MATCH = 2;
     static constexpr auto START_ADDR_MATCH = 4;
     static constexpr auto END_ADDR_MATCH = 6;
     static constexpr auto VERSION_MATCH = 8;
+    constexpr auto versionShift = 24;
+
     // Parse PNOR toc (table of contents) file, which has lines like :
     // partition01=HBB,0x00010000,0x000a0000,0x80,ECC,PRESERVED, to indicate
     // partition information
@@ -170,39 +168,51 @@ void Table::preparePartitions()
         "^partition([0-9]+)=([A-Za-z0-9_]+),"
         "(0x)?([0-9a-fA-F]+),(0x)?([0-9a-fA-F]+),(0x)?([A-Fa-f0-9]{2})",
         std::regex::extended};
-    std::smatch match;
-    std::string line;
-    constexpr auto versionShift = 24;
 
+    std::smatch match;
+    if (std::regex_search(line, match, regex))
+    {
+        fs::path partitionFile = dir;
+        partitionFile /= match[NAME_MATCH].str();
+        if (!fs::exists(partitionFile))
+        {
+            MSG_ERR("Partition file %s does not exist", partitionFile.c_str());
+            return false;
+        }
+
+        writeNameAndId(part, match[NAME_MATCH].str(), match[ID_MATCH].str());
+        writeDefaults(part);
+
+        unsigned long start =
+            std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
+        unsigned long end =
+            std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
+        writeSizes(part, start, end);
+
+        // Use the shift to convert "80" to 0x80000000
+        unsigned long version =
+            std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
+        writeUserdata(part, version << versionShift, match.suffix().str());
+        part.checksum = details::checksum(part.data);
+    }
+
+    return true;
+}
+
+void Table::preparePartitions()
+{
+    fs::path tocFile = directory;
+    tocFile /= PARTITION_TOC_FILE;
+    allocateMemory(tocFile);
+
+    std::ifstream file(tocFile.c_str());
+    std::string line;
     decltype(auto) table = getNativeTable();
 
     while (std::getline(file, line))
     {
-        if (std::regex_search(line, match, regex))
+        if (parseTocLine(directory, line, table.partitions[numParts]))
         {
-            fs::path partitionFile = directory;
-            partitionFile /= match[NAME_MATCH].str();
-            if (!fs::exists(partitionFile))
-            {
-                MSG_ERR("Partition file %s does not exist",
-                        partitionFile.c_str());
-                continue;
-            }
-
-            writeNameAndId(table.partitions[numParts], match[NAME_MATCH].str(),
-                           match[ID_MATCH].str());
-            writeDefaults(table.partitions[numParts]);
-            writeSizes(table.partitions[numParts],
-                       std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16),
-                       std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16));
-            writeUserdata(
-                table.partitions[numParts],
-                std::stoul(match[VERSION_MATCH].str(), nullptr, 16)
-                    << versionShift, // For eg, convert "80" to 0x80000000
-                match.suffix().str());
-            table.partitions[numParts].checksum =
-                details::checksum(table.partitions[numParts].data);
-
             ++numParts;
         }
     }
