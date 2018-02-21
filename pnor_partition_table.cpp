@@ -74,123 +74,6 @@ inline void Table::allocateMemory(const fs::path& tocFile)
     tbl.resize(totalSizeAligned);
 }
 
-static inline void writeSizes(pnor_partition& part, size_t start, size_t end,
-                              size_t blockSize)
-{
-    size_t size = end - start;
-    part.data.base = align_up(start, blockSize) / blockSize;
-    size_t sizeInBlocks = align_up(size, blockSize) / blockSize;
-    part.data.size = sizeInBlocks;
-
-    // If a a patch partition file exists, populate actual size with its file
-    // size if it is smaller than the total size.
-    fs::path patchFile(PARTITION_FILES_PATCH_LOC);
-    patchFile /= part.data.name;
-    if (fs::is_regular_file(patchFile))
-    {
-        part.data.actual =
-            std::min(size, static_cast<size_t>(fs::file_size(patchFile)));
-    }
-    else
-    {
-        part.data.actual = size;
-    }
-}
-
-static inline void writeUserdata(pnor_partition& part, uint32_t version,
-                                 const std::string& data)
-{
-    std::istringstream stream(data);
-    std::string flag{};
-    auto perms = 0;
-
-    while (std::getline(stream, flag, ','))
-    {
-        if (flag == "ECC")
-        {
-            part.data.user.data[0] = PARTITION_ECC_PROTECTED;
-        }
-        else if (flag == "READONLY")
-        {
-            perms |= PARTITION_READONLY;
-        }
-        else if (flag == "PRESERVED")
-        {
-            perms |= PARTITION_PRESERVED;
-        }
-        else if (flag == "REPROVISION")
-        {
-            perms |= PARTITION_REPROVISION;
-        }
-        else if (flag == "VOLATILE")
-        {
-            perms |= PARTITION_VOLATILE;
-        }
-        else if (flag == "CLEARECC")
-        {
-            perms |= PARTITION_CLEARECC;
-        }
-    }
-
-    part.data.user.data[1] = perms;
-
-    part.data.user.data[1] |= version;
-}
-
-static inline void writeDefaults(pnor_partition& part)
-{
-    part.data.pid = PARENT_PATITION_ID;
-    part.data.type = PARTITION_TYPE_DATA;
-    part.data.flags = 0; // flags unused
-}
-
-static inline void writeNameAndId(pnor_partition& part, std::string&& name,
-                                  const std::string& id)
-{
-    name.resize(PARTITION_NAME_MAX);
-    memcpy(part.data.name, name.c_str(), sizeof(part.data.name));
-    part.data.id = std::stoul(id);
-}
-
-bool Table::parseTocLine(const std::string& line, pnor_partition& part)
-{
-    static constexpr auto ID_MATCH = 1;
-    static constexpr auto NAME_MATCH = 2;
-    static constexpr auto START_ADDR_MATCH = 4;
-    static constexpr auto END_ADDR_MATCH = 6;
-    static constexpr auto VERSION_MATCH = 8;
-    constexpr auto versionShift = 24;
-
-    // Parse PNOR toc (table of contents) file, which has lines like :
-    // partition01=HBB,0x00010000,0x000a0000,0x80,ECC,PRESERVED, to indicate
-    // partition information
-    std::regex regex{
-        "^partition([0-9]+)=([A-Za-z0-9_]+),"
-        "(0x)?([0-9a-fA-F]+),(0x)?([0-9a-fA-F]+),(0x)?([A-Fa-f0-9]{2})",
-        std::regex::extended};
-
-    std::smatch match;
-    if (!std::regex_search(line, match, regex))
-    {
-        return false;
-    }
-
-    writeNameAndId(part, match[NAME_MATCH].str(), match[ID_MATCH].str());
-    writeDefaults(part);
-
-    unsigned long start =
-        std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
-    unsigned long end = std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
-    writeSizes(part, start, end, blockSize);
-
-    // Use the shift to convert "80" to 0x80000000
-    unsigned long version = std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
-    writeUserdata(part, version << versionShift, match.suffix().str());
-    part.checksum = details::checksum(part.data);
-
-    return true;
-}
-
 void Table::preparePartitions()
 {
     fs::path tocFile = directory;
@@ -206,7 +89,7 @@ void Table::preparePartitions()
         pnor_partition& part = table.partitions[numParts];
         fs::path file;
 
-        if (!parseTocLine(line, part))
+        if (!parseTocLine(line, blockSize, part))
         {
             continue;
         }
@@ -306,6 +189,124 @@ PartitionTable endianFixup(const PartitionTable& in)
     }
 
     return out;
+}
+
+static inline void writeSizes(pnor_partition& part, size_t start, size_t end,
+                              size_t blockSize)
+{
+    size_t size = end - start;
+    part.data.base = align_up(start, blockSize) / blockSize;
+    size_t sizeInBlocks = align_up(size, blockSize) / blockSize;
+    part.data.size = sizeInBlocks;
+
+    // If a a patch partition file exists, populate actual size with its file
+    // size if it is smaller than the total size.
+    fs::path patchFile(PARTITION_FILES_PATCH_LOC);
+    patchFile /= part.data.name;
+    if (fs::is_regular_file(patchFile))
+    {
+        part.data.actual =
+            std::min(size, static_cast<size_t>(fs::file_size(patchFile)));
+    }
+    else
+    {
+        part.data.actual = size;
+    }
+}
+
+static inline void writeUserdata(pnor_partition& part, uint32_t version,
+                                 const std::string& data)
+{
+    std::istringstream stream(data);
+    std::string flag{};
+    auto perms = 0;
+
+    while (std::getline(stream, flag, ','))
+    {
+        if (flag == "ECC")
+        {
+            part.data.user.data[0] = PARTITION_ECC_PROTECTED;
+        }
+        else if (flag == "READONLY")
+        {
+            perms |= PARTITION_READONLY;
+        }
+        else if (flag == "PRESERVED")
+        {
+            perms |= PARTITION_PRESERVED;
+        }
+        else if (flag == "REPROVISION")
+        {
+            perms |= PARTITION_REPROVISION;
+        }
+        else if (flag == "VOLATILE")
+        {
+            perms |= PARTITION_VOLATILE;
+        }
+        else if (flag == "CLEARECC")
+        {
+            perms |= PARTITION_CLEARECC;
+        }
+    }
+
+    part.data.user.data[1] = perms;
+
+    part.data.user.data[1] |= version;
+}
+
+static inline void writeDefaults(pnor_partition& part)
+{
+    part.data.pid = PARENT_PATITION_ID;
+    part.data.type = PARTITION_TYPE_DATA;
+    part.data.flags = 0; // flags unused
+}
+
+static inline void writeNameAndId(pnor_partition& part, std::string&& name,
+                                  const std::string& id)
+{
+    name.resize(PARTITION_NAME_MAX);
+    memcpy(part.data.name, name.c_str(), sizeof(part.data.name));
+    part.data.id = std::stoul(id);
+}
+
+bool parseTocLine(const std::string& line, size_t blockSize,
+                  pnor_partition& part)
+{
+    static constexpr auto ID_MATCH = 1;
+    static constexpr auto NAME_MATCH = 2;
+    static constexpr auto START_ADDR_MATCH = 4;
+    static constexpr auto END_ADDR_MATCH = 6;
+    static constexpr auto VERSION_MATCH = 8;
+    constexpr auto versionShift = 24;
+
+    // Parse PNOR toc (table of contents) file, which has lines like :
+    // partition01=HBB,0x00010000,0x000a0000,0x80,ECC,PRESERVED, to indicate
+    // partition information
+    std::regex regex{
+        "^partition([0-9]+)=([A-Za-z0-9_]+),"
+        "(0x)?([0-9a-fA-F]+),(0x)?([0-9a-fA-F]+),(0x)?([A-Fa-f0-9]{2})",
+        std::regex::extended};
+
+    std::smatch match;
+    if (!std::regex_search(line, match, regex))
+    {
+        return false;
+    }
+
+    writeNameAndId(part, match[NAME_MATCH].str(), match[ID_MATCH].str());
+    writeDefaults(part);
+
+    unsigned long start =
+        std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
+    unsigned long end = std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
+    writeSizes(part, start, end, blockSize);
+
+    // Use the shift to convert "80" to 0x80000000
+    unsigned long version = std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
+    writeUserdata(part, version << versionShift, match.suffix().str());
+    part.checksum = details::checksum(part.data);
+
+    return true;
 }
 
 } // namespace virtual_pnor

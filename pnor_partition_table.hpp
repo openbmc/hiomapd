@@ -24,6 +24,19 @@ using checksum_t = uint32_t;
  */
 PartitionTable endianFixup(const PartitionTable& src);
 
+/** @brief Parse a ToC line (entry) into the corresponding FFS partition
+ * object.
+ *
+ * @param[in] line - The ToC line to parse
+ * @param[in] blockSize - The flash block size in bytes
+ * @param[out] part - The partition object to populate with the information
+ *                    parsed from the provided ToC line
+ *
+ * @returns True on success, false on failure.
+ */
+bool parseTocLine(const std::string& line, size_t blockSize,
+                  pnor_partition& part);
+
 namespace details
 {
 
@@ -144,17 +157,6 @@ class Table
     const pnor_partition& partition(const std::string& name) const;
 
   private:
-    /** @brief Parse a ToC line (entry) into the corresponding FFS partition
-     * object.
-     *
-     * @param[in] line - The ToC line to parse
-     * @param[out] part - The partition object to populate with the information
-     *                    parsed from the provided ToC line
-     *
-     * @returns True on success, false on failure.
-     */
-    bool parseTocLine(const std::string& line, pnor_partition& part);
-
     /** @brief Prepares a vector of PNOR partition structures.
      */
     void preparePartitions();
