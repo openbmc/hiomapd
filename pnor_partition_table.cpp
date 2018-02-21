@@ -96,7 +96,7 @@ inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
     }
 }
 
-inline void Table::writeUserdata(pnor_partition& part, uint32_t version,
+static inline void writeUserdata(pnor_partition& part, uint32_t version,
                                  const std::string& data)
 {
     std::istringstream stream(data);

@@ -182,18 +182,6 @@ class Table
      */
     void writeSizes(pnor_partition& part, size_t start, size_t end);
 
-    /** @brief Populate userdata bits for the input
-     *         pnor_partition structure.
-     *
-     *  @param[in/out] part - pnor_partition structure
-     *  @param[in] version - partition version check algorithm to be used
-     *                       (see pnor_partition_defs.h)
-     *  @param[in] data - string having userdata fields in a
-     *             comma-separated line.
-     */
-    void writeUserdata(pnor_partition& part, uint32_t version,
-                       const std::string& data);
-
     /** @brief Return a little-endian partition table
      *
      *  @returns reference to native partition table
