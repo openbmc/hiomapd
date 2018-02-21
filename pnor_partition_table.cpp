@@ -143,7 +143,7 @@ inline void Table::writeDefaults(pnor_partition& part)
     part.data.flags = 0; // flags unused
 }
 
-inline void Table::writeNameAndId(pnor_partition& part, std::string&& name,
+static inline void writeNameAndId(pnor_partition& part, std::string&& name,
                                   const std::string& id)
 {
     name.resize(PARTITION_NAME_MAX);

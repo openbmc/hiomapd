@@ -194,16 +194,6 @@ class Table
     void writeUserdata(pnor_partition& part, uint32_t version,
                        const std::string& data);
 
-    /** @brief Populate the name and id fields for the input
-     *         pnor_partition structure.
-     *
-     *  @param[in/out] part - pnor_partition structure
-     *  @param[in] name - partition name
-     *  @param[id] id - partition id
-     */
-    void writeNameAndId(pnor_partition& part, std::string&& name,
-                        const std::string& id);
-
     /** @brief Populate default/unused fields for the input
      *         pnor_partition structure.
      *
