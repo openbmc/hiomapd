@@ -170,31 +170,31 @@ bool Table::parseTocLine(fs::path& dir, const std::string& line,
         std::regex::extended};
 
     std::smatch match;
-    if (std::regex_search(line, match, regex))
+    if (!std::regex_search(line, match, regex))
     {
-        fs::path partitionFile = dir;
-        partitionFile /= match[NAME_MATCH].str();
-        if (!fs::exists(partitionFile))
-        {
-            MSG_ERR("Partition file %s does not exist", partitionFile.c_str());
-            return false;
-        }
-
-        writeNameAndId(part, match[NAME_MATCH].str(), match[ID_MATCH].str());
-        writeDefaults(part);
-
-        unsigned long start =
-            std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
-        unsigned long end =
-            std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
-        writeSizes(part, start, end);
-
-        // Use the shift to convert "80" to 0x80000000
-        unsigned long version =
-            std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
-        writeUserdata(part, version << versionShift, match.suffix().str());
-        part.checksum = details::checksum(part.data);
+        return false;
     }
+
+    fs::path partitionFile = dir;
+    partitionFile /= match[NAME_MATCH].str();
+    if (!fs::exists(partitionFile))
+    {
+        MSG_ERR("Partition file %s does not exist", partitionFile.c_str());
+        return false;
+    }
+
+    writeNameAndId(part, match[NAME_MATCH].str(), match[ID_MATCH].str());
+    writeDefaults(part);
+
+    unsigned long start =
+        std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
+    unsigned long end = std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
+    writeSizes(part, start, end);
+
+    // Use the shift to convert "80" to 0x80000000
+    unsigned long version = std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
+    writeUserdata(part, version << versionShift, match.suffix().str());
+    part.checksum = details::checksum(part.data);
 
     return true;
 }
