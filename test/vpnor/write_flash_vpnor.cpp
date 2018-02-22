@@ -45,7 +45,6 @@ uint8_t data[8] = {0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7};
 #define OFFSET BLOCK_SIZE
 #define MEM_SIZE (BLOCK_SIZE * 2)
 #define DATA_SIZE sizeof(data)
-#define ERASE_SIZE BLOCK_SIZE
 #define BLOCK_SIZE_SHIFT 12
 
 const std::string toc[] = {
