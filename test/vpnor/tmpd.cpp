@@ -14,16 +14,14 @@ namespace fs = std::experimental::filesystem;
 
 size_t VpnorRoot::write(const std::string &name, const void *data, size_t len)
 {
-    fs::path path{root};
-    path /= name;
+    // write() is for test environment setup - always write to ro section
+    fs::path path = root / "ro" / name;
 
     if (!fs::exists(path))
         /* It's not in the ToC */
         throw std::invalid_argument(name);
 
-    std::ofstream partitionFile(path.c_str());
-    partitionFile.write((const char *)data, len);
-    partitionFile.close();
+    std::ofstream(path).write((const char *)data, len);
 
     return len;
 }

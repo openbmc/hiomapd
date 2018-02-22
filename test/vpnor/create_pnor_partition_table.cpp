@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
-#include "pnor_partition_table.hpp"
-#include "config.h"
 #include <assert.h>
 #include <string.h>
-#include <vector>
-#include <fstream>
-#include <experimental/filesystem>
+
+#include "config.h"
+#include "pnor_partition_table.hpp"
 
 #include "test/vpnor/tmpd.hpp"
 
@@ -18,15 +16,14 @@ const std::string toc[] = {
 };
 constexpr auto partitionName = "HBB";
 
-namespace fs = std::experimental::filesystem;
 namespace test = openpower::virtual_pnor::test;
 
 int main()
 {
     test::VpnorRoot root(toc, BLOCK_SIZE);
 
-    const openpower::virtual_pnor::partition::Table table(
-        fs::path{root.path()}, BLOCK_SIZE, PNOR_SIZE);
+    const openpower::virtual_pnor::partition::Table table(root.ro(), BLOCK_SIZE,
+                                                          PNOR_SIZE);
 
     pnor_partition_table expectedTable{};
     expectedTable.data.magic = PARTITION_HEADER_MAGIC;

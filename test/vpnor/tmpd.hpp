@@ -29,9 +29,12 @@ class VpnorRoot
         char* tmpdir = mkdtemp(tmplt);
         root = fs::path{tmpdir};
 
-        fs::path tocFilePath{root};
-        tocFilePath /= PARTITION_TOC_FILE;
-        std::ofstream tocFile(tocFilePath.c_str());
+        for (const auto& attr : attributes)
+        {
+            fs::create_directory(root / attr);
+        }
+
+        fs::path tocFilePath = root / "ro" / PARTITION_TOC_FILE;
 
         for (const std::string& line : toc)
         {
@@ -40,19 +43,14 @@ class VpnorRoot
             openpower::virtual_pnor::parseTocLine(line, blockSize, part);
 
             /* Populate the partition in the tree */
-            fs::path partitionFilePath{root};
-            partitionFilePath /= part.data.name;
-            std::ofstream partitionFile(partitionFilePath.c_str());
-            std::vector<char> empty(part.data.size, 0);
-            partitionFile.write(empty.data(), empty.size());
-            partitionFile.close();
+            std::vector<char> zeroed(part.data.actual, 0);
+            fs::path partitionFilePath = root / "ro" / part.data.name;
+            std::ofstream(partitionFilePath)
+                .write(zeroed.data(), zeroed.size());
 
             /* Update the ToC if the partition file was created */
-            tocFile.write(line.c_str(), line.length());
-            tocFile.write("\n", 1);
+            std::ofstream(tocFilePath, std::ofstream::app) << line << "\n";
         }
-
-        tocFile.close();
     }
 
     VpnorRoot(const VpnorRoot&) = delete;
@@ -64,14 +62,27 @@ class VpnorRoot
     {
         fs::remove_all(root);
     }
-    const fs::path& path()
+    fs::path ro()
     {
-        return root;
+        return fs::path{root} / "ro";
+    }
+    fs::path rw()
+    {
+        return fs::path{root} / "rw";
+    }
+    fs::path prsv()
+    {
+        return fs::path{root} / "prsv";
+    }
+    fs::path patch()
+    {
+        return fs::path{root} / "patch";
     }
     size_t write(const std::string& name, const void* data, size_t len);
 
   private:
     fs::path root;
+    const std::string attributes[4] = {"ro", "rw", "prsv", "patch"};
 };
 
 } // test

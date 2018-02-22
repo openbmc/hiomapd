@@ -71,7 +71,7 @@ int main()
     test::VpnorRoot root(toc, BLOCK_SIZE);
     root.write("HBB", data, sizeof(data));
 
-    path = root.path();
+    path = root.ro();
     cpath = path.c_str();
 
     system_set_reserved_size(MEM_SIZE);
