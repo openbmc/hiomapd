@@ -20,7 +20,9 @@ namespace test = openpower::virtual_pnor::test;
 
 int main()
 {
-    test::VpnorRoot root(toc, BLOCK_SIZE);
+    struct mbox_context _ctx, *ctx = &_ctx;
+
+    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
 
     const openpower::virtual_pnor::partition::Table table(root.ro(), BLOCK_SIZE,
                                                           PNOR_SIZE);

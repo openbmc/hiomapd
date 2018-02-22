@@ -80,11 +80,6 @@ void init(struct mbox_context* ctx, test::VpnorRoot& root)
     ctx->block_size_shift = BLOCK_SIZE_SHIFT;
     ctx->flash_bmap = reinterpret_cast<uint8_t*>(
         calloc(MEM_SIZE >> ctx->erase_size_shift, sizeof(*ctx->flash_bmap)));
-
-    strcpy(ctx->paths.ro_loc, root.ro().c_str());
-    strcpy(ctx->paths.rw_loc, root.rw().c_str());
-    strcpy(ctx->paths.prsv_loc, root.prsv().c_str());
-    strcpy(ctx->paths.patch_loc, root.patch().c_str());
 }
 
 int main(void)
@@ -97,7 +92,7 @@ int main(void)
     struct mbox_context* ctx = &context;
     memset(ctx, 0, sizeof(mbox_context));
 
-    test::VpnorRoot root(toc, BLOCK_SIZE);
+    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
 
     // Initialize the context before running the test case.
     init(ctx, root);

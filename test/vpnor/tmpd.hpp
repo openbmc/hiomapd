@@ -8,6 +8,7 @@
 #include <experimental/filesystem>
 
 #include "config.h"
+#include "mbox.h"
 #include "pnor_partition_table.hpp"
 
 namespace openpower
@@ -23,7 +24,8 @@ class VpnorRoot
 {
   public:
     template <std::size_t N>
-    VpnorRoot(const std::string (&toc)[N], size_t blockSize)
+    VpnorRoot(struct mbox_context* ctx, const std::string (&toc)[N],
+              size_t blockSize)
     {
         char tmplt[] = "/tmp/vpnor_root.XXXXXX";
         char* tmpdir = mkdtemp(tmplt);
@@ -51,6 +53,15 @@ class VpnorRoot
             /* Update the ToC if the partition file was created */
             std::ofstream(tocFilePath, std::ofstream::app) << line << "\n";
         }
+
+        strncpy(ctx->paths.ro_loc, ro().c_str(), PATH_MAX - 1);
+        ctx->paths.ro_loc[PATH_MAX - 1] = '\0';
+        strncpy(ctx->paths.rw_loc, rw().c_str(), PATH_MAX - 1);
+        ctx->paths.rw_loc[PATH_MAX - 1] = '\0';
+        strncpy(ctx->paths.prsv_loc, prsv().c_str(), PATH_MAX - 1);
+        ctx->paths.prsv_loc[PATH_MAX - 1] = '\0';
+        strncpy(ctx->paths.patch_loc, patch().c_str(), PATH_MAX - 1);
+        ctx->paths.patch_loc[PATH_MAX - 1] = '\0';
     }
 
     VpnorRoot(const VpnorRoot&) = delete;

@@ -65,24 +65,17 @@ namespace test = openpower::virtual_pnor::test;
 
 int main()
 {
-    fs::path path;
-    const char *cpath;
-
-    test::VpnorRoot root(toc, BLOCK_SIZE);
-    root.write("HBB", data, sizeof(data));
-
-    path = root.ro();
-    cpath = path.c_str();
+    struct mbox_context *ctx;
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(MEM_SIZE, ERASE_SIZE);
 
-    struct mbox_context *ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
-    strcpy(ctx->paths.ro_loc, cpath);
-    strcpy(ctx->paths.rw_loc, cpath);
-    strcpy(ctx->paths.prsv_loc, cpath);
+    ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
 
-    vpnor_create_partition_table_from_path(ctx, cpath);
+    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
+    root.write("HBB", data, sizeof(data));
+
+    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
 
     int rc = mbox_command_dispatch(ctx, get_info, sizeof(get_info));
     assert(rc == 1);
