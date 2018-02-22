@@ -1,14 +1,16 @@
 TEST_MBOX_VPNOR_SRCS = common.c pnor_partition_table.cpp \
 		       %reldir%/tmpd.cpp
 
+VPNOR_LDADD = -lstdc++fs \
+	$(SDBUSPLUS_LIBS) \
+	$(PHOSPHOR_LOGGING_LIBS) \
+	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
+
 test_vpnor_create_pnor_partition_table_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
 	%reldir%/create_pnor_partition_table.cpp
 test_vpnor_create_pnor_partition_table_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
-test_vpnor_create_pnor_partition_table_LDADD = -lstdc++fs \
-	$(SDBUSPLUS_LIBS) \
-	$(PHOSPHOR_LOGGING_LIBS) \
-	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
+test_vpnor_create_pnor_partition_table_LDADD = $(VPNOR_LDADD)
 
 test_vpnor_create_read_window_vpnor_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \
@@ -21,10 +23,7 @@ test_vpnor_create_read_window_vpnor_SOURCES = \
 	pnor_partition.cpp \
 	%reldir%/create_read_window_vpnor.cpp
 test_vpnor_create_read_window_vpnor_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
-test_vpnor_create_read_window_vpnor_LDADD = -lstdc++fs \
-	$(SDBUSPLUS_LIBS) \
-	$(PHOSPHOR_LOGGING_LIBS) \
-	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
+test_vpnor_create_read_window_vpnor_LDADD = $(VPNOR_LDADD)
 
 test_vpnor_write_flash_vpnor_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
@@ -34,10 +33,7 @@ test_vpnor_write_flash_vpnor_SOURCES = \
 	pnor_partition.cpp \
 	%reldir%/write_flash_vpnor.cpp
 test_vpnor_write_flash_vpnor_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
-test_vpnor_write_flash_vpnor_LDADD = -lstdc++fs \
-	$(SDBUSPLUS_LIBS) \
-	$(PHOSPHOR_LOGGING_LIBS) \
-	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
+test_vpnor_write_flash_vpnor_LDADD = $(VPNOR_LDADD)
 
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
