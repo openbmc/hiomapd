@@ -86,6 +86,8 @@ int main(void)
     namespace fs = std::experimental::filesystem;
 
     int rc{};
+    int fd;
+    void* map;
     char src[DATA_SIZE]{0};
     struct mbox_context context;
     struct mbox_context* ctx = &context;
@@ -98,26 +100,6 @@ int main(void)
 
     // create the partition table
     vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
-
-    // Write to psrv partition
-
-    // As file doesn't exist there, so it copies
-    // the file from RO to PRSV and write the file in PRSV partition.
-
-    memset(src, 0xaa, sizeof(src));
-
-    rc = write_flash(ctx, (OFFSET * 3), src, sizeof(src));
-    assert(rc == 0);
-
-    auto fd = open((root.prsv() / "TEST3").c_str(), O_RDONLY);
-    auto map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, fd, 0);
-    assert(map != MAP_FAILED);
-
-    // verify it is written
-    rc = memcmp(src, map, sizeof(src));
-    assert(rc == 0);
-    munmap(map, MEM_SIZE);
-    close(fd);
 
     // Write to the RO partition
     memset(src, 0x55, sizeof(src));

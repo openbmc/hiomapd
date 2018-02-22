@@ -35,9 +35,20 @@ test_vpnor_write_flash_vpnor_SOURCES = \
 test_vpnor_write_flash_vpnor_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_write_flash_vpnor_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_write_prsv_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	mtd.c \
+	pnor_partition.cpp \
+	%reldir%/write_prsv.cpp
+test_vpnor_write_prsv_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_write_prsv_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
 	%reldir%/create_read_window_vpnor \
-	%reldir%/write_flash_vpnor
+	%reldir%/write_flash_vpnor \
+	%reldir%/write_prsv
 endif
