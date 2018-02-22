@@ -32,11 +32,14 @@ extern "C" {
 #include <fstream>
 #include <experimental/filesystem>
 
+#include "test/vpnor/tmpd.hpp"
+
 // A read window assumes that the toc is located at offset 0,
 // so create dummy partition at arbitrary offset 0x100.
-constexpr auto line = "partition01=HBB,00000100,0001000,ECC,PRESERVED";
-constexpr auto partition = "HBB";
-char tmplt[] = "/tmp/create_read_test.XXXXXX";
+const std::string toc[] = {
+    "partition01=HBB,00000100,0001000,ECC,PRESERVED",
+};
+
 uint8_t data[8] = {0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab};
 
 #define BLOCK_SIZE 4096
@@ -48,6 +51,7 @@ uint8_t data[8] = {0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab};
 static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00};
+
 // offset 0x100 and size 6
 static const uint8_t create_read_window[] = {0x04, 0x01, 0x01, 0x00, 0x06, 0x00,
                                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -57,36 +61,28 @@ static const uint8_t response[] = {0x04, 0x01, 0xfe, 0xff, 0x01, 0x00, 0x01,
                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
 namespace fs = std::experimental::filesystem;
+namespace test = openpower::virtual_pnor::test;
 
 int main()
 {
-    char* tmpdir = mkdtemp(tmplt);
-    assert(tmpdir != nullptr);
+    fs::path path;
+    const char *cpath;
 
-    // create the toc file
-    fs::path tocFilePath{tmpdir};
-    tocFilePath /= PARTITION_TOC_FILE;
-    std::ofstream tocFile(tocFilePath.c_str());
-    tocFile.write(line, strlen(line));
-    tocFile.close();
+    test::VpnorRoot root(toc, BLOCK_SIZE);
+    root.write("HBB", data, sizeof(data));
 
-    // create the partition file
-    fs::path partitionFilePath{tmpdir};
-    partitionFilePath /= partition;
-    std::ofstream partitionFile(partitionFilePath.c_str());
-
-    partitionFile.write((char*)data, sizeof(data));
-    partitionFile.close();
+    path = root.path();
+    cpath = path.c_str();
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(MEM_SIZE, ERASE_SIZE);
 
-    struct mbox_context* ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
-    strcpy(ctx->paths.ro_loc, tmpdir);
-    strcpy(ctx->paths.rw_loc, tmpdir);
-    strcpy(ctx->paths.prsv_loc, tmpdir);
+    struct mbox_context *ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
+    strcpy(ctx->paths.ro_loc, cpath);
+    strcpy(ctx->paths.rw_loc, cpath);
+    strcpy(ctx->paths.prsv_loc, cpath);
 
-    vpnor_create_partition_table_from_path(ctx, tmpdir);
+    vpnor_create_partition_table_from_path(ctx, cpath);
 
     int rc = mbox_command_dispatch(ctx, get_info, sizeof(get_info));
     assert(rc == 1);
@@ -107,6 +103,5 @@ int main()
     //      Read beyond the partition file size.
     //      openbmc/openbmc#1868
 
-    fs::remove_all(fs::path{tmpdir});
     return rc;
 }
