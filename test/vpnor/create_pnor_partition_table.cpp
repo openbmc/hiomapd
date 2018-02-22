@@ -19,18 +19,14 @@ const std::string toc[] = {
 constexpr auto partitionName = "HBB";
 
 namespace fs = std::experimental::filesystem;
+namespace test = openpower::virtual_pnor::test;
 
 int main()
 {
-    char tmplt[] = "/tmp/vpnor_partitions.XXXXXX";
-    char* tmpdir = mkdtemp(tmplt);
-    assert(tmpdir != nullptr);
-    fs::path root{tmpdir};
-
-    openpower::virtual_pnor::test::createVpnorTree(root, toc, BLOCK_SIZE);
+    test::VpnorRoot root(toc, BLOCK_SIZE);
 
     const openpower::virtual_pnor::partition::Table table(
-        fs::path{tmpdir}, BLOCK_SIZE, PNOR_SIZE);
+        fs::path{root.path()}, BLOCK_SIZE, PNOR_SIZE);
 
     pnor_partition_table expectedTable{};
     expectedTable.data.magic = PARTITION_HEADER_MAGIC;
@@ -60,8 +56,6 @@ int main()
         openpower::virtual_pnor::details::checksum(expectedPartition.data);
 
     const pnor_partition_table& result = table.getNativeTable();
-
-    fs::remove_all(fs::path{tmpdir});
 
     auto rc = memcmp(&expectedTable, &result, sizeof(pnor_partition_table));
     assert(rc == 0);

@@ -1,4 +1,5 @@
-TEST_MBOX_VPNOR_SRCS = common.c pnor_partition_table.cpp
+TEST_MBOX_VPNOR_SRCS = common.c pnor_partition_table.cpp \
+		       %reldir%/tmpd.cpp
 
 test_vpnor_create_pnor_partition_table_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
