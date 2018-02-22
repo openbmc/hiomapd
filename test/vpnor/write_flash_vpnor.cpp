@@ -101,16 +101,6 @@ int main(void)
     // create the partition table
     vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
 
-    // Write to the RW partition
-    memset(src, 0xbb, sizeof(src));
-    fd = open((root.rw() / "TEST2").c_str(), O_RDONLY);
-    map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, fd, 0);
-    assert(map != MAP_FAILED);
-    rc = write_flash(ctx, (OFFSET * 2), src, sizeof(src));
-    assert(rc == 0);
-    rc = memcmp(src, map, sizeof(src));
-    assert(rc == 0);
-
     // write beyond the partition length as the partition
     // file length is 8 byte(TEST2).
     rc = write_flash(ctx, (OFFSET * 2 + 3), src, sizeof(src) + 20);
@@ -119,6 +109,9 @@ int main(void)
     memset(src, 0xcc, sizeof(src));
     rc = write_flash(ctx, (OFFSET * 2), src, sizeof(src));
     assert(rc == 0);
+    fd = open((root.rw() / "TEST2").c_str(), O_RDONLY);
+    map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, fd, 0);
+    assert(map != MAP_FAILED);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
 
