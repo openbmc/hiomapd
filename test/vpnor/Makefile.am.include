@@ -12,7 +12,7 @@ test_vpnor_create_pnor_partition_table_SOURCES = \
 test_vpnor_create_pnor_partition_table_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_create_pnor_partition_table_LDADD = $(VPNOR_LDADD)
 
-test_vpnor_create_read_window_vpnor_SOURCES = \
+test_vpnor_create_read_window_partition_exists_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \
 	mboxd_msg.c \
 	mboxd_windows.c \
@@ -21,9 +21,9 @@ test_vpnor_create_read_window_vpnor_SOURCES = \
 	mboxd_pnor_partition_table.cpp \
 	mboxd_flash_virtual.cpp \
 	pnor_partition.cpp \
-	%reldir%/create_read_window_vpnor.cpp
-test_vpnor_create_read_window_vpnor_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
-test_vpnor_create_read_window_vpnor_LDADD = $(VPNOR_LDADD)
+	%reldir%/create_read_window_partition_exists.cpp
+test_vpnor_create_read_window_partition_exists_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_create_read_window_partition_exists_LDADD = $(VPNOR_LDADD)
 
 test_vpnor_write_patch_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
@@ -68,7 +68,7 @@ test_vpnor_write_rw_LDADD = $(VPNOR_LDADD)
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
-	%reldir%/create_read_window_vpnor \
+	%reldir%/create_read_window_partition_exists \
 	%reldir%/write_prsv \
 	%reldir%/write_ro \
 	%reldir%/write_rw \
