@@ -54,21 +54,23 @@ void mbox_log(int p, const char *fmt, ...)
 
 uint16_t get_u16(uint8_t *ptr)
 {
-	return *(uint16_t *)ptr;
+	return le16toh(*(uint16_t *)ptr);
 }
 
 void put_u16(uint8_t *ptr, uint16_t val)
 {
+	val = htole16(val);
 	memcpy(ptr, &val, sizeof(val));
 }
 
 uint32_t get_u32(uint8_t *ptr)
 {
-	return *(uint32_t *)ptr;
+	return le32toh(*(uint32_t *)ptr);
 }
 
 void put_u32(uint8_t *ptr, uint32_t val)
 {
+	val = htole32(val);
 	memcpy(ptr, &val, sizeof(val));
 }
 
