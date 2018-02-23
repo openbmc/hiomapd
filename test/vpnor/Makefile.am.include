@@ -167,6 +167,19 @@ test_vpnor_toc_missing_file_SOURCES = \
 test_vpnor_toc_missing_file_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_toc_missing_file_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_create_read_window_oob_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mboxd_lpc.c \
+	mboxd_lpc_virtual.cpp \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp \
+	%reldir%/create_read_window_oob.cpp
+test_vpnor_create_read_window_oob_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_create_read_window_oob_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -184,5 +197,8 @@ check_PROGRAMS += \
 	%reldir%/toc_overlap \
 	%reldir%/toc_lookup_found \
 	%reldir%/toc_lookup_failed \
-	%reldir%/toc_missing_file
+	%reldir%/toc_missing_file \
+	%reldir%/create_read_window_oob
+
+XFAIL_TESTS += %reldir%/create_read_window_oob
 endif
