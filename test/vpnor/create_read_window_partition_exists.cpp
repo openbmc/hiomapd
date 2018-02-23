@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
+#include <assert.h>
+#include <experimental/filesystem>
+#include <fstream>
+#include <string.h>
+#include <vector>
+
 #include "config.h"
 #include "mboxd_pnor_partition_table.h"
 
@@ -9,42 +15,34 @@ extern "C" {
 #include "test/system.h"
 }
 
-#include <assert.h>
-#include <string.h>
-
-#include <vector>
-#include <fstream>
-#include <experimental/filesystem>
-
 #include "test/vpnor/tmpd.hpp"
 
 // A read window assumes that the toc is located at offset 0,
-// so create dummy partition at arbitrary offset 0x100.
+// so create dummy partition at arbitrary offset 0x1000.
 const std::string toc[] = {
-    "partition01=HBB,00000100,0001000,ECC,PRESERVED",
+    "partition01=HBB,00001000,00002000,80,ECC,READONLY",
 };
 
-uint8_t data[8] = {0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab};
+static const uint8_t data[8] = {0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab};
 
-#define BLOCK_SIZE 4096
-#define MEM_SIZE (BLOCK_SIZE * 2)
-#define ERASE_SIZE BLOCK_SIZE
-#define N_WINDOWS 1
-#define WINDOW_SIZE BLOCK_SIZE
+static const auto BLOCK_SIZE = 4096;
+static const auto MEM_SIZE = BLOCK_SIZE * 2;
+static const auto ERASE_SIZE = BLOCK_SIZE;
+static const auto N_WINDOWS = 1;
+static const auto WINDOW_SIZE = BLOCK_SIZE;
 
 static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00};
 
 // offset 0x100 and size 6
-static const uint8_t create_read_window[] = {0x04, 0x01, 0x01, 0x00, 0x06, 0x00,
+static const uint8_t create_read_window[] = {0x04, 0x01, 0x01, 0x00, 0x01, 0x00,
                                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                              0x00, 0x00, 0x00, 0x00};
 
 static const uint8_t response[] = {0x04, 0x01, 0xfe, 0xff, 0x01, 0x00, 0x01,
                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
-namespace fs = std::experimental::filesystem;
 namespace test = openpower::virtual_pnor::test;
 
 int main()
@@ -75,10 +73,6 @@ int main()
     // Compare the reserved memory to the pnor
     rc = memcmp(ctx->mem, data, 6);
     assert(rc == 0);
-
-    // TODO: Add few more test cases for read from multiple partitions(PRSV/RW)
-    //      Read beyond the partition file size.
-    //      openbmc/openbmc#1868
 
     return rc;
 }
