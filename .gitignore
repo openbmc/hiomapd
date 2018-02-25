@@ -49,7 +49,7 @@ Makefile
 arm-openbmc-linux-gnueabi-libtool
 /mboxd
 mboxctl
-cscope.out
+/cscope.*
 /test/*.o
 
 # Autotools test infrastructure
