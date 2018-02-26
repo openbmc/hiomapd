@@ -42,7 +42,7 @@ char *get_dev_mtd(void)
 {
 	int rc;
 
-	rc = tmpf_init(&mtd, "flashXXXXXX");
+	rc = tmpf_init(&mtd, "flash-store.XXXXXX");
 	if (rc < 0)
 		return NULL;
 

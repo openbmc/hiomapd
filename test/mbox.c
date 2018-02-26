@@ -216,13 +216,13 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 
 	atexit(cleanup);
 
-	rc = tmpf_init(&test.mbox, "mboxXXXXXX");
+	rc = tmpf_init(&test.mbox, "mbox-store.XXXXXX");
 	assert(rc == 0);
 
-	rc = tmpf_init(&test.flash, "flashXXXXXX");
+	rc = tmpf_init(&test.flash, "flash-store.XXXXXX");
 	assert(rc == 0);
 
-	rc = tmpf_init(&test.lpc, "lpcXXXXXX");
+	rc = tmpf_init(&test.lpc, "lpc-store.XXXXXX");
 	assert(rc == 0);
 
 	test.context.windows.num = n_windows;

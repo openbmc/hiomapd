@@ -25,9 +25,12 @@
 
 #include "test/tmpf.h"
 
+static const char *tmpf_dir = "/tmp/";
+
 int tmpf_init(struct tmpf *tmpf, const char *template)
 {
-	strncpy(tmpf->path, template, sizeof(tmpf->path) - 1);
+	strcpy(tmpf->path, tmpf_dir);
+	strncat(tmpf->path, template, sizeof(tmpf->path) - sizeof(tmpf_dir));
 
 	tmpf->fd = mkstemp(tmpf->path);
 	if (tmpf->fd < 0) {

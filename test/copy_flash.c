@@ -66,7 +66,7 @@ int main(void)
 		goto free;
 	}
 
-	rc = tmpf_init(&tmp, "flashXXXXXX");
+	rc = tmpf_init(&tmp, "flash-store.XXXXXX");
 	if (rc < 0)
 		goto free;
 
