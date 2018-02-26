@@ -32,9 +32,9 @@ PartitionTable endianFixup(const PartitionTable& src);
  * @param[out] part - The partition object to populate with the information
  *                    parsed from the provided ToC line
  *
- * @returns True on success, false on failure.
+ * Throws: MalformedTocEntry, InvalidTocEntry
  */
-bool parseTocLine(const std::string& line, size_t blockSize,
+void parseTocLine(const std::string& line, size_t blockSize,
                   pnor_partition& part);
 
 namespace details
@@ -91,6 +91,8 @@ class Table
      *             open-power/hostboot/blob/master/src/usr/pnor/ffs.h for
      *             the PNOR FFS structure.
      *  @param[in] pnorSize - PNOR size, in bytes
+     *
+     * Throws MalformedTocEntry, InvalidTocEntry
      */
     Table(fs::path&& directory, size_t blockSize, size_t pnorSize);
 
@@ -151,6 +153,8 @@ class Table
 
   private:
     /** @brief Prepares a vector of PNOR partition structures.
+     *
+     * Throws: MalformedTocEntry, InvalidTocEntry
      */
     void preparePartitions();
 
@@ -199,7 +203,83 @@ class Table
     /** @brief PNOR size, in bytes */
     size_t pnorSize;
 };
-
 } // namespace partition
+
+/** @brief An exception type storing a reason string.
+ *
+ *  This looks a lot like how std::runtime_error might be implemented however
+ *  we want to avoid extending it, as exceptions extending ReasonedError have
+ *  an expectation of being handled (can be predicted and are inside the scope
+ *  of the program).
+ *
+ *  From std::runtime_error documentation[1]:
+ *
+ *  > Defines a type of object to be thrown as exception. It reports errors
+ *  > that are due to events beyond the scope of the program and can not be
+ *  > easily predicted.
+ *
+ *  [1] http://en.cppreference.com/w/cpp/error/runtime_error
+ *
+ *  We need to keep the inheritance hierarchy separate: This avoids the
+ *  introduction of code that overzealously catches std::runtime_error to
+ *  handle exceptions that would otherwise derive ReasonedError, and in the
+ *  process swallows genuine runtime failures.
+ */
+class ReasonedError : public std::exception
+{
+  public:
+    ReasonedError(const std::string&& what) : _what(what)
+    {
+    }
+    const char* what() const noexcept
+    {
+        return _what.c_str();
+    };
+
+  private:
+    const std::string _what;
+};
+
+/** @brief Base exception type for errors related to ToC entry parsing.
+ *
+ *  Callers of parseTocEntry() may not be concerned with the specifics and
+ *  rather just want to extract and log what().
+ */
+class TocEntryError : public ReasonedError
+{
+  public:
+    TocEntryError(const std::string&& reason) : ReasonedError(std::move(reason))
+    {
+    }
+};
+
+/** @brief The exception thrown on finding a syntax error in the ToC entry
+ *
+ *  If the syntax is wrong, or expected values are missing, the ToC entry is
+ *  malformed
+ */
+class MalformedTocEntry : public TocEntryError
+{
+  public:
+    MalformedTocEntry(const std::string&& reason) :
+        TocEntryError(std::move(reason))
+    {
+    }
+};
+
+/** @brief The exception thrown on finding a semantic error in the ToC entry
+ *
+ *  If the syntax of the ToC entry is correct but the semantics are broken,
+ *  then we have an invalid ToC entry.
+ */
+class InvalidTocEntry : public TocEntryError
+{
+  public:
+    InvalidTocEntry(const std::string&& reason) :
+        TocEntryError(std::move(reason))
+    {
+    }
+};
+
 } // namespace virtual_pnor
 } // namespace openpower

@@ -84,21 +84,31 @@ void Table::preparePartitions()
         pnor_partition& part = table.partitions[numParts];
         fs::path file;
 
-        if (!parseTocLine(line, blockSize, part))
+        // The ToC file presented in the vpnor squashfs looks like:
+        //
+        // version=IBM-witherspoon-ibm-OP9_v1.19_1.135
+        // extended_version=op-build-v1.19-571-g04f4690-dirty,buildroot-2017.11-5-g65679be,skiboot-v5.10-rc4,hostboot-4c46d66,linux-4.14.20-openpower1-p4a6b675,petitboot-v1.6.6-pe5aaec2,machine-xml-0fea226,occ-3286b6b,hostboot-binaries-3d1af8f,capp-ucode-p9-dd2-v3,sbe-99e2fe2
+        // partition00=part,0x00000000,0x00002000,00,READWRITE
+        // partition01=HBEL,0x00008000,0x0002c000,00,ECC,REPROVISION,CLEARECC,READWRITE
+        // ...
+        //
+        // As such we want to skip any lines that don't begin with 'partition'
+        if (std::string::npos == line.find("partition", 0))
         {
             continue;
         }
 
-        file = directory;
-        file /= part.data.name;
-        if (fs::exists(file))
+        parseTocLine(line, blockSize, part);
+
+        file = directory / part.data.name;
+        if (!fs::exists(file))
         {
-            ++numParts;
+            std::stringstream err;
+            err << "Partition file " << file.native() << " does not exist";
+            throw InvalidTocEntry(err.str());
         }
-        else
-        {
-            MSG_ERR("Partition file %s does not exist", file.c_str());
-        }
+
+        ++numParts;
     }
 }
 
@@ -264,7 +274,7 @@ static inline void writeNameAndId(pnor_partition& part, std::string&& name,
     part.data.id = std::stoul(id);
 }
 
-bool parseTocLine(const std::string& line, size_t blockSize,
+void parseTocLine(const std::string& line, size_t blockSize,
                   pnor_partition& part)
 {
     static constexpr auto ID_MATCH = 1;
@@ -285,7 +295,9 @@ bool parseTocLine(const std::string& line, size_t blockSize,
     std::smatch match;
     if (!std::regex_search(line, match, regex))
     {
-        return false;
+        std::stringstream err;
+        err << "Malformed partition description: " << line.c_str() << "\n";
+        throw MalformedTocEntry(err.str());
     }
 
     writeNameAndId(part, match[NAME_MATCH].str(), match[ID_MATCH].str());
@@ -300,8 +312,6 @@ bool parseTocLine(const std::string& line, size_t blockSize,
     unsigned long version = std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
     writeUserdata(part, version << versionShift, match.suffix().str());
     part.checksum = details::checksum(part.data);
-
-    return true;
 }
 
 } // namespace virtual_pnor
