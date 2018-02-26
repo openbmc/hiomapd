@@ -100,6 +100,13 @@ test_vpnor_toc_no_version_SOURCES = \
 test_vpnor_toc_no_version_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_toc_no_version_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_toc_flags_SOURCES = \
+	common.c \
+	pnor_partition_table.cpp \
+	%reldir%/toc_flags.cpp
+test_vpnor_toc_flags_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_toc_flags_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -112,5 +119,8 @@ check_PROGRAMS += \
 	%reldir%/toc_start_gt_end \
 	%reldir%/toc_no_start \
 	%reldir%/toc_no_end \
-	%reldir%/toc_no_version
+	%reldir%/toc_no_version \
+	%reldir%/toc_flags
+
+XFAIL_TESTS += %reldir%/toc_flags
 endif
