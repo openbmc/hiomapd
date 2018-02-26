@@ -26,23 +26,34 @@
 #endif
 
 enum verbose {
-   MBOX_LOG_NONE = 0,
-   MBOX_LOG_INFO = 1,
-   MBOX_LOG_DEBUG = 2
+	MBOX_LOG_NONE = 0,
+	MBOX_LOG_INFO = 1,
+	MBOX_LOG_DEBUG = 2
 };
 
 extern enum verbose verbosity;
 
 /* Error Messages */
-#define MSG_ERR(f_, ...)	mbox_log(LOG_ERR, f_, ##__VA_ARGS__)
+#define MSG_ERR(f_, ...)						\
+do {									\
+	mbox_log(LOG_ERR, f_, ##__VA_ARGS__);				\
+} while (0)
+
 /* Informational Messages */
-#define MSG_INFO(f_, ...)	do { if (verbosity >= MBOX_LOG_INFO) { \
-					mbox_log(LOG_INFO, f_, ##__VA_ARGS__); \
-				} } while (0)
+#define MSG_INFO(f_, ...) 						\
+do { 									\
+	if (verbosity >= MBOX_LOG_INFO) { 				\
+		mbox_log(LOG_INFO, f_, ##__VA_ARGS__);			\
+	}								\
+} while (0)
+
 /* Debug Messages */
-#define MSG_DBG(f_, ...)	do { if (verbosity >= MBOX_LOG_DEBUG) { \
-					mbox_log(LOG_DEBUG, f_, ##__VA_ARGS__); \
-				} } while(0)
+#define MSG_DBG(f_, ...)						\
+do { 									\
+	if (verbosity >= MBOX_LOG_DEBUG) {				\
+		mbox_log(LOG_DEBUG, f_, ##__VA_ARGS__);			\
+	}								\
+} while(0)
 
 extern void (*mbox_vlog)(int p, const char *fmt, va_list args);
 

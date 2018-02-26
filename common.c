@@ -45,7 +45,18 @@ void mbox_log_console(int p, const char *fmt, va_list args)
 __attribute__((format(printf, 2, 3)))
 void mbox_log(int p, const char *fmt, ...)
 {
+	static bool warned = false;
 	va_list args;
+
+	if (!mbox_vlog) {
+		if (!warned) {
+			fprintf(stderr, "Logging backend not configured, "
+					"log output disabled\n");
+			warned = true;
+		}
+
+		return;
+	}
 
 	va_start(args, fmt);
 	mbox_vlog(p, fmt, args);
