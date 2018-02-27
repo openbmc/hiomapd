@@ -22,9 +22,7 @@ void init_vpnor(struct mbox_context *context)
         strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
         strcpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC);
 
-        context->vpnor = new vpnor_partition_table;
-        context->vpnor->table = new openpower::virtual_pnor::partition::Table(
-            1 << context->erase_size_shift, context->flash_size);
+        vpnor_create_partition_table_from_path(context, PARTITION_FILES_RO_LOC);
     }
 }
 
@@ -78,8 +76,11 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
     constexpr size_t tocMaxSize = 0x8000;
     constexpr size_t tocStart = pnorSize - tocMaxSize - pageSize;
     constexpr auto blPartitionName = "HBB";
+    namespace fs = std::experimental::filesystem;
 
-    openpower::virtual_pnor::partition::Table blTable(eraseSize, pnorSize);
+    openpower::virtual_pnor::partition::Table blTable(
+        fs::path{PARTITION_FILES_RO_LOC}, eraseSize, pnorSize);
+
     vpnor_partition_table vtbl{};
     vtbl.table = &blTable;
     struct mbox_context local

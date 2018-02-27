@@ -94,13 +94,6 @@ class Table
      */
     Table(fs::path&& directory, size_t blockSize, size_t pnorSize);
 
-    /** @brief Constructor - creates partition table
-     *
-     *  @param[in] blockSize - PNOR block size, in bytes
-     *  @param[in] pnorSize - PNOR size, in bytes
-     */
-    Table(size_t blockSize, size_t pnorSize);
-
     Table(const Table&) = delete;
     Table& operator=(const Table&) = delete;
     Table(Table&&) = delete;

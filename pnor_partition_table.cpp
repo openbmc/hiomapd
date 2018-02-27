@@ -20,11 +20,6 @@ using namespace sdbusplus::xyz::openbmc_project::Common::Error;
 namespace partition
 {
 
-Table::Table(size_t blockSize, size_t pnorSize) :
-    Table(fs::path(PARTITION_FILES_RO_LOC), blockSize, pnorSize)
-{
-}
-
 Table::Table(fs::path&& directory, size_t blockSize, size_t pnorSize) :
     szBlocks(0), directory(std::move(directory)), numParts(0),
     blockSize(blockSize), pnorSize(pnorSize)
