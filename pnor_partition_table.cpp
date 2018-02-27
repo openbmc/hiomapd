@@ -303,7 +303,21 @@ void parseTocLine(const std::string& line, size_t blockSize,
 
     unsigned long start =
         std::stoul(match[START_ADDR_MATCH].str(), nullptr, 16);
+    if (start & (blockSize - 1))
+    {
+        MSG_ERR("Start offset 0x%lx for partition '%s' is not aligned to block "
+                "size 0x%zx\n",
+                start, match[NAME_MATCH].str().c_str(), blockSize);
+    }
+
     unsigned long end = std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16);
+    if ((end - start) & (blockSize - 1))
+    {
+        MSG_ERR("Partition '%s' has a size 0x%lx that is not aligned to block "
+                "size 0x%zx\n",
+                match[NAME_MATCH].str().c_str(), (end - start), blockSize);
+    }
+
     writeSizes(part, start, end, blockSize);
 
     // Use the shift to convert "80" to 0x80000000
