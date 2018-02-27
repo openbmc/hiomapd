@@ -127,7 +127,7 @@ const pnor_partition& Table::partition(size_t offset) const
         }
     }
 
-    MSG_ERR("Partition corresponding to offset %zu not found", offset);
+    MSG_ERR("Partition corresponding to offset 0x%zx not found", offset);
     elog<InternalFailure>();
 
     static pnor_partition p{};
@@ -146,9 +146,7 @@ const pnor_partition& Table::partition(const std::string& name) const
         }
     }
 
-    MSG_ERR("Partition %s not found", name.c_str());
-    log<level::ERR>("Table::partition partition not found ",
-                    entry("PARTITION_NAME=%s", name.c_str()));
+    MSG_ERR("Partition '%s' not found", name.c_str());
     elog<InternalFailure>();
     static pnor_partition p{};
     return p;

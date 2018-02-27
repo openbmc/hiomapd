@@ -32,7 +32,7 @@ ReturnCode Request::open(const std::string& path, int mode)
 {
     if (mode == O_RDWR && partition->data.user.data[1] & PARTITION_READONLY)
     {
-        MSG_ERR("Can't open the RO partition for write");
+        MSG_ERR("Can't open RO partition '%s' for write\n", path.c_str());
         return ReturnCode::PARTITION_READ_ONLY;
     }
 
@@ -61,10 +61,8 @@ std::string Request::getPartitionFilePath(struct mbox_context* context,
     partition = vpnor_get_partition(context, offset);
     if (!partition)
     {
-        MSG_ERR("Couldn't get the partition info for offset[0x%.8x]", offset);
-        log<level::ERR>("Request::getPartitionFilePath error in call to "
-                        "vpnor_get_partition",
-                        entry("OFFSET=%d", offset));
+        MSG_ERR("Couldn't get the partition info for offset 0x%" PRIx32 "\n",
+                offset);
         elog<InternalFailure>();
     }
 
@@ -108,22 +106,19 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     // not interested in any other error except FILE_NOT_FOUND
     if (rc != ReturnCode::FILE_NOT_FOUND)
     {
-        log<level::ERR>("RORequest::getPartitionInfo error in opening "
-                        "partition file",
-                        entry("RC=%d", rc), entry("FILE_NAME=%s", path.c_str()),
-                        entry("OFFSET=%d", offset));
+        MSG_ERR(
+            "RORequest: Error opening partition file '%s' (offset 0x%" PRIx32
+            "): %u\n",
+            path.c_str(), offset, static_cast<uint8_t>(rc));
         elog<InternalFailure>();
     }
 
     // if the offset lies in read only partition then throw error.
     if (partition->data.user.data[1] & PARTITION_READONLY)
     {
-        MSG_ERR("Can't open the partition file");
-        log<level::ERR>("RORequest::getPartitionInfo error offset is "
-                        "in read only partition",
-                        entry("FILE_NAME=%s", path.c_str()),
-                        entry("OFFSET=%d", offset),
-                        entry("USER_DATA=%s", partition->data.user.data[1]));
+        MSG_ERR("RORequest: Requested offset 0x%" PRIx32
+                " is in a read-only partition (%s)\n",
+                offset, path.c_str());
         elog<InternalFailure>();
     }
 
@@ -136,10 +131,9 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     rc = Request::open(partitionFilePath, O_RDONLY);
     if (rc != ReturnCode::SUCCESS)
     {
-        log<level::ERR>("RORequest::getPartitionInfo error in opening "
-                        "partition file from read only location",
-                        entry("RC=%d", rc),
-                        entry("FILE_NAME=%s", partitionFilePath.c_str()));
+        MSG_ERR("RORequest: Failed to open partition file '%s' at RO fallback "
+                "(offset 0x%" PRIx32 "): %u\n",
+                partitionFilePath.c_str(), offset, static_cast<uint8_t>(rc));
         elog<InternalFailure>();
     }
 
@@ -150,6 +144,7 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
                                                   uint32_t offset)
 {
     std::string path = getPartitionFilePath(context, offset);
+    std::error_code ec;
 
     ReturnCode rc = Request::open(path, O_RDWR);
     if (rc == ReturnCode::SUCCESS)
@@ -159,10 +154,10 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
     // not interested in any other error except FILE_NOT_FOUND
     if (rc != ReturnCode::FILE_NOT_FOUND)
     {
-        log<level::ERR>("RWRequest::getPartitionInfo error in opening "
-                        "partition file",
-                        entry("RC=%d", rc), entry("FILE_NAME=%s", path.c_str()),
-                        entry("OFFSET=%d", offset));
+        MSG_ERR(
+            "RWRequest: Error opening partition file '%s' (offset 0x%" PRIx32
+            "): %d\n",
+            path.c_str(), offset, static_cast<uint8_t>(rc));
         elog<InternalFailure>();
     }
 
@@ -174,11 +169,9 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
     fromPath /= partition->data.name;
     if (!fs::exists(fromPath))
     {
-        MSG_ERR("Couldn't find the file[%s]", fromPath.c_str());
-        log<level::ERR>("RWRequest::getPartitionInfo error in opening "
-                        "partition file from read only location",
-                        entry("FILE_NAME=%s", fromPath.c_str()),
-                        entry("OFFSET=%d", offset));
+        MSG_ERR("RWRequest: Partition '%s' for offset 0x%" PRIx32
+                " not found in RO directory '%s'\n",
+                partition->data.name, offset, context->paths.ro_loc);
         elog<InternalFailure>();
     }
     // copy the file from ro to respective partition
@@ -189,25 +182,23 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
         toPath = context->paths.prsv_loc;
     }
 
+    MSG_DBG("RWRequest: Didn't find '%s' under '%s', copying from '%s'\n",
+            partition->data.name, toPath.c_str(), fromPath.c_str());
+
     toPath /= partition->data.name;
-
-    MSG_DBG("Didn't find the file in the desired partition so copying[%s]\n",
-            toPath.c_str());
-
-    if (fs::copy_file(fromPath, toPath))
+    if (!fs::copy_file(fromPath, toPath, ec))
     {
-        MSG_DBG("File copied from[%s] to [%s]\n", fromPath.c_str(),
-                toPath.c_str());
+        MSG_ERR("RWRequest: Failed to copy file from '%s' to '%s': %d\n",
+                fromPath.c_str(), toPath.c_str(), ec.value());
+        elog<InternalFailure>();
     }
 
     rc = Request::open(toPath.c_str(), O_RDWR);
 
     if (rc != ReturnCode::SUCCESS)
     {
-        log<level::ERR>("RWRequest::getPartitionInfo error in opening "
-                        "partition file from read write location",
-                        entry("RC=%d", rc),
-                        entry("FILE_NAME=%s", toPath.c_str()));
+        MSG_ERR("RWRequest: Failed to open file at '%s': %d\n", toPath.c_str(),
+                static_cast<uint8_t>(rc));
         elog<InternalFailure>();
     }
 
