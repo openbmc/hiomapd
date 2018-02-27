@@ -122,6 +122,21 @@ test_vpnor_toc_overlap_SOURCES = \
 test_vpnor_toc_overlap_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_toc_overlap_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_toc_lookup_found_SOURCES = \
+	$(TEST_MOCK_SRCS) \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mboxd_lpc.c \
+	mboxd_lpc_virtual.cpp \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp \
+	common.c \
+	pnor_partition_table.cpp \
+	%reldir%/toc_lookup_found.cpp
+test_vpnor_toc_lookup_found_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_toc_lookup_found_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -136,5 +151,6 @@ check_PROGRAMS += \
 	%reldir%/toc_no_end \
 	%reldir%/toc_no_version \
 	%reldir%/toc_flags \
-	%reldir%/toc_overlap
+	%reldir%/toc_overlap \
+	%reldir%/toc_lookup_found
 endif
