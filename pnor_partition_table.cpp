@@ -139,12 +139,12 @@ void Table::preparePartitions()
 const pnor_partition& Table::partition(size_t offset) const
 {
     const decltype(auto) table = getNativeTable();
-    size_t offt = offset / blockSize;
+    size_t blockOffset = offset / blockSize;
 
     for (decltype(numParts) i{}; i < numParts; ++i)
     {
-        if ((offt >= table.partitions[i].data.base) &&
-            (offt <
+        if ((blockOffset >= table.partitions[i].data.base) &&
+            (blockOffset <
              (table.partitions[i].data.base + table.partitions[i].data.size)))
         {
             return table.partitions[i];
