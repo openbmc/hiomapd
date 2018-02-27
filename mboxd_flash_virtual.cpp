@@ -29,6 +29,7 @@ extern "C" {
 #include <stdexcept>
 
 namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
+namespace fs = std::experimental::filesystem;
 namespace vpnor = openpower::virtual_pnor;
 
 /** @brief unique_ptr functor to release a char* reference. */
@@ -119,10 +120,6 @@ int erase_flash(struct mbox_context* context, uint32_t offset, uint32_t count)
 int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
                    uint32_t size)
 {
-    using namespace phosphor::logging;
-    using namespace sdbusplus::xyz::openbmc_project::Common::Error;
-    using namespace std::string_literals;
-
     vpnor::partition::Table* table;
     int rc = size;
 
@@ -152,30 +149,8 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
 
     try
     {
-        openpower::virtual_pnor::RORequest roRequest;
-        auto partitionInfo = roRequest.getPartitionInfo(context, offset);
-
-        auto mapped_mem = mmap(NULL, partitionInfo->data.actual, PROT_READ,
-                               MAP_PRIVATE, roRequest.fd(), 0);
-
-        if (mapped_mem == MAP_FAILED)
-        {
-            MSG_ERR("Failed to map partition=%s:Error=%s\n",
-                    partitionInfo->data.name, strerror(errno));
-
-            elog<InternalFailure>();
-        }
-
-        // if the asked offset + no of bytes to read is greater
-        // then size of the partition file then throw error.
-
-        uint32_t baseOffset = partitionInfo->data.base
-                              << context->block_size_shift;
-        // copy to the reserved memory area
-        auto diffOffset = offset - baseOffset;
-        rc = std::min(partitionInfo->data.actual - diffOffset, size);
-        memcpy(mem, (char*)mapped_mem + diffOffset, rc);
-        munmap(mapped_mem, partitionInfo->data.actual);
+        vpnor::Request req(context, offset);
+        rc = req.read(mem, size);
     }
     catch (vpnor::UnmappedOffset& e)
     {
@@ -214,51 +189,28 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
 int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
                 uint32_t count)
 {
-    using namespace phosphor::logging;
-    using namespace sdbusplus::xyz::openbmc_project::Common::Error;
-    using namespace std::string_literals;
 
-    int rc = 0;
-    MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count, buf);
+    if (!(context && context->vpnor && context->vpnor->table))
+    {
+        MSG_ERR("Trying to write data with uninitialised context!\n");
+        return -MBOX_R_SYSTEM_ERROR;
+    }
+
+    vpnor::partition::Table* table = context->vpnor->table;
+
     try
     {
-        openpower::virtual_pnor::RWRequest rwRequest;
-        auto partitionInfo = rwRequest.getPartitionInfo(context, offset);
-
-        auto mapped_mem =
-            mmap(NULL, partitionInfo->data.actual, PROT_READ | PROT_WRITE,
-                 MAP_SHARED, rwRequest.fd(), 0);
-        if (mapped_mem == MAP_FAILED)
+        const struct pnor_partition& part = table->partition(offset);
+        if (part.data.user.data[1] & PARTITION_READONLY)
         {
-            MSG_ERR("Failed to map partition=%s:Error=%s\n",
-                    partitionInfo->data.name, strerror(errno));
-
-            elog<InternalFailure>();
-        }
-        // copy to the mapped memory.
-
-        uint32_t baseOffset = partitionInfo->data.base
-                              << context->block_size_shift;
-
-        // if the asked offset + no of bytes to write is greater
-        // then size of the partition file then throw error.
-        //
-        // FIXME: Don't use .actual, use  (.size << ctx->block_size_shift),
-        // otherwise we can't grow the size of the data to fill the partition
-        if ((offset + count) > (baseOffset + partitionInfo->data.actual))
-        {
-            munmap(mapped_mem, partitionInfo->data.actual);
-            std::stringstream err;
-            err << "Write extends beyond the partition length " << std::hex
-                << partitionInfo->data.actual;
-            throw vpnor::OutOfBoundsOffset(err.str());
+            /* FIXME: This should be done on CREATE_WRITE_WINDOW, not here */
+            return -MBOX_R_WRITE_ERROR;
         }
 
-        auto diffOffset = offset - baseOffset;
-        memcpy((char*)mapped_mem + diffOffset, buf, count);
-        munmap(mapped_mem, partitionInfo->data.actual);
-
-        set_flash_bytemap(context, offset, count, FLASH_DIRTY);
+        MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count,
+                buf);
+        vpnor::Request req(context, offset);
+        req.write(buf, count);
     }
     catch (vpnor::UnmappedOffset& e)
     {
@@ -279,5 +231,5 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
         phosphor::logging::commit<err::InternalFailure>();
         return -MBOX_R_SYSTEM_ERROR;
     }
-    return rc;
+    return 0;
 }
