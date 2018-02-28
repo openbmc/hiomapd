@@ -15,47 +15,6 @@ extern "C" {
 
 namespace openpower
 {
-namespace file
-{
-
-class Descriptor
-{
-  private:
-    /** default value */
-    int fd = -1;
-
-  public:
-    Descriptor() = default;
-    Descriptor(const Descriptor&) = delete;
-    Descriptor& operator=(const Descriptor&) = delete;
-    Descriptor(Descriptor&&) = delete;
-    Descriptor& operator=(Descriptor&&) = delete;
-
-    Descriptor(int fd) : fd(fd)
-    {
-    }
-
-    ~Descriptor()
-    {
-        if (fd >= 0)
-        {
-            close(fd);
-        }
-    }
-
-    int operator()() const
-    {
-        return fd;
-    }
-
-    void set(int descriptor)
-    {
-        fd = descriptor;
-    }
-};
-
-} // namespace file
-
 namespace virtual_pnor
 {
 
