@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 #include "mboxd_pnor_partition_table.h"
+#include "pnor_partition_table.hpp"
 #include "common.h"
 #include "mbox.h"
 #include "mboxd_flash.h"
@@ -9,11 +10,6 @@
 #include "xyz/openbmc_project/Common/error.hpp"
 #include <phosphor-logging/elog-errors.hpp>
 #include <experimental/filesystem>
-
-struct vpnor_partition_table
-{
-    openpower::virtual_pnor::partition::Table *table = nullptr;
-};
 
 int init_vpnor(struct mbox_context *context)
 {

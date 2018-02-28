@@ -306,3 +306,8 @@ class InvalidTocEntry : public TocEntryError
 
 } // namespace virtual_pnor
 } // namespace openpower
+
+struct vpnor_partition_table
+{
+    openpower::virtual_pnor::partition::Table* table;
+};
