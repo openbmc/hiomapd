@@ -123,7 +123,16 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
     using namespace sdbusplus::xyz::openbmc_project::Common::Error;
     using namespace std::string_literals;
 
+    vpnor::partition::Table* table;
     int rc = size;
+
+    if (!(context && context->vpnor && context->vpnor->table))
+    {
+        MSG_ERR("Trying to copy data with uninitialised context!\n");
+        return -MBOX_R_SYSTEM_ERROR;
+    }
+
+    table = context->vpnor->table;
 
     MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n", mem,
             size, offset);
@@ -132,44 +141,41 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
      * pnor image. Check if host asked for an offset that lies within the
      * partition table.
      */
+    size_t sz = table->size();
+    if (offset < sz)
+    {
+        const pnor_partition_table& toc = table->getHostTable();
+        rc = std::min(sz - offset, static_cast<size_t>(size));
+        memcpy(mem, ((uint8_t*)&toc) + offset, rc);
+        return rc;
+    }
+
     try
     {
-        size_t sz = vpnor_get_partition_table_size(context)
-                    << context->block_size_shift;
-        if (offset < sz)
+        openpower::virtual_pnor::RORequest roRequest;
+        auto partitionInfo = roRequest.getPartitionInfo(context, offset);
+
+        auto mapped_mem = mmap(NULL, partitionInfo->data.actual, PROT_READ,
+                               MAP_PRIVATE, roRequest.fd(), 0);
+
+        if (mapped_mem == MAP_FAILED)
         {
-            const struct pnor_partition_table* table =
-                vpnor_get_partition_table(context);
-            rc = std::min(sz - offset, static_cast<size_t>(size));
-            memcpy(mem, ((uint8_t*)table) + offset, rc);
+            MSG_ERR("Failed to map partition=%s:Error=%s\n",
+                    partitionInfo->data.name, strerror(errno));
+
+            elog<InternalFailure>();
         }
-        else
-        {
-            openpower::virtual_pnor::RORequest roRequest;
-            auto partitionInfo = roRequest.getPartitionInfo(context, offset);
 
-            auto mapped_mem = mmap(NULL, partitionInfo->data.actual, PROT_READ,
-                                   MAP_PRIVATE, roRequest.fd(), 0);
+        // if the asked offset + no of bytes to read is greater
+        // then size of the partition file then throw error.
 
-            if (mapped_mem == MAP_FAILED)
-            {
-                MSG_ERR("Failed to map partition=%s:Error=%s\n",
-                        partitionInfo->data.name, strerror(errno));
-
-                elog<InternalFailure>();
-            }
-
-            // if the asked offset + no of bytes to read is greater
-            // then size of the partition file then throw error.
-
-            uint32_t baseOffset = partitionInfo->data.base
-                                  << context->block_size_shift;
-            // copy to the reserved memory area
-            auto diffOffset = offset - baseOffset;
-            rc = std::min(partitionInfo->data.actual - diffOffset, size);
-            memcpy(mem, (char*)mapped_mem + diffOffset, rc);
-            munmap(mapped_mem, partitionInfo->data.actual);
-        }
+        uint32_t baseOffset = partitionInfo->data.base
+                              << context->block_size_shift;
+        // copy to the reserved memory area
+        auto diffOffset = offset - baseOffset;
+        rc = std::min(partitionInfo->data.actual - diffOffset, size);
+        memcpy(mem, (char*)mapped_mem + diffOffset, rc);
+        munmap(mapped_mem, partitionInfo->data.actual);
     }
     catch (vpnor::UnmappedOffset& e)
     {
