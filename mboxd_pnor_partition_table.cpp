@@ -64,26 +64,6 @@ int vpnor_create_partition_table_from_path(struct mbox_context *context,
     return 0;
 }
 
-size_t vpnor_get_partition_table_size(const struct mbox_context *context)
-{
-    return context && context->vpnor ? context->vpnor->table->blocks() : 0;
-}
-
-const struct pnor_partition_table *
-vpnor_get_partition_table(const struct mbox_context *context)
-{
-    return context && context->vpnor ? &(context->vpnor->table->getHostTable())
-                                     : nullptr;
-}
-
-const struct pnor_partition *
-vpnor_get_partition(const struct mbox_context *context, const size_t offset)
-{
-    return context && context->vpnor
-               ? &(context->vpnor->table->partition(offset))
-               : nullptr;
-}
-
 int vpnor_copy_bootloader_partition(const struct mbox_context *context)
 {
     // The hostboot bootloader has certain size/offset assumptions, so
