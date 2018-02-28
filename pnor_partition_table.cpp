@@ -149,13 +149,15 @@ const pnor_partition& Table::partition(size_t offset) const
         {
             return part;
         }
+
+        /* Are we in a hole between partitions? */
+        if (blockOffset < part.data.base)
+        {
+            throw UnmappedOffset(offset, part.data.base * blockSize);
+        }
     }
 
-    MSG_ERR("Partition corresponding to offset 0x%zx not found", offset);
-    elog<InternalFailure>();
-
-    static pnor_partition p{};
-    return p;
+    throw UnmappedOffset(offset, pnorSize);
 }
 
 const pnor_partition& Table::partition(const std::string& name) const
@@ -170,10 +172,9 @@ const pnor_partition& Table::partition(const std::string& name) const
         }
     }
 
-    MSG_ERR("Partition '%s' not found", name.c_str());
-    elog<InternalFailure>();
-    static pnor_partition p{};
-    return p;
+    std::stringstream err;
+    err << "Partition " << name << " is not listed in the table of contents";
+    throw UnknownPartition(err.str());
 }
 
 } // namespace partition

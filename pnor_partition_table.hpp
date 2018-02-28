@@ -163,6 +163,8 @@ class Table
      *
      *  @returns const reference to pnor_partition, if found, else an
      *           exception will be thrown.
+     *
+     *  Throws: UnmappedOffset
      */
     const pnor_partition& partition(size_t offset) const;
 
@@ -172,6 +174,8 @@ class Table
      *
      *  @returns const reference to pnor_partition, if found, else an
      *           exception will be thrown.
+     *
+     *  Throws: UnknownPartition
      */
     const pnor_partition& partition(const std::string& name) const;
 
@@ -300,6 +304,35 @@ class InvalidTocEntry : public TocEntryError
   public:
     InvalidTocEntry(const std::string&& reason) :
         TocEntryError(std::move(reason))
+    {
+    }
+};
+
+class UnmappedOffset : public std::exception
+{
+  public:
+    UnmappedOffset(size_t base, size_t next) : base(base), next(next)
+    {
+    }
+
+    const size_t base;
+    const size_t next;
+};
+
+class OutOfBoundsOffset : public ReasonedError
+{
+  public:
+    OutOfBoundsOffset(const std::string&& reason) :
+        ReasonedError(std::move(reason))
+    {
+    }
+};
+
+class UnknownPartition : public ReasonedError
+{
+  public:
+    UnknownPartition(const std::string&& reason) :
+        ReasonedError(std::move(reason))
     {
     }
 };

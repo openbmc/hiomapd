@@ -45,7 +45,7 @@ int main()
     {
         table.partition("TWO");
     }
-    catch (err::InternalFailure& e)
+    catch (vpnor::UnknownPartition& e)
     {
         return 0;
     }

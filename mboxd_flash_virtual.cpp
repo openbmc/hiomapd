@@ -18,6 +18,7 @@ extern "C" {
 #include "mboxd_flash.h"
 #include "mboxd_pnor_partition_table.h"
 #include "pnor_partition.hpp"
+#include "pnor_partition_table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 #include <phosphor-logging/log.hpp>
 #include <phosphor-logging/elog-errors.hpp>
@@ -26,6 +27,9 @@ extern "C" {
 #include <string>
 #include <exception>
 #include <stdexcept>
+
+namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
+namespace vpnor = openpower::virtual_pnor;
 
 /** @brief unique_ptr functor to release a char* reference. */
 struct StringDeleter
@@ -167,9 +171,25 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
             munmap(mapped_mem, partitionInfo->data.actual);
         }
     }
-    catch (InternalFailure& e)
+    catch (vpnor::UnmappedOffset& e)
     {
-        commit<InternalFailure>();
+        /*
+         * Hooo boy. Pretend that this is valid flash so we don't have
+         * discontiguous regions presented to the host. Instead, fill a window
+         * with 0xff so the 'flash' looks erased. Writes to such regions are
+         * dropped on the floor, see the implementation of write_flash() below.
+         */
+        MSG_INFO("Host requested unmapped region of %" PRId32
+                 " bytes at offset 0x%" PRIx32 "\n",
+                 size, offset);
+        uint32_t span = e.next - e.base;
+        rc = std::min(size, span);
+        memset(mem, 0xff, rc);
+    }
+    catch (std::exception& e)
+    {
+        MSG_ERR("%s\n", e.what());
+        phosphor::logging::commit<err::InternalFailure>();
         rc = -MBOX_R_SYSTEM_ERROR;
     }
     return rc;
@@ -216,12 +236,16 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
 
         // if the asked offset + no of bytes to write is greater
         // then size of the partition file then throw error.
+        //
+        // FIXME: Don't use .actual, use  (.size << ctx->block_size_shift),
+        // otherwise we can't grow the size of the data to fill the partition
         if ((offset + count) > (baseOffset + partitionInfo->data.actual))
         {
-            MSG_ERR("Offset is beyond the partition file length[0x%.8x]\n",
-                    partitionInfo->data.actual);
             munmap(mapped_mem, partitionInfo->data.actual);
-            elog<InternalFailure>();
+            std::stringstream err;
+            err << "Write extends beyond the partition length " << std::hex
+                << partitionInfo->data.actual;
+            throw vpnor::OutOfBoundsOffset(err.str());
         }
 
         auto diffOffset = offset - baseOffset;
@@ -230,9 +254,24 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
 
         set_flash_bytemap(context, offset, count, FLASH_DIRTY);
     }
-    catch (InternalFailure& e)
+    catch (vpnor::UnmappedOffset& e)
     {
-        rc = -1;
+        /* Paper over the fact that the write isn't persistent */
+        MSG_INFO("Dropping %d bytes host wrote to unmapped offset 0x%" PRIx32
+                 "\n",
+                 count, offset);
+        return 0;
+    }
+    catch (const vpnor::OutOfBoundsOffset& e)
+    {
+        MSG_ERR("%s\n", e.what());
+        return -MBOX_R_PARAM_ERROR;
+    }
+    catch (const std::exception& e)
+    {
+        MSG_ERR("%s\n", e.what());
+        phosphor::logging::commit<err::InternalFailure>();
+        return -MBOX_R_SYSTEM_ERROR;
     }
     return rc;
 }

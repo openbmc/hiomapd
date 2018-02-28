@@ -227,6 +227,4 @@ check_PROGRAMS += \
 	%reldir%/create_read_window_oob \
 	%reldir%/create_read_window_toc \
 	%reldir%/create_read_window_straddle_partitions
-
-XFAIL_TESTS += %reldir%/create_read_window_oob
 endif
