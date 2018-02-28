@@ -20,15 +20,6 @@ namespace virtual_pnor
 
 namespace fs = std::experimental::filesystem;
 
-enum class ReturnCode : uint8_t
-{
-    FILE_NOT_FOUND = 0,
-    PARTITION_NOT_FOUND = 1,
-    PARTITION_READ_ONLY = 2,
-    FILE_OPEN_FAILURE = 3,
-    SUCCESS = 4,
-};
-
 class Request
 {
   public:
