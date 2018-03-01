@@ -154,8 +154,10 @@ const pnor_partition& Table::partition(size_t offset) const
     for (decltype(numParts) i{}; i < numParts; ++i)
     {
         const struct pnor_partition& part = table.partitions[i];
+        size_t len = part.data.size;
+
         if ((blockOffset >= part.data.base) &&
-            (blockOffset < (part.data.base + part.data.size)))
+            (blockOffset < (part.data.base + len)))
         {
             return part;
         }

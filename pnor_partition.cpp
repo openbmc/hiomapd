@@ -10,11 +10,14 @@
 #include <phosphor-logging/elog-errors.hpp>
 
 #include <assert.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -86,7 +89,31 @@ fs::path Request::getPartitionFilePath(int flags)
     return dst;
 }
 
-ssize_t Request::fulfil(void *buf, size_t len, int flags)
+size_t Request::clamp(size_t len)
+{
+    size_t maxAccess = offset + len;
+    size_t partSize = partition.data.size << ctx->block_size_shift;
+    return std::min(maxAccess, partSize) - offset;
+}
+
+void Request::resize(const fs::path &path, size_t len)
+{
+    size_t maxAccess = offset + len;
+    size_t fileSize = fs::file_size(path);
+    if (maxAccess < fileSize)
+    {
+        return;
+    }
+    MSG_DBG("Resizing %s to %zu bytes\n", path.c_str(), maxAccess);
+    int rc = truncate(path.c_str(), maxAccess);
+    if (rc == -1)
+    {
+        MSG_ERR("Failed to resize %s: %d\n", path.c_str(), errno);
+        throw std::system_error(errno, std::system_category());
+    }
+}
+
+size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
 {
     if (!(flags == O_RDONLY || flags == O_RDWR))
     {
@@ -96,8 +123,6 @@ ssize_t Request::fulfil(void *buf, size_t len, int flags)
         throw std::invalid_argument(err.str());
     }
 
-    fs::path path = getPartitionFilePath(flags);
-
     int fd = ::open(path.c_str(), flags);
     if (fd == -1)
     {
@@ -106,45 +131,29 @@ ssize_t Request::fulfil(void *buf, size_t len, int flags)
         throw std::system_error(errno, std::system_category());
     }
 
+    size_t fileSize = fs::file_size(path);
     int mprot = PROT_READ | ((flags == O_RDWR) ? PROT_WRITE : 0);
-    auto map = mmap(NULL, partition.data.actual, mprot, MAP_SHARED, fd, 0);
+    auto map = mmap(NULL, fileSize, mprot, MAP_SHARED, fd, 0);
     if (map == MAP_FAILED)
     {
         close(fd);
-        MSG_ERR("Failed to map backing file '%s' for %d bytes: %d\n",
-                path.c_str(), partition.data.actual, errno);
+        MSG_ERR("Failed to map backing file '%s' for %zd bytes: %d\n",
+                path.c_str(), fileSize, errno);
         throw std::system_error(errno, std::system_category());
     }
 
     // copy to the reserved memory area
     if (flags == O_RDONLY)
     {
-        len = std::min(partition.data.actual - offset, len);
-        memcpy(buf, (char *)map + offset, len);
+        memset(buf, 0xff, len);
+        memcpy(buf, (char *)map + offset, std::min(len, fileSize));
     }
     else
     {
-        // if the asked offset + no of bytes to read is greater
-        // then size of the partition file then throw error.
-        //
-        // FIXME: Don't use .actual, use  (.size << ctx->block_size_shift),
-        // otherwise we can't grow the size of the data to fill the partition
-        if ((base + offset + len) > (base + partition.data.actual))
-        {
-            munmap(map, partition.data.actual);
-            close(fd);
-
-            /* FIXME: offset calculation */
-            std::stringstream err;
-            err << "Request size 0x" << std::hex << len << " from offset 0x"
-                << std::hex << offset << " exceeds the partition size 0x"
-                << std::hex << partition.data.actual;
-            throw OutOfBoundsOffset(err.str());
-        }
         memcpy((char *)map + offset, buf, len);
         set_flash_bytemap(ctx, base + offset, len, FLASH_DIRTY);
     }
-    munmap(map, partition.data.actual);
+    munmap(map, fileSize);
     close(fd);
 
     return len;

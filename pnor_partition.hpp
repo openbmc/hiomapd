@@ -48,15 +48,44 @@ class Request
 
     ssize_t read(void* dst, size_t len)
     {
-        return fulfil(dst, len, O_RDONLY);
+        len = clamp(len);
+        constexpr auto flags = O_RDONLY;
+        fs::path path = getPartitionFilePath(flags);
+        return fulfil(path, flags, dst, len);
     }
 
     ssize_t write(void* dst, size_t len)
     {
-        return fulfil(dst, len, O_RDWR);
+        if (len != clamp(len))
+        {
+            std::stringstream err;
+            err << "Request size 0x" << std::hex << len << " from offset 0x"
+                << std::hex << offset << " exceeds the partition size 0x"
+                << std::hex << (partition.data.size << ctx->block_size_shift);
+            throw OutOfBoundsOffset(err.str());
+        }
+        constexpr auto flags = O_RDWR;
+        /* Ensure file is at least the size of the maximum access */
+        fs::path path = getPartitionFilePath(flags);
+        resize(path, len);
+        return fulfil(path, flags, dst, len);
     }
 
   private:
+    /** @brief Clamp the access length to the maximum supported by the ToC */
+    size_t clamp(size_t len);
+
+    /** @brief Ensure the backing file is sized appropriately for the access
+     *
+     *  We need to ensure the file is big enough to satisfy the request so that
+     *  mmap() will succeed for the required size.
+     *
+     *  @return The valid access length
+     *
+     *  Throws: std::system_error
+     */
+    void resize(const std::experimental::filesystem::path& path, size_t len);
+
     /** @brief Returns the partition file path associated with the offset.
      *
      *  The search strategy for the partition file depends on the value of the
@@ -97,7 +126,8 @@ class Request
      *  @param[out] dst - The buffer to fill with partition data
      *  @param[in] len - The length of the destination buffer
      */
-    ssize_t fulfil(void* dst, size_t len, int flags);
+    size_t fulfil(const std::experimental::filesystem::path& path, int flags,
+                  void* dst, size_t len);
 
     struct mbox_context* ctx;
     const pnor_partition& partition;

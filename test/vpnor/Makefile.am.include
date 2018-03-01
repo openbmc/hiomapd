@@ -274,7 +274,4 @@ check_PROGRAMS += \
 	%reldir%/create_read_window_partition_invalid \
 	%reldir%/read_patch \
 	%reldir%/write_patch_resize
-
-XFAIL_TESTS += %reldir%/read_patch
-XFAIL_TESTS += %reldir%/write_patch_resize
 endif
