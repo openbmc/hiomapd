@@ -21,10 +21,14 @@ int init_vpnor(struct mbox_context *context)
     {
         int rc;
 
-        strcpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC);
-        strcpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC);
-        strcpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC);
-        strcpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC);
+        strncpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
+        context->paths.ro_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
+        context->paths.rw_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
+        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
+        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
 
         rc = vpnor_create_partition_table_from_path(context,
                                                     PARTITION_FILES_RO_LOC);
