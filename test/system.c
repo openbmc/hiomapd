@@ -90,7 +90,7 @@ int ioctl(int fd, unsigned long request, ...)
 
 		va_start(ap, request);
 		info = va_arg(ap, struct aspeed_lpc_ctrl_mapping *);
-		info->size = mtd.size;
+		info->size = ctrl.size;
 		va_end(ap);
 		break;
 	}
