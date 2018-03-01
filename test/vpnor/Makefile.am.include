@@ -193,6 +193,19 @@ test_vpnor_create_read_window_toc_SOURCES = \
 test_vpnor_create_read_window_toc_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_create_read_window_toc_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_create_read_window_straddle_partitions_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mboxd_lpc.c \
+	mboxd_lpc_virtual.cpp \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp \
+	%reldir%/create_read_window_straddle_partitions.cpp
+test_vpnor_create_read_window_straddle_partitions_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_create_read_window_straddle_partitions_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -212,7 +225,8 @@ check_PROGRAMS += \
 	%reldir%/toc_lookup_failed \
 	%reldir%/toc_missing_file \
 	%reldir%/create_read_window_oob \
-	%reldir%/create_read_window_toc
+	%reldir%/create_read_window_toc \
+	%reldir%/create_read_window_straddle_partitions
 
 XFAIL_TESTS += %reldir%/create_read_window_oob
 endif
