@@ -26,17 +26,17 @@ int init_vpnor(struct mbox_context *context)
         strncpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
         context->paths.prsv_loc[PATH_MAX - 1] = '\0';
 
-        rc = vpnor_create_partition_table_from_path(context,
-                                                    PARTITION_FILES_RO_LOC);
+        rc = init_vpnor_from_paths(context);
         if (rc < 0)
+        {
             return rc;
+        }
     }
 
     return 0;
 }
 
-int vpnor_create_partition_table_from_path(struct mbox_context *context,
-                                           const char *path)
+int init_vpnor_from_paths(struct mbox_context *context)
 {
     namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
     namespace fs = std::experimental::filesystem;
@@ -44,14 +44,11 @@ int vpnor_create_partition_table_from_path(struct mbox_context *context,
 
     if (context && !context->vpnor)
     {
-        fs::path dir(path);
         try
         {
             context->vpnor = new vpnor_partition_table;
             context->vpnor->table =
-                new openpower::virtual_pnor::partition::Table(
-                    std::move(dir), 1 << context->erase_size_shift,
-                    context->flash_size);
+                new openpower::virtual_pnor::partition::Table(context);
         }
         catch (vpnor::TocEntryError &e)
         {
@@ -87,17 +84,14 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
 
     try
     {
-        openpower::virtual_pnor::partition::Table blTable(
-            fs::path{PARTITION_FILES_RO_LOC}, eraseSize, pnorSize);
-
         vpnor_partition_table vtbl{};
-        vtbl.table = &blTable;
-        struct mbox_context local
-        {
-        };
+        struct mbox_context local = *context;
         local.vpnor = &vtbl;
         local.block_size_shift = log_2(eraseSize);
-        memcpy(&local.paths, &context->paths, sizeof(local.paths));
+
+        openpower::virtual_pnor::partition::Table blTable(&local);
+
+        vtbl.table = &blTable;
 
         size_t tocOffset = 0;
 

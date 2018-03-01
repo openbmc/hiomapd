@@ -8,6 +8,14 @@ VPNOR_LDADD = -lstdc++fs \
 
 test_vpnor_create_pnor_partition_table_SOURCES = \
 	$(TEST_MBOX_VPNOR_SRCS) \
+	$(TEST_MOCK_SRCS) \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mboxd_lpc.c \
+	mboxd_lpc_virtual.cpp \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp \
 	%reldir%/create_pnor_partition_table.cpp
 test_vpnor_create_pnor_partition_table_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_create_pnor_partition_table_LDADD = $(VPNOR_LDADD)

@@ -50,7 +50,7 @@ int main(void)
     fs::path patch = root.patch() / "TEST1";
     assert(fs::copy_file(root.ro() / "TEST1", patch));
 
-    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
+    init_vpnor_from_paths(ctx);
 
     /* Test */
     memset(src, 0x33, sizeof(src));

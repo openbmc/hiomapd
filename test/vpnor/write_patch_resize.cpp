@@ -49,7 +49,7 @@ int main(void)
     std::vector<uint8_t> patchContent(PATCH_SIZE, 0xaa);
     root.patch("TEST1", patchContent.data(), patchContent.size());
 
-    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
+    init_vpnor_from_paths(ctx);
 
     /* Test */
     std::vector<uint8_t> update(UPDATE_SIZE, 0x55);

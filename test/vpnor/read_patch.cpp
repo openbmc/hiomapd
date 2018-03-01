@@ -56,7 +56,7 @@ int main()
     std::vector<uint8_t> patch(PATCH_SIZE, 0xff);
     root.patch("ONE", patch.data(), patch.size());
 
-    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
+    init_vpnor_from_paths(ctx);
 
     int rc = mbox_command_dispatch(ctx, get_info, sizeof(get_info));
     assert(rc == 1);

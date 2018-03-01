@@ -40,7 +40,7 @@ int main(void)
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
     /* write_flash() doesn't copy the file for us */
     assert(fs::copy_file(root.ro() / "TEST1", root.rw() / "TEST1"));
-    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
+    init_vpnor_from_paths(ctx);
 
     /* Test */
     memset(src, 0xbb, sizeof(src));

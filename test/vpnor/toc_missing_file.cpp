@@ -44,7 +44,7 @@ int main()
 
     try
     {
-        vpnor::partition::Table table(root.ro(), BLOCK_SIZE, PNOR_SIZE);
+        vpnor::partition::Table table(ctx);
     }
     catch (vpnor::InvalidTocEntry& e)
     {

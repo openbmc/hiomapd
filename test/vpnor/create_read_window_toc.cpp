@@ -55,12 +55,12 @@ int main()
 
     ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    vpnor::partition::Table table(root.ro(), BLOCK_SIZE, PNOR_SIZE);
+    vpnor::partition::Table table(ctx);
 
     /* Make sure the ToC exactly fits in the space allocated for it */
     assert(table.capacity() == TOC_PART_SIZE);
 
-    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
+    init_vpnor_from_paths(ctx);
 
     rc = mbox_command_dispatch(ctx, get_info, sizeof(get_info));
     assert(rc == 1);

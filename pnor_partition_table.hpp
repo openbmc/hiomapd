@@ -7,6 +7,7 @@
 #include <numeric>
 #include <experimental/filesystem>
 #include "common.h"
+#include "mbox.h"
 #include "pnor_partition_defs.h"
 
 namespace openpower
@@ -89,15 +90,11 @@ class Table
     /** @brief Constructor accepting the path of the directory
      *         that houses the PNOR partition files.
      *
-     *  @param[in] directory - path of the directory housing PNOR partitions
-     *  @param[in] blockSize - PNOR block size, in bytes. See
-     *             open-power/hostboot/blob/master/src/usr/pnor/ffs.h for
-     *             the PNOR FFS structure.
-     *  @param[in] pnorSize - PNOR size, in bytes
+     *  @param[in] ctx - Acquire sizes and paths relevant to the table
      *
      * Throws MalformedTocEntry, InvalidTocEntry
      */
-    Table(fs::path&& directory, size_t blockSize, size_t pnorSize);
+    Table(const struct mbox_context* ctx);
 
     Table(const Table&) = delete;
     Table& operator=(const Table&) = delete;
@@ -182,9 +179,11 @@ class Table
   private:
     /** @brief Prepares a vector of PNOR partition structures.
      *
+     *  @param[in] ctx - An mbox context providing partition locations
+     *
      * Throws: MalformedTocEntry, InvalidTocEntry
      */
-    void preparePartitions();
+    void preparePartitions(const struct mbox_context* ctx);
 
     /** @brief Prepares the PNOR header.
      */

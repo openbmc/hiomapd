@@ -37,16 +37,14 @@ int init_vpnor(struct mbox_context *context);
 /** @brief Create a virtual PNOR partition table.
  *
  *  @param[in] context - mbox context pointer
- *  @param[in] path - location of the partition file
  *
- *  This API is same as above one but it reads the partition file from
- *  from the given location(path).
+ *  This API is same as above one but requires context->path is initialised
+ *  with all the necessary paths.
  *
  *  Returns 0 if the call succeeds, else a negative error code.
  */
 
-int vpnor_create_partition_table_from_path(struct mbox_context *context,
-                                           const char* path);
+int init_vpnor_from_paths(struct mbox_context *context);
 
 /** @brief Copy bootloader partition (alongwith TOC) to LPC memory
  *

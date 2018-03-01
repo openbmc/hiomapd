@@ -36,7 +36,7 @@ int main(void)
     verbosity = (verbose)2;
 
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    vpnor_create_partition_table_from_path(ctx, root.ro().c_str());
+    init_vpnor_from_paths(ctx);
 
     /* Test */
     rc = write_flash(ctx, 0x1000, src, sizeof(src));

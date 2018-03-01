@@ -39,7 +39,7 @@ int main()
     ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
 
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    vpnor::partition::Table table(root.ro(), BLOCK_SIZE, PNOR_SIZE);
+    vpnor::partition::Table table(ctx);
 
     const struct pnor_partition& part = table.partition("TWO");
     assert(part.data.id == 2);

@@ -22,11 +22,11 @@ using namespace sdbusplus::xyz::openbmc_project::Common::Error;
 namespace partition
 {
 
-Table::Table(fs::path&& directory, size_t blockSize, size_t pnorSize) :
-    szBytes(sizeof(pnor_partition_table)), directory(std::move(directory)),
-    numParts(0), blockSize(blockSize), pnorSize(pnorSize)
+Table::Table(const struct mbox_context* ctx) :
+    szBytes(sizeof(pnor_partition_table)), numParts(0),
+    blockSize(1 << ctx->erase_size_shift), pnorSize(ctx->flash_size)
 {
-    preparePartitions();
+    preparePartitions(ctx);
     prepareHeader();
     hostTbl = endianFixup(tbl);
 }
@@ -68,10 +68,11 @@ inline void Table::allocateMemory(const fs::path& tocFile)
     tbl.resize(capacity());
 }
 
-void Table::preparePartitions()
+void Table::preparePartitions(const struct mbox_context* ctx)
 {
-    fs::path tocFile = directory;
-    tocFile /= PARTITION_TOC_FILE;
+    const fs::path roDir = ctx->paths.ro_loc;
+    const fs::path patchDir = ctx->paths.patch_loc;
+    fs::path tocFile = roDir / PARTITION_TOC_FILE;
     allocateMemory(tocFile);
 
     std::ifstream file(tocFile.c_str());
@@ -81,6 +82,7 @@ void Table::preparePartitions()
     while (std::getline(file, line))
     {
         pnor_partition& part = table.partitions[numParts];
+        fs::path patch;
         fs::path file;
 
         // The ToC file presented in the vpnor squashfs looks like:
@@ -124,12 +126,20 @@ void Table::preparePartitions()
             }
         }
 
-        file = directory / part.data.name;
+        file = roDir / part.data.name;
         if (!fs::exists(file))
         {
             std::stringstream err;
             err << "Partition file " << file.native() << " does not exist";
             throw InvalidTocEntry(err.str());
+        }
+
+        patch = patchDir / part.data.name;
+        if (fs::is_regular_file(patch))
+        {
+            const size_t size = part.data.size * blockSize;
+            part.data.actual =
+                std::min(size, static_cast<size_t>(fs::file_size(patch)));
         }
 
         ++numParts;
@@ -226,20 +236,7 @@ static inline void writeSizes(pnor_partition& part, size_t start, size_t end,
     part.data.base = align_up(start, blockSize) / blockSize;
     size_t sizeInBlocks = align_up(size, blockSize) / blockSize;
     part.data.size = sizeInBlocks;
-
-    // If a a patch partition file exists, populate actual size with its file
-    // size if it is smaller than the total size.
-    fs::path patchFile(PARTITION_FILES_PATCH_LOC);
-    patchFile /= part.data.name;
-    if (fs::is_regular_file(patchFile))
-    {
-        part.data.actual =
-            std::min(size, static_cast<size_t>(fs::file_size(patchFile)));
-    }
-    else
-    {
-        part.data.actual = size;
-    }
+    part.data.actual = size;
 }
 
 static inline void writeUserdata(pnor_partition& part, uint32_t version,
