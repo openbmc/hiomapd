@@ -64,7 +64,7 @@ int vpnor_create_partition_table_from_path(struct mbox_context *context,
 
 size_t vpnor_get_partition_table_size(const struct mbox_context *context)
 {
-    return context && context->vpnor ? context->vpnor->table->size() : 0;
+    return context && context->vpnor ? context->vpnor->table->blocks() : 0;
 }
 
 const struct pnor_partition_table *
@@ -118,11 +118,11 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
         memcpy(&local.paths, &context->paths, sizeof(local.paths));
 
         size_t tocOffset = 0;
-        uint32_t tocSize = blTable.size() * eraseSize;
 
         // Copy TOC
         copy_flash(&local, tocOffset,
-                   static_cast<uint8_t *>(context->mem) + tocStart, tocSize);
+                   static_cast<uint8_t *>(context->mem) + tocStart,
+                   blTable.capacity());
         const pnor_partition &partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;

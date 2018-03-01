@@ -4,6 +4,7 @@
 #include <memory>
 #include <numeric>
 #include <experimental/filesystem>
+#include "common.h"
 #include "pnor_partition_defs.h"
 
 namespace openpower
@@ -102,13 +103,34 @@ class Table
     Table& operator=(Table&&) = delete;
     ~Table() = default;
 
-    /** @brief Return size of partition table
+    /** @brief Return the exact size of partition table in bytes
      *
-     *  @returns size_t - size of partition table in blocks
+     *  @returns size_t - size of partition table in bytes
      */
     size_t size() const
     {
-        return szBlocks;
+        return szBytes;
+    }
+
+    /** @brief Return aligned size of partition table in bytes
+     *
+     *  The value returned will be greater-than or equal to size(), and
+     *  aligned to blockSize.
+     *
+     *  @returns size_t - capacity of partition table in bytes
+     */
+    size_t capacity() const
+    {
+        return align_up(szBytes, blockSize);
+    }
+
+    /** @brief Return the size of partition table in blocks
+     *
+     *  @returns size_t - size of partition table in blocks
+     */
+    size_t blocks() const
+    {
+        return capacity() / blockSize;
     }
 
     /** @brief Return a partition table having byte-ordering
@@ -181,9 +203,8 @@ class Table
     /** @brief Size of the PNOR partition table -
      *         sizeof(pnor_partition_table) +
      *         (no. of partitions * sizeof(pnor_partition)),
-     *         measured in erase-blocks.
      */
-    size_t szBlocks;
+    size_t szBytes;
 
     /** @brief Partition table */
     PartitionTable tbl;

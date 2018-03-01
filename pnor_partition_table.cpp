@@ -21,8 +21,8 @@ namespace partition
 {
 
 Table::Table(fs::path&& directory, size_t blockSize, size_t pnorSize) :
-    szBlocks(0), directory(std::move(directory)), numParts(0),
-    blockSize(blockSize), pnorSize(pnorSize)
+    szBytes(sizeof(pnor_partition_table)), directory(std::move(directory)),
+    numParts(0), blockSize(blockSize), pnorSize(pnorSize)
 {
     preparePartitions();
     prepareHeader();
@@ -34,7 +34,7 @@ void Table::prepareHeader()
     decltype(auto) table = getNativeTable();
     table.data.magic = PARTITION_HEADER_MAGIC;
     table.data.version = PARTITION_VERSION_1;
-    table.data.size = szBlocks;
+    table.data.size = blocks();
     table.data.entry_size = sizeof(pnor_partition);
     table.data.entry_count = numParts;
     table.data.block_size = blockSize;
@@ -62,11 +62,8 @@ inline void Table::allocateMemory(const fs::path& tocFile)
         }
     }
 
-    size_t totalSizeBytes =
-        sizeof(pnor_partition_table) + (num * sizeof(pnor_partition));
-    size_t totalSizeAligned = align_up(totalSizeBytes, blockSize);
-    szBlocks = totalSizeAligned / blockSize;
-    tbl.resize(totalSizeAligned);
+    szBytes = sizeof(pnor_partition_table) + (num * sizeof(pnor_partition));
+    tbl.resize(capacity());
 }
 
 void Table::preparePartitions()
