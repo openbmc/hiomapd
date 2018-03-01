@@ -39,8 +39,9 @@
 
 #define STEP 16
 
-void dump_buf(const uint8_t *buf, size_t len)
+void dump_buf(const void *buf, size_t len)
 {
+	const uint8_t *buf8 = buf;
 	int i;
 
 	for (i = 0; i < len; i += STEP) {
@@ -53,7 +54,7 @@ void dump_buf(const uint8_t *buf, size_t len)
 
 		printf("0x%08x:\t", i);
 		for (j = 0; j < max; j++)
-			printf("0x%02x, ", buf[i + j]);
+			printf("0x%02x, ", buf8[i + j]);
 
 		printf("\n");
 	}

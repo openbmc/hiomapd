@@ -44,6 +44,6 @@ int mbox_command_dispatch(struct mbox_context *context, const uint8_t *command,
 	size_t len);
 
 /* Helpers */
-void dump_buf(const uint8_t *buf, size_t len);
+void dump_buf(const void *buf, size_t len);
 
 #endif /* TEST_MBOX_H */
