@@ -90,6 +90,7 @@ class VpnorRoot
         return fs::path{root} / "patch";
     }
     size_t write(const std::string& name, const void* data, size_t len);
+    size_t patch(const std::string& name, const void* data, size_t len);
 
   private:
     fs::path root;

@@ -26,6 +26,17 @@ size_t VpnorRoot::write(const std::string &name, const void *data, size_t len)
     return len;
 }
 
+size_t VpnorRoot::patch(const std::string &name, const void *data, size_t len)
+{
+    if (!fs::exists(root / "ro" / name))
+        /* It's not in the ToC */
+        throw std::invalid_argument(name);
+
+    std::ofstream(root / "patch" / name).write((const char *)data, len);
+
+    return len;
+}
+
 } // test
 } // virtual_pnor
 } // openpower
