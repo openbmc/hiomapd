@@ -222,16 +222,25 @@ static inline void writeUserdata(pnor_partition& part, uint32_t version,
     std::istringstream stream(data);
     std::string flag{};
     auto perms = 0;
+    auto state = 0;
 
+    MSG_DBG("Parsing ToC flags '%s'\n", data.c_str());
     while (std::getline(stream, flag, ','))
     {
+        if (flag == "")
+            continue;
+
         if (flag == "ECC")
         {
-            part.data.user.data[0] = PARTITION_ECC_PROTECTED;
+            state |= PARTITION_ECC_PROTECTED;
         }
         else if (flag == "READONLY")
         {
             perms |= PARTITION_READONLY;
+        }
+        else if (flag == "READWRITE")
+        {
+            perms &= ~PARTITION_READONLY;
         }
         else if (flag == "PRESERVED")
         {
@@ -249,10 +258,15 @@ static inline void writeUserdata(pnor_partition& part, uint32_t version,
         {
             perms |= PARTITION_CLEARECC;
         }
+        else
+        {
+            MSG_INFO("Found unimplemented partition property: %s\n",
+                     flag.c_str());
+        }
     }
 
+    part.data.user.data[0] = state;
     part.data.user.data[1] = perms;
-
     part.data.user.data[1] |= version;
 }
 

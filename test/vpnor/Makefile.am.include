@@ -121,6 +121,4 @@ check_PROGRAMS += \
 	%reldir%/toc_no_end \
 	%reldir%/toc_no_version \
 	%reldir%/toc_flags
-
-XFAIL_TESTS += %reldir%/toc_flags
 endif
