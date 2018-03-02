@@ -137,6 +137,4 @@ check_PROGRAMS += \
 	%reldir%/toc_no_version \
 	%reldir%/toc_flags \
 	%reldir%/toc_overlap
-
-XFAIL_TESTS += %reldir%/toc_overlap
 endif

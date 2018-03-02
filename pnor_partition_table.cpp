@@ -99,6 +99,31 @@ void Table::preparePartitions()
 
         parseTocLine(line, blockSize, part);
 
+        if (numParts > 0)
+        {
+            struct pnor_partition& prev = table.partitions[numParts - 1];
+            uint32_t prev_end = prev.data.base + prev.data.size;
+
+            if (part.data.id == prev.data.id)
+            {
+                MSG_ERR("ID for previous partition '%s' at block 0x%" PRIx32
+                        "matches current partition '%s' at block 0x%" PRIx32
+                        ": %" PRId32 "\n",
+                        prev.data.name, prev.data.base, part.data.name,
+                        part.data.base, part.data.id);
+            }
+
+            if (part.data.base < prev_end)
+            {
+                std::stringstream err;
+                err << "Partition '" << part.data.name << "' start block 0x"
+                    << std::hex << part.data.base << "is less than the end "
+                    << "block 0x" << std::hex << prev_end << " of '"
+                    << prev.data.name << "'";
+                throw InvalidTocEntry(err.str());
+            }
+        }
+
         file = directory / part.data.name;
         if (!fs::exists(file))
         {
