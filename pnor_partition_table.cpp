@@ -317,6 +317,14 @@ void parseTocLine(const std::string& line, size_t blockSize,
                 match[NAME_MATCH].str().c_str(), (end - start), blockSize);
     }
 
+    if (start >= end)
+    {
+        std::stringstream err;
+        err << "Partition " << match[NAME_MATCH].str()
+            << " has an invalid range: start offset (0x" << std::hex << start
+            << " is beyond open end (0x" << std::hex << end << ")\n";
+        throw InvalidTocEntry(err.str());
+    }
     writeSizes(part, start, end, blockSize);
 
     // Use the shift to convert "80" to 0x80000000

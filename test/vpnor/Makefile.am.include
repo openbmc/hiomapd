@@ -89,7 +89,4 @@ check_PROGRAMS += \
 	%reldir%/write_patch \
 	%reldir%/toc_no_name \
 	%reldir%/toc_start_gt_end
-
-XFAIL_TESTS += \
-	%reldir%/toc_start_gt_end
 endif
