@@ -53,7 +53,7 @@ struct StringDeleter
 };
 using StringPtr = std::unique_ptr<char, StringDeleter>;
 
-int init_flash_dev(struct mbox_context *context)
+int init_flash_dev(struct mbox_context* context)
 {
     StringPtr filename(get_dev_mtd());
     int fd = 0;
@@ -70,16 +70,15 @@ int init_flash_dev(struct mbox_context *context)
     fd = open(filename.get(), O_RDWR);
     if (fd < 0)
     {
-        MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-                filename.get(), strerror(errno));
+        MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n", filename.get(),
+                strerror(errno));
         return -errno;
     }
 
     // Read the Flash Info
     if (ioctl(fd, MEMGETINFO, &context->mtd_info) == -1)
     {
-        MSG_ERR("Couldn't get information about MTD: %s\n",
-                strerror(errno));
+        MSG_ERR("Couldn't get information about MTD: %s\n", strerror(errno));
         close(fd);
         return -errno;
     }
@@ -101,19 +100,19 @@ int init_flash_dev(struct mbox_context *context)
     return rc;
 }
 
-void free_flash_dev(struct mbox_context *context)
+void free_flash_dev(struct mbox_context* context)
 {
     // No-op
 }
 
-int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
+int set_flash_bytemap(struct mbox_context* context, uint32_t offset,
                       uint32_t count, uint8_t val)
 {
     // No-op
     return 0;
 }
 
-int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
+int erase_flash(struct mbox_context* context, uint32_t offset, uint32_t count)
 {
     // No-op
     return 0;
@@ -138,8 +137,8 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
 
     int rc = size;
 
-    MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n",
-            mem, size, offset);
+    MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n", mem,
+            size, offset);
 
     /* The virtual PNOR partition table starts at offset 0 in the virtual
      * pnor image. Check if host asked for an offset that lies within the
@@ -147,8 +146,8 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
      */
     try
     {
-        size_t sz =
-            vpnor_get_partition_table_size(context) << context->block_size_shift;
+        size_t sz = vpnor_get_partition_table_size(context)
+                    << context->block_size_shift;
         if (offset < sz)
         {
             const struct pnor_partition_table* table =
@@ -161,8 +160,8 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
             openpower::virtual_pnor::RORequest roRequest;
             auto partitionInfo = roRequest.getPartitionInfo(context, offset);
 
-            auto mapped_mem = mmap(NULL, partitionInfo->data.actual,
-                                   PROT_READ, MAP_PRIVATE, roRequest.fd(), 0);
+            auto mapped_mem = mmap(NULL, partitionInfo->data.actual, PROT_READ,
+                                   MAP_PRIVATE, roRequest.fd(), 0);
 
             if (mapped_mem == MAP_FAILED)
             {
@@ -175,11 +174,12 @@ int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
             // if the asked offset + no of bytes to read is greater
             // then size of the partition file then throw error.
 
-            uint32_t baseOffset = partitionInfo->data.base << context->block_size_shift;
-            //copy to the reserved memory area
+            uint32_t baseOffset = partitionInfo->data.base
+                                  << context->block_size_shift;
+            // copy to the reserved memory area
             auto diffOffset = offset - baseOffset;
             rc = std::min(partitionInfo->data.actual - diffOffset, size);
-            memcpy(mem, (char*)mapped_mem + diffOffset , rc);
+            memcpy(mem, (char*)mapped_mem + diffOffset, rc);
             munmap(mapped_mem, partitionInfo->data.actual);
         }
     }
@@ -215,10 +215,9 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
         openpower::virtual_pnor::RWRequest rwRequest;
         auto partitionInfo = rwRequest.getPartitionInfo(context, offset);
 
-
-        auto mapped_mem = mmap(NULL, partitionInfo->data.actual,
-                               PROT_READ | PROT_WRITE,
-                               MAP_SHARED, rwRequest.fd(), 0);
+        auto mapped_mem =
+            mmap(NULL, partitionInfo->data.actual, PROT_READ | PROT_WRITE,
+                 MAP_SHARED, rwRequest.fd(), 0);
         if (mapped_mem == MAP_FAILED)
         {
             MSG_ERR("Failed to map partition=%s:Error=%s\n",
@@ -226,27 +225,28 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
 
             elog<InternalFailure>();
         }
-        //copy to the mapped memory.
+        // copy to the mapped memory.
 
-        uint32_t baseOffset = partitionInfo->data.base << context->block_size_shift;
+        uint32_t baseOffset = partitionInfo->data.base
+                              << context->block_size_shift;
 
         // if the asked offset + no of bytes to write is greater
         // then size of the partition file then throw error.
         if ((offset + count) > (baseOffset + partitionInfo->data.actual))
         {
             MSG_ERR("Offset is beyond the partition file length[0x%.8x]\n",
-                     partitionInfo->data.actual);
+                    partitionInfo->data.actual);
             munmap(mapped_mem, partitionInfo->data.actual);
             elog<InternalFailure>();
         }
 
         auto diffOffset = offset - baseOffset;
-        memcpy((char*)mapped_mem + diffOffset , buf, count);
+        memcpy((char*)mapped_mem + diffOffset, buf, count);
         munmap(mapped_mem, partitionInfo->data.actual);
 
         set_flash_bytemap(context, offset, count, FLASH_DIRTY);
     }
-    catch (InternalFailure & e)
+    catch (InternalFailure& e)
     {
         rc = -1;
     }

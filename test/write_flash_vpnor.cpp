@@ -37,16 +37,14 @@ extern "C" {
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
+uint8_t data[8] = {0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7};
 
-uint8_t data[8] = { 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7 };
-
-#define BLOCK_SIZE  4096
-#define OFFSET  BLOCK_SIZE
-#define MEM_SIZE    (BLOCK_SIZE *2)
+#define BLOCK_SIZE 4096
+#define OFFSET BLOCK_SIZE
+#define MEM_SIZE (BLOCK_SIZE * 2)
 #define DATA_SIZE sizeof(data)
 #define ERASE_SIZE BLOCK_SIZE
 #define BLOCK_SIZE_SHIFT 12
-
 
 void init(struct mbox_context* ctx)
 {
@@ -54,18 +52,16 @@ void init(struct mbox_context* ctx)
     namespace fs = std::experimental::filesystem;
     using namespace std::string_literals;
 
-    std::string  tocData = "partition01=TEST1,00001000,00001400,ECC,READONLY\n"s
-                           + "partition02=TEST2,00002000,00002008,ECC,READWRITE\n"s
-                           + "partition03=TEST3,00003000,00003400,ECC,PRESERVED"s;
+    std::string tocData =
+        "partition01=TEST1,00001000,00001400,ECC,READONLY\n"s +
+        "partition02=TEST2,00002000,00002008,ECC,READWRITE\n"s +
+        "partition03=TEST3,00003000,00003400,ECC,PRESERVED"s;
 
-    std::vector<std::string> templatePaths = { "/tmp/ro.XXXXXX",
-                                               "/tmp/rw.XXXXXX" ,
-                                               "/tmp/prsv.XXXXXX",
-                                               "/tmp/patch.XXXXXX"
-                                             };
+    std::vector<std::string> templatePaths = {
+        "/tmp/ro.XXXXXX", "/tmp/rw.XXXXXX", "/tmp/prsv.XXXXXX",
+        "/tmp/patch.XXXXXX"};
 
-    std::vector<std::string>partitions = { "TEST1", "TEST2", "TEST3" };
-
+    std::vector<std::string> partitions = {"TEST1", "TEST2", "TEST3"};
 
     // create various partition directory
 
@@ -75,10 +71,12 @@ void init(struct mbox_context* ctx)
     std::string tmpRWdir = mkdtemp(const_cast<char*>(templatePaths[1].c_str()));
     assert(tmpRWdir.length() != 0);
 
-    std::string tmpPRSVdir = mkdtemp(const_cast<char*>(templatePaths[2].c_str()));
+    std::string tmpPRSVdir =
+        mkdtemp(const_cast<char*>(templatePaths[2].c_str()));
     assert(tmpPRSVdir.length() != 0);
 
-    std::string tmpPATCHdir = mkdtemp(const_cast<char*>(templatePaths[3].c_str()));
+    std::string tmpPATCHdir =
+        mkdtemp(const_cast<char*>(templatePaths[3].c_str()));
     assert(tmpPATCHdir.length() != 0);
 
     // create the toc file
@@ -92,12 +90,11 @@ void init(struct mbox_context* ctx)
     // create the partition files in the ro directory
     for (auto partition : partitions)
     {
-        fs::path partitionFilePath {tmpROdir};
+        fs::path partitionFilePath{tmpROdir};
         partitionFilePath /= partition;
         std::ofstream partitionFile(partitionFilePath.c_str());
         partitionFile.write(reinterpret_cast<char*>(data), sizeof(data));
         partitionFile.close();
-
     }
 
     // copy partition2 file from ro to rw
@@ -112,28 +109,25 @@ void init(struct mbox_context* ctx)
     ctx->erase_size_shift = BLOCK_SIZE_SHIFT;
     ctx->block_size_shift = BLOCK_SIZE_SHIFT;
     ctx->flash_bmap = reinterpret_cast<uint8_t*>(
-                          calloc(MEM_SIZE >> ctx->erase_size_shift,
-                                 sizeof(*ctx->flash_bmap)));
+        calloc(MEM_SIZE >> ctx->erase_size_shift, sizeof(*ctx->flash_bmap)));
 
     strcpy(ctx->paths.ro_loc, tmpROdir.c_str());
     strcpy(ctx->paths.rw_loc, tmpRWdir.c_str());
     strcpy(ctx->paths.prsv_loc, tmpPRSVdir.c_str());
     strcpy(ctx->paths.patch_loc, tmpPATCHdir.c_str());
-
 }
-
 
 int main(void)
 {
     namespace fs = std::experimental::filesystem;
 
-    int rc {};
-    char src[DATA_SIZE] {0};
+    int rc{};
+    char src[DATA_SIZE]{0};
     struct mbox_context context;
     struct mbox_context* ctx = &context;
     memset(ctx, 0, sizeof(mbox_context));
 
-    //Initialize the context before running the test case.
+    // Initialize the context before running the test case.
     init(ctx);
 
     std::string tmpROdir = ctx->paths.ro_loc;
@@ -151,7 +145,7 @@ int main(void)
 
     memset(src, 0xaa, sizeof(src));
 
-    rc = write_flash(ctx, (OFFSET * 3) , src, sizeof(src));
+    rc = write_flash(ctx, (OFFSET * 3), src, sizeof(src));
     assert(rc == 0);
 
     auto fd = open((tmpPRSVdir + "/" + "TEST3").c_str(), O_RDONLY);
@@ -229,7 +223,7 @@ int main(void)
     assert(fs::copy_file(roFile, patchFile) == true);
 
     // Write arbitrary data
-    char srcPatch[DATA_SIZE] {0};
+    char srcPatch[DATA_SIZE]{0};
     memset(srcPatch, 0x33, sizeof(srcPatch));
     rc = write_flash(ctx, (OFFSET * 2), srcPatch, sizeof(srcPatch));
     assert(rc == 0);
@@ -258,10 +252,10 @@ int main(void)
     fs::remove(patchFile);
     // END Test patch location
 
-    fs::remove_all(fs::path {tmpROdir});
-    fs::remove_all(fs::path {tmpRWdir});
-    fs::remove_all(fs::path {tmpPRSVdir});
-    fs::remove_all(fs::path {tmpPATCHdir});
+    fs::remove_all(fs::path{tmpROdir});
+    fs::remove_all(fs::path{tmpRWdir});
+    fs::remove_all(fs::path{tmpPRSVdir});
+    fs::remove_all(fs::path{tmpPATCHdir});
 
     destroy_vpnor(ctx);
     free(ctx->flash_bmap);

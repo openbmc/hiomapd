@@ -28,11 +28,9 @@ using namespace phosphor::logging;
 using namespace sdbusplus::xyz::openbmc_project::Common::Error;
 using namespace std::string_literals;
 
-ReturnCode Request::open(const std::string& path,
-                         int mode)
+ReturnCode Request::open(const std::string& path, int mode)
 {
-    if (mode == O_RDWR &&
-        partition->data.user.data[1] & PARTITION_READONLY)
+    if (mode == O_RDWR && partition->data.user.data[1] & PARTITION_READONLY)
     {
         MSG_ERR("Can't open the RO partition for write");
         return ReturnCode::PARTITION_READ_ONLY;
@@ -63,10 +61,10 @@ std::string Request::getPartitionFilePath(struct mbox_context* context,
     partition = vpnor_get_partition(context, offset);
     if (!partition)
     {
-        MSG_ERR("Couldn't get the partition info for offset[0x%.8x]",offset);
+        MSG_ERR("Couldn't get the partition info for offset[0x%.8x]", offset);
         log<level::ERR>("Request::getPartitionFilePath error in call to "
-                "vpnor_get_partition",
-                entry("OFFSET=%d", offset));
+                        "vpnor_get_partition",
+                        entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
 
@@ -111,10 +109,9 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     if (rc != ReturnCode::FILE_NOT_FOUND)
     {
         log<level::ERR>("RORequest::getPartitionInfo error in opening "
-                "partition file",
-                entry("RC=%d", rc),
-                entry("FILE_NAME=%s", path.c_str()),
-                entry("OFFSET=%d", offset));
+                        "partition file",
+                        entry("RC=%d", rc), entry("FILE_NAME=%s", path.c_str()),
+                        entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
 
@@ -123,10 +120,10 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     {
         MSG_ERR("Can't open the partition file");
         log<level::ERR>("RORequest::getPartitionInfo error offset is "
-                "in read only partition",
-                entry("FILE_NAME=%s", path.c_str()),
-                entry("OFFSET=%d", offset),
-                entry("USER_DATA=%s", partition->data.user.data[1]));
+                        "in read only partition",
+                        entry("FILE_NAME=%s", path.c_str()),
+                        entry("OFFSET=%d", offset),
+                        entry("USER_DATA=%s", partition->data.user.data[1]));
         elog<InternalFailure>();
     }
 
@@ -140,14 +137,13 @@ const pnor_partition* RORequest::getPartitionInfo(struct mbox_context* context,
     if (rc != ReturnCode::SUCCESS)
     {
         log<level::ERR>("RORequest::getPartitionInfo error in opening "
-                "partition file from read only location",
-                entry("RC=%d", rc),
-                entry("FILE_NAME=%s", partitionFilePath.c_str()));
+                        "partition file from read only location",
+                        entry("RC=%d", rc),
+                        entry("FILE_NAME=%s", partitionFilePath.c_str()));
         elog<InternalFailure>();
     }
 
     return partition;
-
 }
 
 const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
@@ -164,10 +160,9 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
     if (rc != ReturnCode::FILE_NOT_FOUND)
     {
         log<level::ERR>("RWRequest::getPartitionInfo error in opening "
-                "partition file",
-                entry("RC=%d", rc),
-                entry("FILE_NAME=%s", path.c_str()),
-                entry("OFFSET=%d", offset));
+                        "partition file",
+                        entry("RC=%d", rc), entry("FILE_NAME=%s", path.c_str()),
+                        entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
 
@@ -179,14 +174,14 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
     fromPath /= partition->data.name;
     if (!fs::exists(fromPath))
     {
-        MSG_ERR("Couldn't find the file[%s]",fromPath.c_str());
+        MSG_ERR("Couldn't find the file[%s]", fromPath.c_str());
         log<level::ERR>("RWRequest::getPartitionInfo error in opening "
-                "partition file from read only location",
-                entry("FILE_NAME=%s", fromPath.c_str()),
-                entry("OFFSET=%d", offset));
+                        "partition file from read only location",
+                        entry("FILE_NAME=%s", fromPath.c_str()),
+                        entry("OFFSET=%d", offset));
         elog<InternalFailure>();
     }
-    //copy the file from ro to respective partition
+    // copy the file from ro to respective partition
     fs::path toPath = context->paths.rw_loc;
 
     if (partition->data.user.data[1] & PARTITION_PRESERVED)
@@ -201,23 +196,23 @@ const pnor_partition* RWRequest::getPartitionInfo(struct mbox_context* context,
 
     if (fs::copy_file(fromPath, toPath))
     {
-        MSG_DBG("File copied from[%s] to [%s]\n",
-                fromPath.c_str(), toPath.c_str());
+        MSG_DBG("File copied from[%s] to [%s]\n", fromPath.c_str(),
+                toPath.c_str());
     }
 
-    rc  = Request::open(toPath.c_str(), O_RDWR);
+    rc = Request::open(toPath.c_str(), O_RDWR);
 
     if (rc != ReturnCode::SUCCESS)
     {
         log<level::ERR>("RWRequest::getPartitionInfo error in opening "
-                "partition file from read write location",
-                entry("RC=%d", rc),
-                entry("FILE_NAME=%s", toPath.c_str()));
+                        "partition file from read write location",
+                        entry("RC=%d", rc),
+                        entry("FILE_NAME=%s", toPath.c_str()));
         elog<InternalFailure>();
     }
 
     return partition;
 }
 
-}// namespace virtual_pnor
-}// namespace openpower
+} // namespace virtual_pnor
+} // namespace openpower

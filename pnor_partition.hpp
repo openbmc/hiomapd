@@ -13,39 +13,41 @@ namespace file
 
 class Descriptor
 {
-    private:
-        /** default value */
-        int fd = -1;
+  private:
+    /** default value */
+    int fd = -1;
 
-    public:
-        Descriptor() = default;
-        Descriptor(const Descriptor&) = delete;
-        Descriptor& operator=(const Descriptor&) = delete;
-        Descriptor(Descriptor&&) = delete;
-        Descriptor& operator=(Descriptor &&) = delete;
+  public:
+    Descriptor() = default;
+    Descriptor(const Descriptor&) = delete;
+    Descriptor& operator=(const Descriptor&) = delete;
+    Descriptor(Descriptor&&) = delete;
+    Descriptor& operator=(Descriptor&&) = delete;
 
-        Descriptor(int fd) : fd(fd) {}
+    Descriptor(int fd) : fd(fd)
+    {
+    }
 
-        ~Descriptor()
+    ~Descriptor()
+    {
+        if (fd >= 0)
         {
-            if (fd >= 0)
-            {
-                close(fd);
-            }
+            close(fd);
         }
+    }
 
-        int operator()() const
-        {
-            return fd;
-        }
+    int operator()() const
+    {
+        return fd;
+    }
 
-        void set(int descriptor)
-        {
-            fd = descriptor;
-        }
+    void set(int descriptor)
+    {
+        fd = descriptor;
+    }
 };
 
-}// namespace file
+} // namespace file
 
 namespace virtual_pnor
 {
@@ -63,35 +65,34 @@ enum class ReturnCode : uint8_t
 
 class Request
 {
-    public:
+  public:
+    Request() = default;
+    Request(const Request&) = delete;
+    Request& operator=(const Request&) = delete;
+    Request(Request&&) = default;
+    Request& operator=(Request&&) = default;
+    ~Request() = default;
 
-        Request() = default;
-        Request(const Request&) = delete;
-        Request& operator=(const Request&) = delete;
-        Request(Request&&) = default;
-        Request& operator=(Request&&) = default;
-        ~Request() = default;
+    openpower::file::Descriptor fd;
 
-        openpower::file::Descriptor fd;
+  protected:
+    /** @brief opens the partition file
+     *
+     *  @param[in] filePath - Absolute file path.
+     *  @param[in] mode - File open mode.
+     */
+    ReturnCode open(const std::string& filePath, int mode);
 
-    protected:
-        /** @brief opens the partition file
-         *
-         *  @param[in] filePath - Absolute file path.
-         *  @param[in] mode - File open mode.
-         */
-        ReturnCode open(const std::string& filePath, int mode);
+    /** @brief returns the partition file path associated with the offset.
+     *
+     *  @param[in] context - The mbox context pointer.
+     *  @param[in] offset - The pnor offset(bytes).
+     */
 
-        /** @brief returns the partition file path associated with the offset.
-         *
-         *  @param[in] context - The mbox context pointer.
-         *  @param[in] offset - The pnor offset(bytes).
-         */
+    std::string getPartitionFilePath(struct mbox_context* context,
+                                     uint32_t offset);
 
-        std::string getPartitionFilePath(struct mbox_context* context,
-                                         uint32_t offset);
-
-        const pnor_partition* partition = nullptr;
+    const pnor_partition* partition = nullptr;
 };
 
 /** @class RORequest
@@ -100,30 +101,30 @@ class Request
  */
 class RORequest : public Request
 {
-    public:
-        RORequest() = default;
-        RORequest(const RORequest&) = delete;
-        RORequest& operator=(const RORequest&) = delete;
-        RORequest(RORequest&&) = default;
-        RORequest& operator=(RORequest&&) = default;
-        ~RORequest(){};
+  public:
+    RORequest() = default;
+    RORequest(const RORequest&) = delete;
+    RORequest& operator=(const RORequest&) = delete;
+    RORequest(RORequest&&) = default;
+    RORequest& operator=(RORequest&&) = default;
+    ~RORequest(){};
 
-        /** @brief opens the partition file associated with the offset
-         *         in read only mode and gets the partition details.
-         *
-         *  1.  Depending on the partition type,tries to open the file
-         *      from the associated partition(RW/PRSV/RO).
-         *  1a. if file not found in the corresponding
-         *      partition(RW/PRSV/RO) then tries to read the file from
-         *      the read only partition.
-         *  1b. if the file not found in the read only partition then
-         *      throw exception.
-         *
-         *  @param[in] context - The mbox context pointer.
-         *  @param[in] offset - The pnor offset(bytes).
-         */
-        const pnor_partition* getPartitionInfo(struct mbox_context* context,
-                                               uint32_t offset);
+    /** @brief opens the partition file associated with the offset
+     *         in read only mode and gets the partition details.
+     *
+     *  1.  Depending on the partition type,tries to open the file
+     *      from the associated partition(RW/PRSV/RO).
+     *  1a. if file not found in the corresponding
+     *      partition(RW/PRSV/RO) then tries to read the file from
+     *      the read only partition.
+     *  1b. if the file not found in the read only partition then
+     *      throw exception.
+     *
+     *  @param[in] context - The mbox context pointer.
+     *  @param[in] offset - The pnor offset(bytes).
+     */
+    const pnor_partition* getPartitionInfo(struct mbox_context* context,
+                                           uint32_t offset);
 };
 
 /** @class RWRequest
@@ -132,31 +133,31 @@ class RORequest : public Request
  */
 class RWRequest : public Request
 {
-    public:
+  public:
+    RWRequest() = default;
+    RWRequest(const RWRequest&) = delete;
+    RWRequest& operator=(const RWRequest&) = delete;
+    RWRequest(RWRequest&&) = default;
+    RWRequest& operator=(RWRequest&&) = default;
+    ~RWRequest(){};
 
-        RWRequest() = default;
-        RWRequest(const RWRequest&) = delete;
-        RWRequest& operator=(const RWRequest&) = delete;
-        RWRequest(RWRequest&&) = default;
-        RWRequest& operator=(RWRequest&&) = default;
-        ~RWRequest() {};
-
-        /** @brief opens the partition file associated with the offset
-         *         in write mode and gets the parttition details.
-         *
-         *  1.  Depending on the partition type tries to open the file
-         *      from the associated partition.
-         *  1a. if file not found in the corresponding partition(RW/PRSV)
-         *      then copy the file from the read only partition to the (RW/PRSV)
-         *      partition depending on the partition type.
-         *  1b. if the file not found in the read only partition then throw exception.
-         *
-         *  @param[in] context - The mbox context pointer.
-         *  @param[in] offset - The pnor offset(bytes).
-         */
-        const pnor_partition* getPartitionInfo(struct mbox_context* context,
-                                               uint32_t offset);
+    /** @brief opens the partition file associated with the offset
+     *         in write mode and gets the parttition details.
+     *
+     *  1.  Depending on the partition type tries to open the file
+     *      from the associated partition.
+     *  1a. if file not found in the corresponding partition(RW/PRSV)
+     *      then copy the file from the read only partition to the (RW/PRSV)
+     *      partition depending on the partition type.
+     *  1b. if the file not found in the read only partition then throw
+     * exception.
+     *
+     *  @param[in] context - The mbox context pointer.
+     *  @param[in] offset - The pnor offset(bytes).
+     */
+    const pnor_partition* getPartitionInfo(struct mbox_context* context,
+                                           uint32_t offset);
 };
 
-}// namespace virtual_pnor
-}// namespace openpower
+} // namespace virtual_pnor
+} // namespace openpower

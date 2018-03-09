@@ -30,8 +30,8 @@ int main()
     partitionFile.write(empty.data(), empty.size());
     partitionFile.close();
 
-    const openpower::virtual_pnor::partition::Table
-        table(fs::path{tmpdir}, 4 * 1024, 64 * 1024 * 1024);
+    const openpower::virtual_pnor::partition::Table table(
+        fs::path{tmpdir}, 4 * 1024, 64 * 1024 * 1024);
 
     pnor_partition_table expectedTable{};
     expectedTable.data.magic = PARTITION_HEADER_MAGIC;
@@ -47,8 +47,8 @@ int main()
 
     pnor_partition expectedPartition{};
     strcpy(expectedPartition.data.name, partitionName);
-    expectedPartition.data.base = 0; // starts at offset 0
-    expectedPartition.data.size = 1; // 1 block
+    expectedPartition.data.base = 0;       // starts at offset 0
+    expectedPartition.data.size = 1;       // 1 block
     expectedPartition.data.actual = 0x400; // 1024 bytes
     expectedPartition.data.id = 1;
     expectedPartition.data.pid = PARENT_PATITION_ID;

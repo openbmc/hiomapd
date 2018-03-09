@@ -20,18 +20,14 @@ using namespace sdbusplus::xyz::openbmc_project::Common::Error;
 namespace partition
 {
 
-Table::Table(size_t blockSize, size_t pnorSize):
+Table::Table(size_t blockSize, size_t pnorSize) :
     Table(fs::path(PARTITION_FILES_RO_LOC), blockSize, pnorSize)
 {
 }
 
-Table::Table(fs::path&& directory,
-             size_t blockSize, size_t pnorSize):
-    szBlocks(0),
-    directory(std::move(directory)),
-    numParts(0),
-    blockSize(blockSize),
-    pnorSize(pnorSize)
+Table::Table(fs::path&& directory, size_t blockSize, size_t pnorSize) :
+    szBlocks(0), directory(std::move(directory)), numParts(0),
+    blockSize(blockSize), pnorSize(pnorSize)
 {
     preparePartitions();
     prepareHeader();
@@ -71,8 +67,8 @@ inline void Table::allocateMemory(const fs::path& tocFile)
         }
     }
 
-    size_t totalSizeBytes = sizeof(pnor_partition_table) +
-                            (num * sizeof(pnor_partition));
+    size_t totalSizeBytes =
+        sizeof(pnor_partition_table) + (num * sizeof(pnor_partition));
     size_t totalSizeAligned = align_up(totalSizeBytes, blockSize);
     szBlocks = totalSizeAligned / blockSize;
     tbl.resize(totalSizeAligned);
@@ -91,8 +87,8 @@ inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
     patchFile /= part.data.name;
     if (fs::is_regular_file(patchFile))
     {
-        part.data.actual = std::min(
-                size, static_cast<size_t>(fs::file_size(patchFile)));
+        part.data.actual =
+            std::min(size, static_cast<size_t>(fs::file_size(patchFile)));
     }
     else
     {
@@ -100,12 +96,11 @@ inline void Table::writeSizes(pnor_partition& part, size_t start, size_t end)
     }
 }
 
-inline void Table::writeUserdata(pnor_partition& part,
-                                 uint32_t version,
+inline void Table::writeUserdata(pnor_partition& part, uint32_t version,
                                  const std::string& data)
 {
     std::istringstream stream(data);
-    std::string flag {};
+    std::string flag{};
     auto perms = 0;
 
     while (std::getline(stream, flag, ','))
@@ -152,9 +147,7 @@ inline void Table::writeNameAndId(pnor_partition& part, std::string&& name,
                                   const std::string& id)
 {
     name.resize(PARTITION_NAME_MAX);
-    memcpy(part.data.name,
-           name.c_str(),
-           sizeof(part.data.name));
+    memcpy(part.data.name, name.c_str(), sizeof(part.data.name));
     part.data.id = std::stoul(id);
 }
 
@@ -173,12 +166,10 @@ void Table::preparePartitions()
     // Parse PNOR toc (table of contents) file, which has lines like :
     // partition01=HBB,0x00010000,0x000a0000,0x80,ECC,PRESERVED, to indicate
     // partition information
-    std::regex regex
-    {
+    std::regex regex{
         "^partition([0-9]+)=([A-Za-z0-9_]+),"
         "(0x)?([0-9a-fA-F]+),(0x)?([0-9a-fA-F]+),(0x)?([A-Fa-f0-9]{2})",
-        std::regex::extended
-    };
+        std::regex::extended};
     std::smatch match;
     std::string line;
     constexpr auto versionShift = 24;
@@ -194,12 +185,11 @@ void Table::preparePartitions()
             if (!fs::exists(partitionFile))
             {
                 MSG_ERR("Partition file %s does not exist",
-                         partitionFile.c_str());
+                        partitionFile.c_str());
                 continue;
             }
 
-            writeNameAndId(table.partitions[numParts],
-                           match[NAME_MATCH].str(),
+            writeNameAndId(table.partitions[numParts], match[NAME_MATCH].str(),
                            match[ID_MATCH].str());
             writeDefaults(table.partitions[numParts]);
             writeSizes(table.partitions[numParts],
@@ -207,8 +197,8 @@ void Table::preparePartitions()
                        std::stoul(match[END_ADDR_MATCH].str(), nullptr, 16));
             writeUserdata(
                 table.partitions[numParts],
-                std::stoul(match[VERSION_MATCH].str(), nullptr, 16) <<
-                    versionShift, // For eg, convert "80" to 0x80000000
+                std::stoul(match[VERSION_MATCH].str(), nullptr, 16)
+                    << versionShift, // For eg, convert "80" to 0x80000000
                 match.suffix().str());
             table.partitions[numParts].checksum =
                 details::checksum(table.partitions[numParts].data);
@@ -226,8 +216,8 @@ const pnor_partition& Table::partition(size_t offset) const
     for (decltype(numParts) i{}; i < numParts; ++i)
     {
         if ((offt >= table.partitions[i].data.base) &&
-            (offt < (table.partitions[i].data.base +
-                     table.partitions[i].data.size)))
+            (offt <
+             (table.partitions[i].data.base + table.partitions[i].data.size)))
         {
             return table.partitions[i];
         }
@@ -254,7 +244,7 @@ const pnor_partition& Table::partition(const std::string& name) const
 
     MSG_ERR("Partition %s not found", name.c_str());
     log<level::ERR>("Table::partition partition not found ",
-        entry("PARTITION_NAME=%s", name.c_str()));
+                    entry("PARTITION_NAME=%s", name.c_str()));
     elog<InternalFailure>();
     static pnor_partition p{};
     return p;

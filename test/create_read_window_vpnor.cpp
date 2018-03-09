@@ -18,28 +18,24 @@ extern "C" {
 constexpr auto line = "partition01=HBB,00000100,0001000,ECC,PRESERVED";
 constexpr auto partition = "HBB";
 char tmplt[] = "/tmp/create_read_test.XXXXXX";
-uint8_t data[8] = { 0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab };
+uint8_t data[8] = {0xaa, 0x55, 0xaa, 0x66, 0x77, 0x88, 0x99, 0xab};
 
-#define BLOCK_SIZE  4096
-#define MEM_SIZE    (BLOCK_SIZE *2)
-#define ERASE_SIZE  BLOCK_SIZE
-#define N_WINDOWS   1
+#define BLOCK_SIZE 4096
+#define MEM_SIZE (BLOCK_SIZE * 2)
+#define ERASE_SIZE BLOCK_SIZE
+#define N_WINDOWS 1
 #define WINDOW_SIZE BLOCK_SIZE
 
-static const uint8_t get_info[] = {
-        0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00};
 // offset 0x100 and size 6
-static const uint8_t create_read_window[] = {
-        0x04, 0x01, 0x01, 0x00, 0x06, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+static const uint8_t create_read_window[] = {0x04, 0x01, 0x01, 0x00, 0x06, 0x00,
+                                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                             0x00, 0x00, 0x00, 0x00};
 
-static const uint8_t response[] = {
-        0x04, 0x01, 0xfe, 0xff, 0x01, 0x00, 0x01, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x01
-};
+static const uint8_t response[] = {0x04, 0x01, 0xfe, 0xff, 0x01, 0x00, 0x01,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
 namespace fs = std::experimental::filesystem;
 
@@ -60,16 +56,16 @@ int main()
     partitionFilePath /= partition;
     std::ofstream partitionFile(partitionFilePath.c_str());
 
-    partitionFile.write((char*)data,sizeof(data));
+    partitionFile.write((char*)data, sizeof(data));
     partitionFile.close();
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(MEM_SIZE, ERASE_SIZE);
 
-    struct mbox_context *ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
-    strcpy(ctx->paths.ro_loc,tmpdir);
-    strcpy(ctx->paths.rw_loc,tmpdir);
-    strcpy(ctx->paths.prsv_loc,tmpdir);
+    struct mbox_context* ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
+    strcpy(ctx->paths.ro_loc, tmpdir);
+    strcpy(ctx->paths.rw_loc, tmpdir);
+    strcpy(ctx->paths.prsv_loc, tmpdir);
 
     vpnor_create_partition_table_from_path(ctx, tmpdir);
 
@@ -78,7 +74,7 @@ int main()
 
     // send the request for partition1
     rc = mbox_command_dispatch(ctx, create_read_window,
-                        sizeof(create_read_window));
+                               sizeof(create_read_window));
     assert(rc == 1);
 
     rc = mbox_cmp(ctx, response, sizeof(response));
@@ -88,7 +84,7 @@ int main()
     rc = memcmp(ctx->mem, data, 6);
     assert(rc == 0);
 
-    //TODO: Add few more test cases for read from multiple partitions(PRSV/RW)
+    // TODO: Add few more test cases for read from multiple partitions(PRSV/RW)
     //      Read beyond the partition file size.
     //      openbmc/openbmc#1868
 

@@ -10,7 +10,7 @@
 
 struct vpnor_partition_table
 {
-    openpower::virtual_pnor::partition::Table* table = nullptr;
+    openpower::virtual_pnor::partition::Table *table = nullptr;
 };
 
 void init_vpnor(struct mbox_context *context)
@@ -23,10 +23,8 @@ void init_vpnor(struct mbox_context *context)
         strcpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC);
 
         context->vpnor = new vpnor_partition_table;
-        context->vpnor->table =
-            new openpower::virtual_pnor::partition::Table(
-                    1 << context->erase_size_shift,
-                    context->flash_size);
+        context->vpnor->table = new openpower::virtual_pnor::partition::Table(
+            1 << context->erase_size_shift, context->flash_size);
     }
 }
 
@@ -38,33 +36,30 @@ void vpnor_create_partition_table_from_path(struct mbox_context *context,
     if (context && !context->vpnor)
     {
         context->vpnor = new vpnor_partition_table;
-        context->vpnor->table =
-            new openpower::virtual_pnor::partition::Table(
-                    std::move(dir),
-                    1 << context->erase_size_shift,
-                    context->flash_size);
+        context->vpnor->table = new openpower::virtual_pnor::partition::Table(
+            std::move(dir), 1 << context->erase_size_shift,
+            context->flash_size);
     }
 }
 
 size_t vpnor_get_partition_table_size(const struct mbox_context *context)
 {
-    return context && context->vpnor ?
-        context->vpnor->table->size() : 0;
+    return context && context->vpnor ? context->vpnor->table->size() : 0;
 }
 
-const struct pnor_partition_table* vpnor_get_partition_table(
-                                       const struct mbox_context *context)
+const struct pnor_partition_table *
+vpnor_get_partition_table(const struct mbox_context *context)
 {
-    return context && context->vpnor ?
-        &(context->vpnor->table->getHostTable()) : nullptr;
+    return context && context->vpnor ? &(context->vpnor->table->getHostTable())
+                                     : nullptr;
 }
 
-const struct pnor_partition* vpnor_get_partition(
-                                 const struct mbox_context *context,
-                                 const size_t offset)
+const struct pnor_partition *
+vpnor_get_partition(const struct mbox_context *context, const size_t offset)
 {
-    return context && context->vpnor ?
-        &(context->vpnor->table->partition(offset)) : nullptr;
+    return context && context->vpnor
+               ? &(context->vpnor->table->partition(offset))
+               : nullptr;
 }
 
 void vpnor_copy_bootloader_partition(const struct mbox_context *context)
@@ -87,7 +82,9 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
     openpower::virtual_pnor::partition::Table blTable(eraseSize, pnorSize);
     vpnor_partition_table vtbl{};
     vtbl.table = &blTable;
-    struct mbox_context local{};
+    struct mbox_context local
+    {
+    };
     local.vpnor = &vtbl;
     local.block_size_shift = log_2(eraseSize);
     memcpy(&local.paths, &context->paths, sizeof(local.paths));
@@ -100,16 +97,15 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
     {
         // Copy TOC
         copy_flash(&local, tocOffset,
-                   static_cast<uint8_t*>(context->mem) + tocStart,
-                   tocSize);
-        const pnor_partition& partition = blTable.partition(blPartitionName);
+                   static_cast<uint8_t *>(context->mem) + tocStart, tocSize);
+        const pnor_partition &partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
         // Copy HBB
         copy_flash(&local, hbbOffset,
-                   static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
+                   static_cast<uint8_t *>(context->mem) + hbbOffset, hbbSize);
     }
-    catch (InternalFailure& e)
+    catch (InternalFailure &e)
     {
         commit<InternalFailure>();
     }
@@ -117,7 +113,7 @@ void vpnor_copy_bootloader_partition(const struct mbox_context *context)
 
 void destroy_vpnor(struct mbox_context *context)
 {
-    if(context && context->vpnor)
+    if (context && context->vpnor)
     {
         delete context->vpnor->table;
         delete context->vpnor;
