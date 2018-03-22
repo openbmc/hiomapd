@@ -5,6 +5,7 @@
 #define MBOXD_MSG_H
 
 #include "common.h"
+#include "mbox.h"
 
 /* Estimate as to how long (milliseconds) it takes to access a MB from flash */
 #define FLASH_ACCESS_MS_PER_MB		8000
