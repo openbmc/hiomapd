@@ -20,7 +20,7 @@ struct mbox_msg {
 };
 
 union mbox_regs {
-	char raw[MBOX_REG_BYTES];
+	uint8_t raw[MBOX_REG_BYTES];
 	struct mbox_msg msg;
 };
 
