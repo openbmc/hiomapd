@@ -7,8 +7,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "../common.h"
-#include "../mbox.h"
+#include "common.h"
+#include "mbox.h"
+#include "mboxd_msg.h"
 
 #include "tmpf.h"
 
@@ -18,6 +19,8 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 		size_t len);
 
 void mbox_dump(struct mbox_context *context);
+
+void mbox_rspcpy(struct mbox_context *context, struct mbox_msg *msg);
 
 int mbox_cmp(struct mbox_context *context, const uint8_t *expected, size_t len);
 

@@ -87,6 +87,24 @@ int mbox_cmp(struct mbox_context *context, const uint8_t *expected, size_t len)
 	return rc;
 }
 
+void mbox_rspcpy(struct mbox_context *context, struct mbox_msg *msg)
+{
+	struct stat details;
+	uint8_t *map;
+	int fd;
+
+	fd = context->fds[MBOX_FD].fd;
+	fstat(fd, &details);
+
+	map = mmap(NULL, details.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	assert(map != MAP_FAILED);
+	assert(details.st_size >= (RESPONSE_OFFSET + RESPONSE_SIZE));
+
+	memcpy(msg, &map[RESPONSE_OFFSET], RESPONSE_SIZE);
+
+	munmap(map, details.st_size);
+}
+
 int mbox_command_write(struct mbox_context *context, const uint8_t *command,
 		size_t len)
 {
