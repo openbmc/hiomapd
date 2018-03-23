@@ -316,6 +316,4 @@ check_PROGRAMS += \
 	%reldir%/dump_flash \
 	%reldir%/create_read_window_size \
 	%reldir%/create_read_window_remap
-
-XFAIL_TESTS += %reldir%/dump_flash
 endif

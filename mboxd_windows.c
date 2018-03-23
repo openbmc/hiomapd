@@ -592,7 +592,10 @@ int create_map_window(struct mbox_context *context,
 	}
 #endif
 
-	if ((offset + cur->size) > context->flash_size) {
+	if (offset > context->flash_size) {
+		MSG_ERR("Tried to open read window past flash limit\n");
+		return -MBOX_R_PARAM_ERROR;
+	} else if ((offset + cur->size) > context->flash_size) {
 		/*
 		 * There is V1 skiboot implementations out there which don't
 		 * mask offset with window size, meaning when we have
@@ -607,9 +610,11 @@ int create_map_window(struct mbox_context *context,
 			cur->size = align_down(context->flash_size - offset,
 					       1 << context->block_size_shift);
 		} else {
-			/* Trying to read past the end of flash */
-			MSG_ERR("Tried to open read window past flash limit\n");
-			return -MBOX_R_PARAM_ERROR;
+			/*
+			 * Allow requests to exceed the flash size, but limit
+			 * the response to the size of the flash.
+			 */
+			cur->size = context->flash_size - offset;
 		}
 	}
 
