@@ -568,6 +568,7 @@ int create_map_window(struct mbox_context *context,
 	if (!cur) {
 		MSG_DBG("No uninitialised window, evicting one\n");
 		cur = find_oldest_window(context);
+		reset_window(context, cur);
 	}
 
 /*
