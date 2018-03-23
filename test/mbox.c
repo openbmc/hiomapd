@@ -243,10 +243,10 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	rc = fallocate(test.flash.fd, 0, 0, test.context.mtd_info.size);
 	assert(rc == 0);
 
-	rc = fallocate(test.lpc.fd, 0, 0, test.context.mtd_info.size);
+	rc = __init_lpc_dev(&test.context, test.lpc.path);
 	assert(rc == 0);
 
-	rc = __init_lpc_dev(&test.context, test.lpc.path);
+	rc = fallocate(test.lpc.fd, 0, 0, test.context.mem_size);
 	assert(rc == 0);
 
 	rc = init_windows(&test.context);
