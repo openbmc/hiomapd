@@ -12,24 +12,21 @@
 #include "mbox.h"
 #include "mboxd_flash.h"
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 
 const std::string toc[] = {
-    "partition01=TEST1,00001000,00002000,80,ECC,PRESERVED",
+    "partition01=TEST1,00001000,00002000,80,ECC,READONLY",
 };
-
-namespace test = openpower::virtual_pnor::test;
 
 int main(void)
 {
     namespace fs = std::experimental::filesystem;
+    namespace test = openpower::virtual_pnor::test;
 
     struct mbox_context _ctx, *ctx = &_ctx;
-    uint8_t src[8];
-    void *map;
-    int fd;
+    uint8_t src[8] = {0};
     int rc;
 
     /* Setup */
@@ -42,22 +39,11 @@ int main(void)
     init_vpnor_from_paths(ctx);
 
     /* Test */
-    memset(src, 0xaa, sizeof(src));
     rc = write_flash(ctx, 0x1000, src, sizeof(src));
-    assert(rc == 0);
 
-    /* Verify */
-    fd = open((root.prsv() / "TEST1").c_str(), O_RDONLY);
-    assert(fd >= 0);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_PRIVATE, fd, 0);
-    assert(map != MAP_FAILED);
+    /* Verify we can't write to RO partitions */
+    assert(rc != 0);
 
-    rc = memcmp(src, map, sizeof(src));
-    assert(rc == 0);
-    munmap(map, sizeof(src));
-    close(fd);
-
-    /* Cleanup */
     destroy_vpnor(ctx);
 
     return 0;

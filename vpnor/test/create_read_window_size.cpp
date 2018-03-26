@@ -12,7 +12,7 @@ extern "C" {
 #include "test/system.h"
 }
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 static const auto BLOCK_SIZE = 4096;
 static const auto ERASE_SIZE = BLOCK_SIZE;
 static const auto WINDOW_SIZE = 2 * BLOCK_SIZE;

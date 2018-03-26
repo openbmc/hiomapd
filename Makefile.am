@@ -29,6 +29,6 @@ check_PROGRAMS =
 XFAIL_TESTS =
 
 include test/Makefile.am.include
-include test/vpnor/Makefile.am.include
+include vpnor/test/Makefile.am.include
 
 TESTS = $(check_PROGRAMS)

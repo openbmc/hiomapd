@@ -11,7 +11,7 @@ extern "C" {
 #include "test/system.h"
 }
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 static constexpr auto ERASE_SIZE = BLOCK_SIZE;

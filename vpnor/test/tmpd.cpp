@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 namespace openpower
 {

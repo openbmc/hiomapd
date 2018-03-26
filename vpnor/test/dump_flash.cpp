@@ -13,7 +13,7 @@ extern "C" {
 #include "test/system.h"
 }
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 struct test_context
 {

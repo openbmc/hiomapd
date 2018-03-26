@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <experimental/filesystem>
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/syslog.h>
@@ -14,13 +15,12 @@
 #include "mbox.h"
 #include "mboxd_flash.h"
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
-static constexpr auto DATA_SIZE = 8;
-
-const uint8_t data[DATA_SIZE] = {0xa0, 0xa1, 0xa2, 0xa3,
-                                 0xa4, 0xa5, 0xa6, 0xa7};
+static constexpr auto PART_SIZE = BLOCK_SIZE;
+static constexpr auto PATCH_SIZE = BLOCK_SIZE / 2;
+static constexpr auto UPDATE_SIZE = BLOCK_SIZE;
 
 const std::string toc[] = {
     "partition01=TEST1,00001000,00002000,80,ECC,READWRITE",
@@ -32,7 +32,6 @@ int main(void)
     namespace test = openpower::virtual_pnor::test;
 
     struct mbox_context _ctx, *ctx = &_ctx;
-    char src[DATA_SIZE]{0};
     void *map;
     int rc;
     int fd;
@@ -44,35 +43,28 @@ int main(void)
     verbosity = (verbose)2;
 
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    root.write("TEST1", data, sizeof(data));
+    std::vector<uint8_t> roContent(PART_SIZE, 0xff);
+    root.write("TEST1", roContent.data(), roContent.size());
     /* write_flash doesn't copy the file for us */
-    assert(fs::copy_file(root.ro() / "TEST1", root.rw() / "TEST1"));
-    fs::path patch = root.patch() / "TEST1";
-    assert(fs::copy_file(root.ro() / "TEST1", patch));
+    std::vector<uint8_t> patchContent(PATCH_SIZE, 0xaa);
+    root.patch("TEST1", patchContent.data(), patchContent.size());
 
     init_vpnor_from_paths(ctx);
 
     /* Test */
-    memset(src, 0x33, sizeof(src));
-    rc = write_flash(ctx, 0x1000, src, sizeof(src));
+    std::vector<uint8_t> update(UPDATE_SIZE, 0x55);
+    rc = write_flash(ctx, 0x1000, update.data(), update.size());
     assert(rc == 0);
-
-    /* Check that RW file is unmodified after the patch write */
-    fd = open((root.rw() / "TEST1").c_str(), O_RDONLY);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
-    assert(map != MAP_FAILED);
-    rc = memcmp(data, map, sizeof(src));
-    assert(rc == 0);
-    munmap(map, sizeof(src));
-    close(fd);
 
     /* Check that PATCH is modified with the new data */
+    fs::path patch = root.patch() / "TEST1";
+    assert(UPDATE_SIZE == fs::file_size(patch));
     fd = open(patch.c_str(), O_RDONLY);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
+    map = mmap(NULL, UPDATE_SIZE, PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
-    rc = memcmp(src, map, sizeof(src));
+    rc = memcmp(update.data(), map, update.size());
     assert(rc == 0);
-    munmap(map, sizeof(src));
+    munmap(map, update.size());
     close(fd);
 
     destroy_vpnor(ctx);

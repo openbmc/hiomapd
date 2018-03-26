@@ -12,7 +12,7 @@ extern "C" {
 #include "test/system.h"
 }
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 static constexpr auto PNOR_SIZE = 64 * 1024 * 1024;

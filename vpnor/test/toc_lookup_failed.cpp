@@ -5,13 +5,14 @@
 
 #include "config.h"
 #include "vpnor/pnor_partition_table.hpp"
+#include "xyz/openbmc_project/Common/error.hpp"
 
 extern "C" {
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 static constexpr auto ERASE_SIZE = BLOCK_SIZE;
@@ -22,13 +23,12 @@ static constexpr auto WINDOW_SIZE = BLOCK_SIZE * 2;
 
 const std::string toc[] = {
     "partition01=ONE,00001000,00002000,80,",
-    "partition02=TWO,00002000,00003000,80,",
 };
 
 int main()
 {
+    namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
     namespace test = openpower::virtual_pnor::test;
-    namespace fs = std::experimental::filesystem;
     namespace vpnor = openpower::virtual_pnor;
 
     struct mbox_context* ctx;
@@ -39,14 +39,13 @@ int main()
     ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
 
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-
-    fs::remove(root.ro() / "TWO");
+    vpnor::partition::Table table(ctx);
 
     try
     {
-        vpnor::partition::Table table(ctx);
+        table.partition("TWO");
     }
-    catch (vpnor::InvalidTocEntry& e)
+    catch (vpnor::UnknownPartition& e)
     {
         return 0;
     }

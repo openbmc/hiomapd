@@ -12,7 +12,7 @@
 #include "mbox.h"
 #include "mboxd_flash.h"
 
-#include "test/vpnor/tmpd.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 
