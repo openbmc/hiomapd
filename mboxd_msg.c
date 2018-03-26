@@ -33,9 +33,6 @@
 static int mbox_handle_flush_window(struct mbox_context *context, union mbox_regs *req,
 			     struct mbox_msg *resp);
 
-typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
-				  struct mbox_msg *);
-
 /*
  * write_bmc_event_reg() - Write to the BMC controlled status register (reg 15)
  * @context:	The mbox context pointer
@@ -754,7 +751,8 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 		resp.response = -rc;
 	} else {
 		/* Commands start at 1 so we have to subtract 1 from the cmd */
-		rc = mbox_handlers[req->msg.command - 1](context, req, &resp);
+		mboxd_mbox_handler h = context->handlers[req->msg.command - 1];
+		rc = h(context, req, &resp);
 		if (rc < 0) {
 			MSG_ERR("Error handling mbox cmd: %d\n",
 				req->msg.command);
@@ -834,6 +832,8 @@ int dispatch_mbox(struct mbox_context *context)
 int __init_mbox_dev(struct mbox_context *context, const char *path)
 {
 	int fd;
+
+	context->handlers = mbox_handlers;
 
 	/* Open MBOX Device */
 	fd = open(path, O_RDWR | O_NONBLOCK);

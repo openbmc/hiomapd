@@ -118,6 +118,21 @@ struct window_list {
 	struct window_context *window;
 };
 
+struct mbox_msg {
+	uint8_t command;
+	uint8_t seq;
+	uint8_t args[MBOX_ARGS_BYTES];
+	uint8_t response;
+};
+
+union mbox_regs {
+	uint8_t raw[MBOX_REG_BYTES];
+	struct mbox_msg msg;
+};
+
+typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
+				  struct mbox_msg *);
+
 struct mbox_context {
 /* System State */
 	enum mbox_state state;
@@ -127,6 +142,9 @@ struct mbox_context {
 	bool terminate;
 	uint8_t bmc_events;
 	uint8_t prev_seq;
+
+/* Command Dispatch */
+	const mboxd_mbox_handler *handlers;
 
 /* Window State */
 	/* The window list struct containing all current "windows" */

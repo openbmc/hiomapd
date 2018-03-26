@@ -13,18 +13,6 @@
 #define NO_BMC_EVENT			false
 #define SET_BMC_EVENT			true
 
-struct mbox_msg {
-	uint8_t command;
-	uint8_t seq;
-	uint8_t args[MBOX_ARGS_BYTES];
-	uint8_t response;
-};
-
-union mbox_regs {
-	uint8_t raw[MBOX_REG_BYTES];
-	struct mbox_msg msg;
-};
-
 int set_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 		   bool write_back);
 int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,

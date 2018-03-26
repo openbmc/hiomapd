@@ -232,9 +232,14 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	test.context.windows.default_size = len;
 
 	/*
-	 * We need to control MBOX_FD, so don't call __init_mbox_dev().
-	 * Instead, insert our temporary file's fd directly into the context
+	 * We need to call __init_mbox_dev() to initialise the handler table.
+	 * However, afterwards we need to discard the fd of the clearly useless
+	 * /dev/null and replace it with our own fd for mbox device emulation
+	 * by the test framework.
 	 */
+	__init_mbox_dev(&test.context, "/dev/null");
+	rc = close(test.context.fds[MBOX_FD].fd);
+	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;
 
 	rc = init_flash_dev(&test.context);
