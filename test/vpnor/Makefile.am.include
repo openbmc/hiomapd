@@ -289,6 +289,19 @@ test_vpnor_create_read_window_remap_SOURCES = \
 test_vpnor_create_read_window_remap_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_create_read_window_remap_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_create_write_window_ro_partition_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) $(TEST_MOCK_SRCS) \
+	mboxd_msg.c \
+	mboxd_windows.c \
+	mboxd_lpc.c \
+	mboxd_lpc_virtual.cpp \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	pnor_partition.cpp \
+	%reldir%/create_write_window_ro_partition.cpp
+test_vpnor_create_write_window_ro_partition_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_create_write_window_ro_partition_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -315,5 +328,8 @@ check_PROGRAMS += \
 	%reldir%/write_patch_resize \
 	%reldir%/dump_flash \
 	%reldir%/create_read_window_size \
-	%reldir%/create_read_window_remap
+	%reldir%/create_read_window_remap \
+	%reldir%/create_write_window_ro_partition
+
+XFAIL_TESTS += %reldir%/create_write_window_ro_partition
 endif
