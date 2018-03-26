@@ -3,7 +3,7 @@
 
 #include "config.h"
 #include "common.h"
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 #include <assert.h>
 

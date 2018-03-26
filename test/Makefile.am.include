@@ -7,19 +7,19 @@ test_sanity_SOURCES = %reldir%/sanity.c
 
 test_copy_flash_SOURCES = \
 	%reldir%/copy_flash.c \
-	mboxd_flash_physical.c \
+	mboxd_flash.c \
 	common.c mtd.c \
 	%reldir%/tmpf.c
 
 test_erase_flash_SOURCES = \
 	%reldir%/erase_flash.c \
-	mboxd_flash_physical.c \
+	mboxd_flash.c \
 	common.c \
 	%reldir%/tmpf.c
 
 test_write_flash_SOURCES = \
 	%reldir%/write_flash.c \
-	mboxd_flash_physical.c \
+	mboxd_flash.c \
 	common.c \
 	%reldir%/tmpf.c
 
@@ -27,9 +27,9 @@ TEST_MBOX_SRCS = \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mboxd_lpc.c \
-	mboxd_lpc_physical.c \
+	mboxd_lpc_reset.c \
 	common.c \
-	mboxd_flash_physical.c
+	mboxd_flash.c
 
 TEST_MOCK_SRCS = %reldir%/tmpf.c %reldir%/mbox.c %reldir%/system.c
 

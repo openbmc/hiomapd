@@ -5,8 +5,8 @@
 #include <assert.h>
 
 #include "common.h"
-#include "pnor_partition_defs.h"
-#include "pnor_partition_table.hpp"
+#include "vpnor/pnor_partition_defs.h"
+#include "vpnor/pnor_partition_table.hpp"
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 static constexpr auto DATA_MASK = ((1 << 24) - 1);

@@ -8,7 +8,7 @@
 #include <systemd/sd-bus.h>
 #include <poll.h>
 #include <stdbool.h>
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 enum api_version {
 	API_VERSION_INVAL	= 0,

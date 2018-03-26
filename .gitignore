@@ -40,6 +40,7 @@ Makefile.in
 *.swp
 /libtool
 /*.o
+/vpnor/*.o
 /config.h
 /config.h.in~
 /config.log

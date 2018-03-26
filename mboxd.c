@@ -35,7 +35,7 @@
 #include "mboxd_lpc.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 #define USAGE \
 "\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \

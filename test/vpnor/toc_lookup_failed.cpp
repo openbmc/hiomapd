@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "pnor_partition_table.hpp"
+#include "vpnor/pnor_partition_table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 extern "C" {

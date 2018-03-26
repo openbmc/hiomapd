@@ -6,7 +6,7 @@
 
 #include "config.h"
 #include "mboxd_msg.h"
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 extern "C" {
 #include "test/mbox.h"

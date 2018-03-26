@@ -4,7 +4,7 @@
 #include "config.h"
 #include <assert.h>
 
-#include "pnor_partition_table.hpp"
+#include "vpnor/pnor_partition_table.hpp"
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 
