@@ -10,6 +10,7 @@
 #include "xyz/openbmc_project/Common/error.hpp"
 #include <phosphor-logging/elog-errors.hpp>
 #include <experimental/filesystem>
+#include "vpnor/mboxd_msg.hpp"
 
 int init_vpnor(struct mbox_context *context)
 {
@@ -44,6 +45,8 @@ int init_vpnor_from_paths(struct mbox_context *context)
 
     if (context && !context->vpnor)
     {
+        context->handlers = vpnor_mbox_handlers;
+
         try
         {
             context->vpnor = new vpnor_partition_table;

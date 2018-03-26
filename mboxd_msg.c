@@ -30,9 +30,6 @@
 #include "mboxd_windows.h"
 #include "mboxd_lpc.h"
 
-static int mbox_handle_flush_window(struct mbox_context *context, union mbox_regs *req,
-			     struct mbox_msg *resp);
-
 /*
  * write_bmc_event_reg() - Write to the BMC controlled status register (reg 15)
  * @context:	The mbox context pointer
@@ -122,7 +119,7 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
  * Reset the LPC mapping to point back at the flash, or memory in case we're
  * using a virtual pnor.
  */
-static int mbox_handle_reset(struct mbox_context *context,
+int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
 	/* Host requested it -> No BMC Event */
@@ -171,7 +168,7 @@ static uint16_t get_suggested_timeout(struct mbox_context *context)
  * RESP[3:4]: Default write window size (number of blocks)
  * RESP[5]: Block size (as shift)
  */
-static int mbox_handle_mbox_info(struct mbox_context *context,
+int mbox_handle_mbox_info(struct mbox_context *context,
 				 union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint8_t mbox_api_version = req->msg.args[0];
@@ -250,7 +247,7 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
  * RESP[0:1]: Flash Size (number of blocks)
  * RESP[2:3]: Erase Size (number of blocks)
  */
-static int mbox_handle_flash_info(struct mbox_context *context,
+int mbox_handle_flash_info(struct mbox_context *context,
 				  union mbox_regs *req, struct mbox_msg *resp)
 {
 	switch (context->version) {
@@ -314,7 +311,7 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
  * RESP[0:1]: LPC bus address for host to access this window (number of blocks)
  * RESP[2:3]: Actual window size that the host can access (number of blocks)
  */
-static int mbox_handle_read_window(struct mbox_context *context,
+int mbox_handle_read_window(struct mbox_context *context,
 				   union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint32_t flash_offset;
@@ -387,7 +384,7 @@ static int mbox_handle_read_window(struct mbox_context *context,
  * RESP[0:1]: LPC bus address for host to access this window (number of blocks)
  * RESP[2:3]: Actual window size that was mapped/host can access (n.o. blocks)
  */
-static int mbox_handle_write_window(struct mbox_context *context,
+int mbox_handle_write_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	int rc;
@@ -421,7 +418,7 @@ static int mbox_handle_write_window(struct mbox_context *context,
  * ARGS[0:1]: Where within window to start (number of blocks)
  * ARGS[2:3]: Number to mark dirty (number of blocks)
  */
-static int mbox_handle_dirty_window(struct mbox_context *context,
+int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint32_t offset, size;
@@ -480,7 +477,7 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
  * ARGS[0:1]: Where within window to start (number of blocks)
  * ARGS[2:3]: Number to erase (number of blocks)
  */
-static int mbox_handle_erase_window(struct mbox_context *context,
+int mbox_handle_erase_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint32_t offset, size;
@@ -533,7 +530,7 @@ static int mbox_handle_erase_window(struct mbox_context *context,
  * V2:
  * NONE
  */
-static int mbox_handle_flush_window(struct mbox_context *context,
+int mbox_handle_flush_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	int rc, i, offset, count;
@@ -629,7 +626,7 @@ static int mbox_handle_flush_window(struct mbox_context *context,
  * V2:
  * ARGS[0]: FLAGS
  */
-static int mbox_handle_close_window(struct mbox_context *context,
+int mbox_handle_close_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint8_t flags = 0;
@@ -663,7 +660,7 @@ static int mbox_handle_close_window(struct mbox_context *context,
  *
  * ARGS[0]: Bitmap of bits to ack (by clearing)
  */
-static int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
+int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
 			   struct mbox_msg *resp)
 {
 	uint8_t bmc_events = req->msg.args[0];

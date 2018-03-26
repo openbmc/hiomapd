@@ -21,4 +21,26 @@ int dispatch_mbox(struct mbox_context *context);
 int init_mbox_dev(struct mbox_context *context);
 void free_mbox_dev(struct mbox_context *context);
 
+/* Command handlers */
+int mbox_handle_reset(struct mbox_context *context,
+			     union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_mbox_info(struct mbox_context *context,
+				 union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_flash_info(struct mbox_context *context,
+				  union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_read_window(struct mbox_context *context,
+				   union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_close_window(struct mbox_context *context,
+				    union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_write_window(struct mbox_context *context,
+				    union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_dirty_window(struct mbox_context *context,
+				    union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_flush_window(struct mbox_context *context,
+				    union mbox_regs *req, struct mbox_msg *resp);
+int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
+			   struct mbox_msg *resp);
+int mbox_handle_erase_window(struct mbox_context *context,
+				    union mbox_regs *req, struct mbox_msg *resp);
+
 #endif /* MBOXD_MSG_H */
