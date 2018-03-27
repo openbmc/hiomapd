@@ -203,7 +203,9 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
         const struct pnor_partition& part = table->partition(offset);
         if (part.data.user.data[1] & PARTITION_READONLY)
         {
-            /* FIXME: This should be done on CREATE_WRITE_WINDOW, not here */
+            MSG_ERR("Unreachable: Host attempted to write to read-only "
+                    "partition %s\n",
+                    part.data.name);
             return -MBOX_R_WRITE_ERROR;
         }
 
@@ -214,11 +216,10 @@ int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
     }
     catch (vpnor::UnmappedOffset& e)
     {
-        /* Paper over the fact that the write isn't persistent */
-        MSG_INFO("Dropping %d bytes host wrote to unmapped offset 0x%" PRIx32
-                 "\n",
-                 count, offset);
-        return 0;
+        MSG_ERR("Unreachable: Host attempted to write %" PRIu32
+                " bytes to unmapped offset 0x%" PRIx32 "\n",
+                count, offset);
+        return -MBOX_R_WRITE_ERROR;
     }
     catch (const vpnor::OutOfBoundsOffset& e)
     {

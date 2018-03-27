@@ -247,7 +247,4 @@ check_PROGRAMS += \
 	%reldir%/create_write_window_ro_partition \
 	%reldir%/create_write_window_rw_partition \
 	%reldir%/create_write_window_unmapped
-
-XFAIL_TESTS += %reldir%/create_write_window_ro_partition
-XFAIL_TESTS += %reldir%/create_write_window_unmapped
 endif
