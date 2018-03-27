@@ -49,7 +49,7 @@ int main(void)
     /* Verify */
     fd = open((root.prsv() / "TEST1").c_str(), O_RDONLY);
     assert(fd >= 0);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_PRIVATE, fd, 0);
+    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
 
     rc = memcmp(src, map, sizeof(src));
