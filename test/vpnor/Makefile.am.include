@@ -232,6 +232,16 @@ test_vpnor_read_patch_SOURCES = \
 test_vpnor_read_patch_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 test_vpnor_read_patch_LDADD = $(VPNOR_LDADD)
 
+test_vpnor_write_patch_resize_SOURCES = \
+	$(TEST_MBOX_VPNOR_SRCS) \
+	mboxd_pnor_partition_table.cpp \
+	mboxd_flash_virtual.cpp \
+	mtd.c \
+	pnor_partition.cpp \
+	%reldir%/write_patch_resize.cpp
+test_vpnor_write_patch_resize_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+test_vpnor_write_patch_resize_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -254,7 +264,9 @@ check_PROGRAMS += \
 	%reldir%/create_read_window_toc \
 	%reldir%/create_read_window_straddle_partitions \
 	%reldir%/create_read_window_partition_invalid \
-	%reldir%/read_patch
+	%reldir%/read_patch \
+	%reldir%/write_patch_resize
 
 XFAIL_TESTS += %reldir%/read_patch
+XFAIL_TESTS += %reldir%/write_patch_resize
 endif
