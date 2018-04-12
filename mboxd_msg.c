@@ -158,7 +158,7 @@ static uint16_t get_suggested_timeout(struct mbox_context *context)
 {
 	struct window_context *window = find_largest_window(context);
 	uint32_t max_size_mb = window ? (window->size >> 20) : 0;
-	uint8_t ret;
+	uint16_t ret;
 
 	ret = align_up(max_size_mb * FLASH_ACCESS_MS_PER_MB, 1000) / 1000;
 
