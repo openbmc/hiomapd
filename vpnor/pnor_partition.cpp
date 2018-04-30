@@ -126,8 +126,8 @@ size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
     int fd = ::open(path.c_str(), flags);
     if (fd == -1)
     {
-        MSG_ERR("Failed to open backing file at '%s': %d\n",
-                path.c_str(), errno);
+        MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
+                errno);
         throw std::system_error(errno, std::system_category());
     }
 
