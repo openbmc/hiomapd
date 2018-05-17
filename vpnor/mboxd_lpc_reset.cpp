@@ -29,8 +29,17 @@
  */
 int reset_lpc(struct mbox_context *context)
 {
+    int rc;
+
     destroy_vpnor(context);
-    init_vpnor(context);
-    vpnor_copy_bootloader_partition(context);
+
+    rc = init_vpnor(context);
+    if (rc < 0)
+        return rc;
+
+    rc = vpnor_copy_bootloader_partition(context);
+    if (rc < 0)
+        return rc;
+
     return point_to_memory(context);
 }
