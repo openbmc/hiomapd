@@ -114,7 +114,7 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
         phosphor::logging::commit<err::InternalFailure>();
         return -MBOX_R_SYSTEM_ERROR;
     }
-    catch (vpnor::TocEntryError &e)
+    catch (vpnor::ReasonedError &e)
     {
         MSG_ERR("%s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();

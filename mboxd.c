@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 	/* Set the LPC bus mapping */
 	rc = reset_lpc(context);
 	if (rc) {
-		goto finish;
+		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}
 
 	rc = set_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
