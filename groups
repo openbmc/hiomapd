@@ -1,4 +1,3 @@
-# UUID           	Group Name
+# UUID                                   	Group Name
 #
-user:amboar      	user/Andrew Jeffery (amboar)
-user:cyrilbur-ibm	user/Cyril Bur (cyrilbur-ibm)
+github:openbmc/phosphor-mboxd-maintainers	github/openbmc/phosphor-mboxd-maintainers
