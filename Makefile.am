@@ -28,6 +28,11 @@ mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 check_PROGRAMS =
 XFAIL_TESTS =
 
+AM_LIBS = $(CODE_COVERAGE_LIBS)
+AM_CPPFLAGS = $(CODE_COVERAGE_CPPFLAGS) -UNDEBUG
+AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
+AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
+
 include test/Makefile.am.include
 include vpnor/test/Makefile.am.include
 
