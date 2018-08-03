@@ -25,6 +25,52 @@ of which can be found in Documentation/mboxd.md.
 Finally there is also an implementation of a mailbox daemon control program, the
 details of which can be found in Documentation/mboxctl.md.
 
+Building
+========
+
+The build system is a standard autotools setup. `bootstrap.sh` runs all the
+jobs necessary to initialise autotools.
+
+By default mboxd is configured and built _without_ the 'virtual PNOR' feature
+discussed below. The virtual PNOR functionality is written in C++, and due to
+some autotools clunkiness even if it is disabled mboxd will still be linked
+with `CXX`. Point `CXX` to `cc` at configure time if you do not have a C++
+compiler for your target (`./configure CXX=cc`).
+
+If you are hacking on the reference implementation it's recommended to run
+`bootstrap.sh` with the `dev` argument:
+
+```
+$ ./bootstrap.sh dev
+$ ./configure
+$ make
+$ make check
+```
+
+This will turn on several of the compiler's sanitizers to help find bad memory
+management and undefined behaviour in the code via the test suites.
+
+Otherwise, build with:
+
+```
+$ ./bootstrap.sh
+$ ./configure
+$ make
+$ make check
+```
+
+In addition to its role as a flash abstraction `mboxd` can also serve as a
+partition/filesystem abstraction. This feature is known as 'virtual PNOR' and
+it can be enabled at `configure` time (note that this requires a C++ compiler
+for your target):
+
+```
+$ ./bootstrap.sh
+$ ./configure --enable-virtual-pnor
+$ make
+$ make check
+```
+
 Style Guide
 ===========
 
