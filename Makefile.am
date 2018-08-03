@@ -37,3 +37,8 @@ include test/Makefile.am.include
 include vpnor/test/Makefile.am.include
 
 TESTS = $(check_PROGRAMS)
+
+cscope.files: clean-cscope cscopelist-unique
+
+cscopelist-unique: cscopelist
+	sort -u cscope.files > cscope.files.u && mv cscope.files.u cscope.files
