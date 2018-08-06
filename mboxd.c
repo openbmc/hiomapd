@@ -322,7 +322,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = init_mboxd_dbus(context);
+	rc = mboxd_dbus_init(context);
 	if (rc) {
 		goto finish;
 	}
@@ -351,7 +351,7 @@ finish:
 	MSG_INFO("Daemon Exiting...\n");
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
-	free_mboxd_dbus(context);
+	mboxd_dbus_free(context);
 	free_flash_dev(context);
 	free_lpc_dev(context);
 	free_mbox_dev(context);
