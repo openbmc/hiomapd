@@ -4,7 +4,7 @@
 #ifndef MBOXD_DBUS_H
 #define MBOXD_DBUS_H
 
-int init_mboxd_dbus(struct mbox_context *context);
-void free_mboxd_dbus(struct mbox_context *context);
+int mboxd_dbus_init(struct mbox_context *context);
+void mboxd_dbus_free(struct mbox_context *context);
 
 #endif /* MBOXD_DBUS_H */
