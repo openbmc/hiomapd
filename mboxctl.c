@@ -1,32 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
+#include "config.h"
 
-#define _GNU_SOURCE
-#include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
 #include <getopt.h>
-#include <limits.h>
-#include <poll.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <syslog.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/timerfd.h>
-#include <sys/types.h>
-#include <time.h>
-#include <unistd.h>
-#include <inttypes.h>
-
 #include <systemd/sd-bus.h>
 
-#include "config.h"
 #include "dbus.h"
 
 #define USAGE \
