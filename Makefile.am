@@ -7,6 +7,7 @@ mboxd_SOURCES = \
 	control.c \
 	control_legacy.c \
 	mboxd_dbus.c \
+	control_dbus.c \
 	mboxd_lpc.c \
 	mboxd_msg.c \
 	mboxd_windows.c \

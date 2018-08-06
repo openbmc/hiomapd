@@ -7,7 +7,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "mbox.h"
-#include "mboxd_dbus.h"
+#include "control_dbus.h"
 
 int mboxd_dbus_init(struct mbox_context *context)
 {
@@ -27,6 +27,21 @@ int mboxd_dbus_init(struct mbox_context *context)
 		return rc;
 	}
 
+	rc = control_dbus_init(context);
+	if (rc < 0) {
+		MSG_ERR("Failed to initialise DBus control interface: %s\n",
+			strerror(-rc));
+		return rc;
+	}
+
+	rc = sd_bus_request_name(context->bus, MBOX_DBUS_NAME,
+				 SD_BUS_NAME_ALLOW_REPLACEMENT |
+				 SD_BUS_NAME_REPLACE_EXISTING);
+	if (rc < 0) {
+		MSG_ERR("Failed to request bus name: %s\n", strerror(-rc));
+		return rc;
+	}
+
 	rc = sd_bus_get_fd(context->bus);
 	if (rc < 0) {
 		MSG_ERR("Failed to get bus fd: %s\n", strerror(-rc));
@@ -40,6 +55,7 @@ int mboxd_dbus_init(struct mbox_context *context)
 
 void mboxd_dbus_free(struct mbox_context *context)
 {
+	control_dbus_free(context);
 	control_legacy_free(context);
 	sd_bus_unref(context->bus);
 }
