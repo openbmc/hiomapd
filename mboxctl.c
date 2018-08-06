@@ -2,10 +2,12 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
+#include <errno.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <systemd/sd-bus.h>
 
 #include "dbus.h"
@@ -46,15 +48,6 @@ static void usage(char *name)
 	exit(0);
 }
 
-static const char *dbus_err_str[] = {
-	"Success",
-	"Failed - Internal Error",
-	"Failed - Invalid Command or Request",
-	"Failed - Request Rejected by Daemon",
-	"Failed - BMC Hardware Error",
-	"Failed - Insufficient Memory for Allocation Request"
-};
-
 static int init_mboxctl_dbus(struct mboxctl_context *context)
 {
 	int rc;
@@ -68,21 +61,164 @@ static int init_mboxctl_dbus(struct mboxctl_context *context)
 	return rc;
 }
 
-static int send_dbus_msg_legacy(struct mboxctl_context *context,
-			 struct mbox_dbus_msg *msg,
-			 struct mbox_dbus_msg *resp)
+static int mboxctl_directive(struct mboxctl_context *context, const char *cmd)
+{
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	sd_bus_message *m = NULL;
+	int rc;
+
+	rc = sd_bus_message_new_method_call(context->bus, &m,
+					    MBOX_DBUS_NAME,
+					    MBOX_DBUS_OBJECT,
+					    MBOX_DBUS_CONTROL_IFACE,
+					    cmd);
+	if (rc < 0) {
+		MSG_ERR("Failed to init method call: %s\n",
+			strerror(-rc));
+		goto out;
+	}
+
+	rc = sd_bus_call(context->bus, m, 0, &error, NULL);
+	if (rc < 0) {
+		MSG_ERR("Failed to post message: %s\n", strerror(-rc));
+	}
+
+out:
+	sd_bus_error_free(&error);
+	sd_bus_message_unref(m);
+
+	return rc < 0 ? rc : 0;
+}
+
+static int mboxctl_getter(struct mboxctl_context *context, const char *cmd,
+			  uint8_t *resp)
 {
 	sd_bus_error error = SD_BUS_ERROR_NULL;
 	sd_bus_message *m = NULL, *n = NULL;
-	uint8_t *buf;
-	size_t sz;
 	int rc;
 
-	/* Generate the bus message */
 	rc = sd_bus_message_new_method_call(context->bus, &m,
-					    MBOX_DBUS_LEGACY_NAME,
-					    MBOX_DBUS_LEGACY_OBJECT,
-					    MBOX_DBUS_LEGACY_NAME, "cmd");
+					    MBOX_DBUS_NAME,
+					    MBOX_DBUS_OBJECT,
+					    MBOX_DBUS_CONTROL_IFACE,
+					    cmd);
+	if (rc < 0) {
+		MSG_ERR("Failed to init method call: %s\n",
+			strerror(-rc));
+		goto out;
+	}
+
+	rc = sd_bus_call(context->bus, m, 0, &error, &n);
+	if (rc < 0) {
+		MSG_ERR("Failed to post message: %s\n", strerror(-rc));
+		goto out;
+	}
+
+	rc = sd_bus_message_read_basic(n, 'y', resp);
+	if (rc < 0) {
+		MSG_ERR("Failed to read response args: %s\n",
+			strerror(-rc));
+		goto out;
+	}
+
+out:
+	sd_bus_error_free(&error);
+	sd_bus_message_unref(m);
+	sd_bus_message_unref(n);
+
+	return rc < 0 ? rc : 0;
+
+}
+
+static int handle_cmd_ping(struct mboxctl_context *context)
+{
+	int rc;
+
+	rc = mboxctl_directive(context, "Ping");
+	MSG_OUT("Ping: %s\n", rc ? strerror(-rc) : "Success");
+
+	return rc;
+}
+
+static int handle_cmd_daemon_state(struct mboxctl_context *context)
+{
+	uint8_t resp;
+	int rc;
+
+	rc = mboxctl_getter(context, "GetDaemonState", &resp);
+	if (rc < 0)
+		return rc;
+
+	MSG_OUT("Daemon State: %s\n", resp == DAEMON_STATE_ACTIVE ?
+				      "Active" : "Suspended");
+	return 0;
+}
+
+static int handle_cmd_lpc_state(struct mboxctl_context *context)
+{
+	uint8_t resp;
+	int rc;
+
+	rc = mboxctl_getter(context, "GetLpcState", &resp);
+	if (rc < 0)
+		return rc;
+
+	MSG_OUT("LPC Bus Maps: %s\n", resp == LPC_STATE_MEM ?
+				      "BMC Memory" :
+				      (resp == LPC_STATE_FLASH ?
+				       "Flash Device" :
+				       "Invalid System State"));
+
+	return 0;
+}
+
+static int handle_cmd_kill(struct mboxctl_context *context)
+{
+	int rc;
+
+	rc = mboxctl_directive(context, "Kill");
+	MSG_OUT("Kill: %s\n", rc ? strerror(-rc) : "Success");
+
+	return rc;
+}
+
+static int handle_cmd_reset(struct mboxctl_context *context)
+{
+	int rc;
+
+	rc = mboxctl_directive(context, "Reset");
+	MSG_OUT("Reset: %s\n", rc ? strerror(-rc) : "Success");
+
+	return rc;
+}
+
+static int handle_cmd_suspend(struct mboxctl_context *context)
+{
+	int rc;
+
+	rc = mboxctl_directive(context, "Suspend");
+	MSG_OUT("Suspend: %s\n", rc ? strerror(-rc) : "Success");
+
+	return rc;
+}
+
+static int handle_cmd_resume(struct mboxctl_context *context, char *sarg)
+{
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	sd_bus_message *m = NULL, *n = NULL;
+	uint8_t arg;
+	int rc;
+
+	if (!sarg) {
+		MSG_ERR("Resume command takes an argument\n");
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_new_method_call(context->bus, &m,
+					    MBOX_DBUS_NAME,
+					    MBOX_DBUS_OBJECT,
+					    MBOX_DBUS_CONTROL_IFACE,
+					    "Resume");
 	if (rc < 0) {
 		MSG_ERR("Failed to init method call: %s\n",
 			strerror(-rc));
@@ -90,17 +226,18 @@ static int send_dbus_msg_legacy(struct mboxctl_context *context,
 		goto out;
 	}
 
-	/* Add the command */
-	rc = sd_bus_message_append(m, "y", msg->cmd);
-	if (rc < 0) {
-		MSG_ERR("Failed to add cmd to message: %s\n",
-			strerror(-rc));
-		rc = -E_DBUS_INTERNAL;
+	if (!strncmp(sarg, "clean", strlen("clean"))) {
+		arg = RESUME_NOT_MODIFIED;
+	} else if (!strncmp(sarg, "modified", strlen("modified"))) {
+		arg = RESUME_FLASH_MODIFIED;
+	} else {
+		MSG_ERR("Resume command takes argument < \"clean\" | "
+			"\"modified\" >\n");
+		rc = -EINVAL;
 		goto out;
 	}
 
-	/* Add the args */
-	rc = sd_bus_message_append_array(m, 'y', msg->args, msg->num_args);
+	rc = sd_bus_message_append(m, "y", arg);
 	if (rc < 0) {
 		MSG_ERR("Failed to add args to message: %s\n",
 			strerror(-rc));
@@ -108,7 +245,6 @@ static int send_dbus_msg_legacy(struct mboxctl_context *context,
 		goto out;
 	}
 
-	/* Send the message */
 	rc = sd_bus_call(context->bus, m, 0, &error, &n);
 	if (rc < 0) {
 		MSG_ERR("Failed to post message: %s\n", strerror(-rc));
@@ -116,244 +252,22 @@ static int send_dbus_msg_legacy(struct mboxctl_context *context,
 		goto out;
 	}
 
-	/* Read response code */
-	rc = sd_bus_message_read(n, "y", &resp->cmd);
-	if (rc < 0) {
-		MSG_ERR("Failed to read response code: %s\n",
-			strerror(-rc));
-		rc = -E_DBUS_INTERNAL;
-		goto out;
-	}
-
-	/* Read response args */
-	rc = sd_bus_message_read_array(n, 'y', (const void **) &buf, &sz);
-	if (rc < 0) {
-		MSG_ERR("Failed to read response args: %s\n",
-			strerror(-rc));
-		rc = -E_DBUS_INTERNAL;
-		goto out;
-	}
-
-	if (sz < resp->num_args) {
-		MSG_ERR("Command returned insufficient response args\n");
-		rc = -E_DBUS_INTERNAL;
-		goto out;
-	}
-
-	memcpy(resp->args, buf, resp->num_args);
-	rc = 0;
+	MSG_OUT("Resume: %s\n", rc < 0 ? strerror(-rc) : "Success");
 
 out:
 	sd_bus_error_free(&error);
 	sd_bus_message_unref(m);
 	sd_bus_message_unref(n);
 
-	return rc;
-}
-
-static int handle_cmd_ping(struct mboxctl_context *context)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	msg.cmd = DBUS_C_PING;
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send ping command\n");
-		return rc;
-	}
-
-	rc = -resp.cmd;
-	MSG_OUT("Ping: %s\n", dbus_err_str[-rc]);
-
-	return rc;
-}
-
-static int handle_cmd_daemon_state(struct mboxctl_context *context)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	msg.cmd = DBUS_C_DAEMON_STATE;
-	resp.num_args = DAEMON_STATE_NUM_ARGS;
-	resp.args = calloc(resp.num_args, sizeof(*resp.args));
-	if (!resp.args) {
-		MSG_ERR("Memory allocation failed\n");
-		return -E_DBUS_NO_MEM;
-	}
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send daemon state command\n");
-		goto out;
-	}
-
-	rc = -resp.cmd;
-	if (resp.cmd != DBUS_SUCCESS) {
-		MSG_ERR("Daemon state command failed\n");
-		goto out;
-	}
-
-	MSG_OUT("Daemon State: %s\n", resp.args[0] == DAEMON_STATE_ACTIVE ?
-				      "Active" : "Suspended");
-
-out:
-	free(resp.args);
-	return rc;
-}
-
-static int handle_cmd_lpc_state(struct mboxctl_context *context)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	msg.cmd = DBUS_C_LPC_STATE;
-	resp.num_args = LPC_STATE_NUM_ARGS;
-	resp.args = calloc(resp.num_args, sizeof(*resp.args));
-	if (!resp.args) {
-		MSG_ERR("Memory allocation failed\n");
-		return -E_DBUS_NO_MEM;
-	}
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send lpc state command\n");
-		goto out;
-	}
-
-	rc = -resp.cmd;
-	if (resp.cmd != DBUS_SUCCESS) {
-		MSG_ERR("LPC state command failed\n");
-		goto out;
-	}
-
-	MSG_OUT("LPC Bus Maps: %s\n", resp.args[0] == LPC_STATE_MEM ?
-				      "BMC Memory" :
-				      (resp.args[0] == LPC_STATE_FLASH ?
-				       "Flash Device" :
-				       "Invalid System State"));
-
-out:
-	free(resp.args);
-	return rc;
-}
-
-static int handle_cmd_kill(struct mboxctl_context *context)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	msg.cmd = DBUS_C_KILL;
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send kill command\n");
-		return rc;
-	}
-
-	rc = -resp.cmd;
-	MSG_OUT("Kill: %s\n", dbus_err_str[-rc]);
-
-	return rc;
-}
-
-static int handle_cmd_reset(struct mboxctl_context *context)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	msg.cmd = DBUS_C_RESET;
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send reset command\n");
-		return rc;
-	}
-
-	rc = -resp.cmd;
-	MSG_OUT("Reset: %s\n", dbus_err_str[-rc]);
-
-	return rc;
-}
-
-static int handle_cmd_suspend(struct mboxctl_context *context)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	msg.cmd = DBUS_C_SUSPEND;
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send suspend command\n");
-		return rc;
-	}
-
-	rc = -resp.cmd;
-	MSG_OUT("Suspend: %s\n", dbus_err_str[-rc]);
-
-	return rc;
-}
-
-static int handle_cmd_resume(struct mboxctl_context *context, char *arg)
-{
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
-	int rc;
-
-	if (!arg) {
-		MSG_ERR("Resume command takes an argument\n");
-		return -E_DBUS_INVAL;
-	}
-
-	msg.cmd = DBUS_C_RESUME;
-	msg.num_args = RESUME_NUM_ARGS;
-	msg.args = calloc(msg.num_args, sizeof(*msg.args));
-	if (!msg.args) {
-		MSG_ERR("Memory allocation failed\n");
-		return -E_DBUS_NO_MEM;
-	}
-
-	if (!strncmp(arg, "clean", strlen("clean"))) {
-		msg.args[0] = RESUME_NOT_MODIFIED;
-	} else if (!strncmp(arg, "modified", strlen("modified"))) {
-		msg.args[0] = RESUME_FLASH_MODIFIED;
-	} else {
-		MSG_ERR("Resume command takes argument < \"clean\" | "
-			"\"modified\" >\n");
-		rc = -E_DBUS_INVAL;
-		goto out;
-	}
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send resume command\n");
-		goto out;
-	}
-
-	rc = -resp.cmd;
-	MSG_OUT("Resume: %s\n", dbus_err_str[-rc]);
-
-out:
-	free(msg.args);
-	return rc;
+	return rc < 0 ? rc : 0;
 }
 
 static int handle_cmd_modified(struct mboxctl_context *context)
 {
-	struct mbox_dbus_msg msg = { 0 }, resp = { 0 };
 	int rc;
 
-	msg.cmd = DBUS_C_MODIFIED;
-
-	rc = send_dbus_msg_legacy(context, &msg, &resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to send flash modified command\n");
-		return rc;
-	}
-
-	rc = -resp.cmd;
-	MSG_OUT("Clear Cache: %s\n", dbus_err_str[-rc]);
+	rc = mboxctl_directive(context, "MarkFlashModified");
+	MSG_OUT("Clear Cache: %s\n", rc ? strerror(-rc) : "Success");
 
 	return rc;
 }
@@ -380,7 +294,7 @@ static int parse_cmdline(struct mboxctl_context *context, int argc, char **argv)
 
 	if (argc <= 1) {
 		usage(argv[0]);
-		return -E_DBUS_INVAL;
+		return -EINVAL;
 	}
 
 	while ((opt = getopt_long(argc, argv, "spdlkrfue:cvh", long_options,
@@ -424,7 +338,7 @@ static int parse_cmdline(struct mboxctl_context *context, int argc, char **argv)
 			break;
 		default:
 			usage(argv[0]);
-			rc = -E_DBUS_INVAL;
+			rc = -EINVAL;
 			break;
 		}
 	}
