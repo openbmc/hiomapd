@@ -4,6 +4,8 @@ sbin_PROGRAMS = mboxd mboxctl
 mboxd_SOURCES = \
 	mboxd.c \
 	common.c \
+	control.c \
+	control_legacy.c \
 	mboxd_dbus.c \
 	mboxd_lpc.c \
 	mboxd_msg.c \
