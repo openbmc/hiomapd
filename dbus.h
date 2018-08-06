@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright (C) 2018 IBM Corp. */
 
-#ifndef MBOX_DBUS_H
-#define MBOX_DBUS_H
+#ifndef DBUS_H
+#define DBUS_H
 
 #include <stdint.h>
 #include <stddef.h>

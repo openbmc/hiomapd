@@ -5,7 +5,7 @@
 
 #include "common.h"
 #include "dbus.h"
-#include "mboxd_dbus.h"
+#include "control_dbus.h"
 #include "mbox.h"
 
 /*
