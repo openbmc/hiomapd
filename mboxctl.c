@@ -68,7 +68,7 @@ static int init_mboxctl_dbus(struct mboxctl_context *context)
 	return rc;
 }
 
-static int send_dbus_msg(struct mboxctl_context *context,
+static int send_dbus_msg_legacy(struct mboxctl_context *context,
 			 struct mbox_dbus_msg *msg,
 			 struct mbox_dbus_msg *resp)
 {
@@ -79,8 +79,10 @@ static int send_dbus_msg(struct mboxctl_context *context,
 	int rc;
 
 	/* Generate the bus message */
-	rc = sd_bus_message_new_method_call(context->bus, &m, DBUS_NAME,
-					    DOBJ_NAME, DBUS_NAME, "cmd");
+	rc = sd_bus_message_new_method_call(context->bus, &m,
+					    MBOX_DBUS_LEGACY_NAME,
+					    MBOX_DBUS_LEGACY_OBJECT,
+					    MBOX_DBUS_LEGACY_NAME, "cmd");
 	if (rc < 0) {
 		MSG_ERR("Failed to init method call: %s\n",
 			strerror(-rc));
@@ -156,7 +158,7 @@ static int handle_cmd_ping(struct mboxctl_context *context)
 
 	msg.cmd = DBUS_C_PING;
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send ping command\n");
 		return rc;
@@ -181,7 +183,7 @@ static int handle_cmd_daemon_state(struct mboxctl_context *context)
 		return -E_DBUS_NO_MEM;
 	}
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send daemon state command\n");
 		goto out;
@@ -214,7 +216,7 @@ static int handle_cmd_lpc_state(struct mboxctl_context *context)
 		return -E_DBUS_NO_MEM;
 	}
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send lpc state command\n");
 		goto out;
@@ -244,7 +246,7 @@ static int handle_cmd_kill(struct mboxctl_context *context)
 
 	msg.cmd = DBUS_C_KILL;
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send kill command\n");
 		return rc;
@@ -263,7 +265,7 @@ static int handle_cmd_reset(struct mboxctl_context *context)
 
 	msg.cmd = DBUS_C_RESET;
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send reset command\n");
 		return rc;
@@ -282,7 +284,7 @@ static int handle_cmd_suspend(struct mboxctl_context *context)
 
 	msg.cmd = DBUS_C_SUSPEND;
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send suspend command\n");
 		return rc;
@@ -323,7 +325,7 @@ static int handle_cmd_resume(struct mboxctl_context *context, char *arg)
 		goto out;
 	}
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send resume command\n");
 		goto out;
@@ -344,7 +346,7 @@ static int handle_cmd_modified(struct mboxctl_context *context)
 
 	msg.cmd = DBUS_C_MODIFIED;
 
-	rc = send_dbus_msg(context, &msg, &resp);
+	rc = send_dbus_msg_legacy(context, &msg, &resp);
 	if (rc < 0) {
 		MSG_ERR("Failed to send flash modified command\n");
 		return rc;
