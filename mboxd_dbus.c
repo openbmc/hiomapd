@@ -340,7 +340,7 @@ static const sd_bus_vtable mboxd_vtable[] = {
 	SD_BUS_VTABLE_END
 };
 
-int init_mboxd_dbus(struct mbox_context *context)
+int mboxd_dbus_init(struct mbox_context *context)
 {
 	int rc;
 
@@ -377,7 +377,7 @@ int init_mboxd_dbus(struct mbox_context *context)
 	return 0;
 }
 
-void free_mboxd_dbus(struct mbox_context *context)
+void mboxd_dbus_free(struct mbox_context *context)
 {
 	sd_bus_unref(context->bus);
 }
