@@ -23,7 +23,7 @@ The main mailbox daemon is implemented in mboxd.c. This file uses helper
 functions from the various mboxd_*.c files.
 
 ```
-mboxd_dbus.c -    Contains the handlers for the D-Bus commands which the daemon can
+dbus.c -    Contains the handlers for the D-Bus commands which the daemon can
                   receive.
 mboxd_flash.c -   Contains the functions for performing flash access including
                   read, write and erase.

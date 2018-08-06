@@ -30,7 +30,7 @@
 #include "mbox.h"
 #include "common.h"
 #include "dbus.h"
-#include "mboxd_dbus.h"
+#include "control_dbus.h"
 #include "mboxd_flash.h"
 #include "mboxd_lpc.h"
 #include "mboxd_msg.h"
@@ -49,6 +49,9 @@
 "\t-w | --window-size\tThe window size (power of 2) in MB\n" \
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+
+int mboxd_dbus_init(struct mbox_context *context);
+void mboxd_dbus_free(struct mbox_context *context);
 
 static int poll_loop(struct mbox_context *context)
 {
