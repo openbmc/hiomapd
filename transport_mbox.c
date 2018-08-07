@@ -307,50 +307,20 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 int mbox_handle_read_window(struct mbox_context *context,
 				   union mbox_regs *req, struct mbox_msg *resp)
 {
-	uint32_t flash_offset;
+	struct protocol_create_window io;
 	int rc;
 
-	/* Close the current window if there is one */
-	if (context->current) {
-		/* There is an implicit flush if it was a write window */
-		if (context->current_is_write) {
-			rc = mbox_handle_flush_window(context, NULL, NULL);
-			if (rc < 0) {
-				MSG_ERR("Couldn't Flush Write Window\n");
-				return rc;
-			}
-		}
-		windows_close_current(context, NO_BMC_EVENT, FLAGS_NONE);
+	io.req.offset = get_u16(&req->msg.args[0]);
+
+	rc = context->protocol->create_read_window(context, &io);
+	if (rc < 0) {
+		return mbox_xlate_errno(context, rc);
 	}
 
-	/* Offset the host has requested */
-	flash_offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
-	MSG_INFO("Host requested flash @ 0x%.8x\n", flash_offset);
-	/* Check if we have an existing window */
-	context->current = windows_search(context, flash_offset,
-					  context->version == API_VERSION_1);
-
-	if (!context->current) { /* No existing window */
-		MSG_DBG("No existing window which maps that flash offset\n");
-		rc = windows_create_map(context, &context->current, flash_offset,
-				       context->version == API_VERSION_1);
-		if (rc < 0) { /* Unable to map offset */
-			MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n"
-				, flash_offset);
-			return rc;
-		}
-	}
-
-	MSG_INFO("Window @ %p for size 0x%.8x maps flash offset 0x%.8x\n",
-		 context->current->mem, context->current->size,
-		 context->current->flash_offset);
-
-	put_u16(&resp->args[0], get_lpc_addr_shifted(context));
+	put_u16(&resp->args[0], io.resp.lpc_address);
 	if (context->version >= API_VERSION_2) {
-		put_u16(&resp->args[2], context->current->size >>
-					context->block_size_shift);
-		put_u16(&resp->args[4], context->current->flash_offset >>
-					context->block_size_shift);
+		put_u16(&resp->args[2], io.resp.size);
+		put_u16(&resp->args[4], io.resp.offset);
 	}
 
 	context->current_is_write = false;
