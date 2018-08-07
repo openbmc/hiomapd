@@ -422,38 +422,23 @@ int mbox_handle_dirty_window(struct mbox_context *context,
 int mbox_handle_erase_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	uint32_t offset, size;
+	struct protocol_erase io;
 	int rc;
 
-	if (context->version < API_VERSION_2) {
+	io.req.offset = get_u16(&req->msg.args[0]);
+	io.req.size = get_u16(&req->msg.args[2]);
+
+	if (!context->protocol->erase) {
 		MSG_ERR("Protocol Version invalid for Erase Command\n");
 		return -MBOX_R_PARAM_ERROR;
 	}
 
-	if (!(context->current && context->current_is_write)) {
-		MSG_ERR("Tried to call erase without open write window\n");
-		return -MBOX_R_WINDOW_ERROR;
-	}
-
-	offset = get_u16(&req->msg.args[0]);
-	size = get_u16(&req->msg.args[2]);
-
-	MSG_INFO("Erase window @ 0x%.8x for 0x%.8x\n",
-		 offset << context->block_size_shift,
-		 size << context->block_size_shift);
-
-	rc = window_set_bytemap(context, context->current, offset, size,
-				WINDOW_ERASED);
+	rc = context->protocol->erase(context, &io);
 	if (rc < 0) {
-		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
-				       : -MBOX_R_SYSTEM_ERROR;
+		return mbox_xlate_errno(context, rc);
 	}
 
-	/* Write 0xFF to mem -> This ensures consistency between flash & ram */
-	memset(context->current->mem + (offset << context->block_size_shift),
-	       0xFF, size << context->block_size_shift);
-
-	return 0;
+	return rc;
 }
 
 /*
