@@ -265,12 +265,42 @@ int protocol_v2_mark_dirty(struct mbox_context *context,
 				  io->req.v2.size, WINDOW_DIRTY);
 }
 
+int protocol_v2_erase(struct mbox_context *context,
+		      struct protocol_erase *io)
+{
+	size_t start, len;
+	int rc;
+
+	if (!(context->current && context->current_is_write)) {
+		MSG_ERR("Tried to call erase without open write window\n");
+		return -EPERM;
+	}
+
+	MSG_INFO("Erase window @ 0x%.8x for 0x%.8x\n",
+		 io->req.offset << context->block_size_shift,
+		 io->req.size << context->block_size_shift);
+
+	rc = window_set_bytemap(context, context->current, io->req.offset,
+				io->req.size, WINDOW_ERASED);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Write 0xFF to mem -> This ensures consistency between flash & ram */
+	start = io->req.offset << context->block_size_shift;
+	len = io->req.size << context->block_size_shift;
+	memset(context->current->mem + start, 0xFF, len);
+
+	return 0;
+}
+
 static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
 	.get_flash_info = protocol_v1_get_flash_info,
 	.create_window = protocol_v1_create_window,
 	.mark_dirty = protocol_v1_mark_dirty,
+	.erase = NULL,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
@@ -279,6 +309,7 @@ static const struct protocol_ops protocol_ops_v2 = {
 	.get_flash_info = protocol_v2_get_flash_info,
 	.create_window = protocol_v2_create_window,
 	.mark_dirty = protocol_v2_mark_dirty,
+	.erase = protocol_v2_erase,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
