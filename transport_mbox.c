@@ -387,51 +387,20 @@ int mbox_handle_write_window(struct mbox_context *context,
 int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	uint32_t offset, size;
+	struct protocol_mark_dirty io;
 	int rc;
 
-	if (!(context->current && context->current_is_write)) {
-		MSG_ERR("Tried to call mark dirty without open write window\n");
-		return context->version >= API_VERSION_2 ? -MBOX_R_WINDOW_ERROR
-							 : -MBOX_R_PARAM_ERROR;
-	}
-
-	offset = get_u16(&req->msg.args[0]);
-
-	if (context->version >= API_VERSION_2) {
-		size = get_u16(&req->msg.args[2]);
+	if (context->version == API_VERSION_1) {
+		io.req.v1.offset = get_u16(&req->msg.args[0]);
+		io.req.v1.size = get_u32(&req->msg.args[2]);
 	} else {
-		uint32_t off;
-		/* For V1 offset given relative to flash - we want the window */
-		off = offset - ((context->current->flash_offset) >>
-				context->block_size_shift);
-		if (off > offset) { /* Underflow - before current window */
-			MSG_ERR("Tried to mark dirty before start of window\n");
-			MSG_ERR("requested offset: 0x%x window start: 0x%x\n",
-				offset << context->block_size_shift,
-				context->current->flash_offset);
-			return -MBOX_R_PARAM_ERROR;
-		}
-		offset = off;
-		size = get_u32(&req->msg.args[2]);
-		/*
-		 * We only track dirty at the block level.
-		 * For protocol V1 we can get away with just marking the whole
-		 * block dirty.
-		 */
-		size = align_up(size, 1 << context->block_size_shift);
-		size >>= context->block_size_shift;
+		io.req.v2.offset = get_u16(&req->msg.args[0]);
+		io.req.v2.size = get_u16(&req->msg.args[2]);
 	}
 
-	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
-		 offset << context->block_size_shift,
-		 size << context->block_size_shift);
-
-	rc = window_set_bytemap(context, context->current, offset, size,
-				  WINDOW_DIRTY);
+	rc = context->protocol->mark_dirty(context, &io);
 	if (rc < 0) {
-		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
-				       : -MBOX_R_SYSTEM_ERROR;
+		return mbox_xlate_errno(context, rc);
 	}
 
 	return rc;

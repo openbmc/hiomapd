@@ -58,6 +58,21 @@ struct protocol_create_window {
 	} resp;
 };
 
+struct protocol_mark_dirty {
+	struct {
+		union {
+			struct {
+				uint16_t offset;
+				uint32_t size;
+			} v1;
+			struct {
+				uint16_t offset;
+				uint16_t size;
+			} v2;
+		};
+	} req;
+};
+
 struct protocol_ops {
 	int (*reset)(struct mbox_context *context);
 	int (*get_info)(struct mbox_context *context,
@@ -66,6 +81,8 @@ struct protocol_ops {
 			      struct protocol_get_flash_info *io);
 	int (*create_window)(struct mbox_context *context,
 			     struct protocol_create_window *io);
+	int (*mark_dirty)(struct mbox_context *context,
+			  struct protocol_mark_dirty *io);
 };
 
 int protocol_init(struct mbox_context *context);
@@ -81,6 +98,8 @@ int protocol_v1_get_flash_info(struct mbox_context *context,
 			       struct protocol_get_flash_info *io);
 int protocol_v1_create_window(struct mbox_context *context,
 			      struct protocol_create_window *io);
+int protocol_v1_mark_dirty(struct mbox_context *context,
+			   struct protocol_mark_dirty *io);
 
 /* Protocol v2 */
 int protocol_v2_get_info(struct mbox_context *context,
@@ -89,5 +108,7 @@ int protocol_v2_get_flash_info(struct mbox_context *context,
 			       struct protocol_get_flash_info *io);
 int protocol_v2_create_window(struct mbox_context *context,
 			      struct protocol_create_window *io);
+int protocol_v2_mark_dirty(struct mbox_context *context,
+			   struct protocol_mark_dirty *io);
 
 #endif /* PROTOCOL_H */
