@@ -80,6 +80,12 @@ struct protocol_erase {
 	} req;
 };
 
+struct protocol_flush {
+	struct {
+		uint16_t offset;
+		uint32_t size;
+	} req;
+};
 
 struct protocol_ops {
 	int (*reset)(struct mbox_context *context);
@@ -92,6 +98,7 @@ struct protocol_ops {
 	int (*mark_dirty)(struct mbox_context *context,
 			  struct protocol_mark_dirty *io);
 	int (*erase)(struct mbox_context *context, struct protocol_erase *io);
+	int (*flush)(struct mbox_context *context, struct protocol_flush *io);
 };
 
 int protocol_init(struct mbox_context *context);
@@ -109,6 +116,7 @@ int protocol_v1_create_window(struct mbox_context *context,
 			      struct protocol_create_window *io);
 int protocol_v1_mark_dirty(struct mbox_context *context,
 			   struct protocol_mark_dirty *io);
+int protocol_v1_flush(struct mbox_context *context, struct protocol_flush *io);
 
 /* Protocol v2 */
 int protocol_v2_get_info(struct mbox_context *context,
@@ -121,5 +129,6 @@ int protocol_v2_mark_dirty(struct mbox_context *context,
 			   struct protocol_mark_dirty *io);
 int protocol_v2_erase(struct mbox_context *context,
 		      struct protocol_erase *io);
+int protocol_v2_flush(struct mbox_context *context, struct protocol_flush *io);
 
 #endif /* PROTOCOL_H */

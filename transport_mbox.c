@@ -461,89 +461,17 @@ int mbox_handle_erase_window(struct mbox_context *context,
 int mbox_handle_flush_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	int rc, i, offset, count;
-	uint8_t prev;
+	struct protocol_flush io = { 0 };
+	int rc;
 
-	if (!(context->current && context->current_is_write)) {
-		MSG_ERR("Tried to call flush without open write window\n");
-		return context->version >= API_VERSION_2 ? -MBOX_R_WINDOW_ERROR
-							 : -MBOX_R_PARAM_ERROR;
+	if (context->version == API_VERSION_1) {
+		io.req.offset = get_u16(&req->msg.args[0]);
+		io.req.size = get_u32(&req->msg.args[2]);
 	}
 
-	/*
-	 * For V1 the Flush command acts much the same as the dirty command
-	 * except with a flush as well. Only do this on an actual flush
-	 * command not when we call flush because we've implicitly closed a
-	 * window because we might not have the required args in req.
-	 */
-	if (context->version == API_VERSION_1 && req &&
-			req->msg.command == MBOX_C_WRITE_FLUSH) {
-		rc = mbox_handle_dirty_window(context, req, NULL);
-		if (rc < 0) {
-			return rc;
-		}
-	}
-
-	offset = 0;
-	count = 0;
-	prev = WINDOW_CLEAN;
-
-	MSG_INFO("Flush window @ %p for size 0x%.8x which maps flash @ 0x%.8x\n",
-		 context->current->mem, context->current->size,
-		 context->current->flash_offset);
-
-	/*
-	 * We look for streaks of the same type and keep a count, when the type
-	 * (dirty/erased) changes we perform the required action on the backing
-	 * store and update the current streak-type
-	 */
-	for (i = 0; i < (context->current->size >> context->block_size_shift);
-			i++) {
-		uint8_t cur = context->current->dirty_bmap[i];
-		if (cur != WINDOW_CLEAN) {
-			if (cur == prev) { /* Same as previous block, incrmnt */
-				count++;
-			} else if (prev == WINDOW_CLEAN) { /* Start of run */
-				offset = i;
-				count++;
-			} else { /* Change in streak type */
-				rc = window_flush(context, offset, count,
-						       prev);
-				if (rc < 0) {
-					return rc;
-				}
-				offset = i;
-				count = 1;
-			}
-		} else {
-			if (prev != WINDOW_CLEAN) { /* End of a streak */
-				rc = window_flush(context, offset, count,
-						       prev);
-				if (rc < 0) {
-					return rc;
-				}
-				offset = 0;
-				count = 0;
-			}
-		}
-		prev = cur;
-	}
-
-	if (prev != WINDOW_CLEAN) { /* Still the last streak to write */
-		rc = window_flush(context, offset, count, prev);
-		if (rc < 0) {
-			return rc;
-		}
-	}
-
-	/* Clear the dirty bytemap since we have written back all changes */
-	rc = window_set_bytemap(context, context->current, 0,
-				  context->current->size >>
-				  context->block_size_shift,
-				  WINDOW_CLEAN);
+	rc = context->protocol->flush(context, &io);
 	if (rc < 0) {
-		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
-				       : -MBOX_R_SYSTEM_ERROR;
+		return mbox_xlate_errno(context, rc);
 	}
 
 	return rc;
