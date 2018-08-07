@@ -248,12 +248,39 @@ int protocol_v1_flush(struct mbox_context *context, struct protocol_flush *io)
 	 * command not when we call flush because we've implicitly closed a
 	 * window because we might not have the required args in req.
 	 */
-	rc = protocol_v1_mark_dirty(context, (struct protocol_mark_dirty *)io);
-	if (rc < 0) {
-		return rc;
+	if (io) {
+		struct protocol_mark_dirty *mdio = (void *)io;
+		rc = protocol_v1_mark_dirty(context, mdio);
+		if (rc < 0) {
+			return rc;
+		}
 	}
 
 	return generic_flush(context);
+}
+
+int protocol_v1_close(struct mbox_context *context, struct protocol_close *io)
+{
+	int rc;
+
+	/* Close the current window if there is one */
+	if (!context->current) {
+		return 0;
+	}
+
+	/* There is an implicit flush if it was a write window */
+	if (context->current_is_write) {
+		rc = protocol_v1_flush(context, NULL);
+		if (rc < 0) {
+			MSG_ERR("Couldn't Flush Write Window\n");
+			return rc;
+		}
+	}
+
+	/* Host asked for it -> Don't set the BMC Event */
+	windows_close_current(context, NO_BMC_EVENT, io->req.flags);
+
+	return 0;
 }
 
 /*
@@ -391,6 +418,30 @@ int protocol_v2_flush(struct mbox_context *context, struct protocol_flush *io)
 	return generic_flush(context);
 }
 
+int protocol_v2_close(struct mbox_context *context, struct protocol_close *io)
+{
+	int rc;
+
+	/* Close the current window if there is one */
+	if (!context->current) {
+		return 0;
+	}
+
+	/* There is an implicit flush if it was a write window */
+	if (context->current_is_write) {
+		rc = protocol_v2_flush(context, NULL);
+		if (rc < 0) {
+			MSG_ERR("Couldn't Flush Write Window\n");
+			return rc;
+		}
+	}
+
+	/* Host asked for it -> Don't set the BMC Event */
+	windows_close_current(context, NO_BMC_EVENT, io->req.flags);
+
+	return 0;
+}
+
 static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
@@ -399,6 +450,7 @@ static const struct protocol_ops protocol_ops_v1 = {
 	.mark_dirty = protocol_v1_mark_dirty,
 	.erase = NULL,
 	.flush = protocol_v1_flush,
+	.close = protocol_v1_close,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
@@ -409,6 +461,7 @@ static const struct protocol_ops protocol_ops_v2 = {
 	.mark_dirty = protocol_v2_mark_dirty,
 	.erase = protocol_v2_erase,
 	.flush = protocol_v2_flush,
+	.close = protocol_v2_close,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
