@@ -53,6 +53,15 @@ int protocol_v1_get_info(struct mbox_context *context,
 	return lpc_map_memory(context);
 }
 
+int protocol_v1_get_flash_info(struct mbox_context *context,
+			       struct protocol_get_flash_info *io)
+{
+	io->resp.v1.flash_size = context->flash_size;
+	io->resp.v1.erase_size = context->mtd_info.erasesize;
+
+	return 0;
+}
+
 /*
  * get_suggested_timeout() - get the suggested timeout value in seconds
  * @context:	The mbox context pointer
@@ -106,14 +115,27 @@ int protocol_v2_get_info(struct mbox_context *context,
 	return lpc_map_memory(context);
 }
 
+int protocol_v2_get_flash_info(struct mbox_context *context,
+			       struct protocol_get_flash_info *io)
+{
+	io->resp.v2.flash_size =
+		context->flash_size >> context->block_size_shift;
+	io->resp.v2.erase_size =
+		context->mtd_info.erasesize >> context->block_size_shift;
+
+	return 0;
+}
+
 static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
+	.get_flash_info = protocol_v1_get_flash_info,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v2_get_info,
+	.get_flash_info = protocol_v2_get_flash_info,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
