@@ -82,8 +82,8 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 	return lpc_addr >> context->block_size_shift;
 }
 
-int protocol_v1_create_read_window(struct mbox_context *context,
-				   struct protocol_create_window *io)
+int protocol_v1_create_window(struct mbox_context *context,
+			      struct protocol_create_window *io)
 {
 	int rc;
 	uint32_t offset = io->req.offset << context->block_size_shift;
@@ -114,10 +114,12 @@ int protocol_v1_create_read_window(struct mbox_context *context,
 				       context->version == API_VERSION_1);
 		if (rc < 0) { /* Unable to map offset */
 			MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n",
-				io->req.offset);
+				offset);
 			return rc;
 		}
 	}
+
+	context->current_is_write = !io->req.ro;
 
 	MSG_INFO("Window @ %p for size 0x%.8x maps flash offset 0x%.8x\n",
 		 context->current->mem, context->current->size,
@@ -192,12 +194,12 @@ int protocol_v2_get_flash_info(struct mbox_context *context,
 	return 0;
 }
 
-int protocol_v2_create_read_window(struct mbox_context *context,
-				   struct protocol_create_window *io)
+int protocol_v2_create_window(struct mbox_context *context,
+			      struct protocol_create_window *io)
 {
 	int rc;
 
-	rc = protocol_v1_create_read_window(context, io);
+	rc = protocol_v1_create_window(context, io);
 	if (rc < 0)
 		return rc;
 
@@ -212,15 +214,14 @@ static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
 	.get_flash_info = protocol_v1_get_flash_info,
-	.create_read_window = protocol_v1_create_read_window,
+	.create_window = protocol_v1_create_window,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v2_get_info,
 	.get_flash_info = protocol_v2_get_flash_info,
-	.create_read_window = protocol_v2_create_read_window,
-
+	.create_window = protocol_v2_create_window,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
