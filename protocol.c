@@ -283,6 +283,12 @@ int protocol_v1_close(struct mbox_context *context, struct protocol_close *io)
 	return 0;
 }
 
+int protocol_v1_ack(struct mbox_context *context, struct protocol_ack *io)
+{
+	return clr_bmc_events(context, (io->req.flags & BMC_EVENT_ACK_MASK),
+			      SET_BMC_EVENT);
+}
+
 /*
  * get_suggested_timeout() - get the suggested timeout value in seconds
  * @context:	The mbox context pointer
@@ -451,6 +457,7 @@ static const struct protocol_ops protocol_ops_v1 = {
 	.erase = NULL,
 	.flush = protocol_v1_flush,
 	.close = protocol_v1_close,
+	.ack = protocol_v1_ack,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
@@ -462,6 +469,7 @@ static const struct protocol_ops protocol_ops_v2 = {
 	.erase = protocol_v2_erase,
 	.flush = protocol_v2_flush,
 	.close = protocol_v2_close,
+	.ack = protocol_v1_ack,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
