@@ -63,6 +63,72 @@ int protocol_v1_get_flash_info(struct mbox_context *context,
 }
 
 /*
+ * get_lpc_addr_shifted() - Get lpc address of the current window
+ * @context:		The mbox context pointer
+ *
+ * Return:	The lpc address to access that offset shifted by block size
+ */
+static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
+{
+	uint32_t lpc_addr, mem_offset;
+
+	/* Offset of the current window in the reserved memory region */
+	mem_offset = context->current->mem - context->mem;
+	/* Total LPC Address */
+	lpc_addr = context->lpc_base + mem_offset;
+
+	MSG_DBG("LPC address of current window: 0x%.8x\n", lpc_addr);
+
+	return lpc_addr >> context->block_size_shift;
+}
+
+int protocol_v1_create_read_window(struct mbox_context *context,
+				   struct protocol_create_window *io)
+{
+	int rc;
+	uint32_t offset = io->req.offset << context->block_size_shift;
+
+	/* Close the current window if there is one */
+	if (context->current) {
+		/* There is an implicit flush if it was a write window */
+		if (context->current_is_write) {
+			rc = mbox_handle_flush_window(context, NULL, NULL);
+			if (rc < 0) {
+				MSG_ERR("Couldn't Flush Write Window\n");
+				return rc;
+			}
+		}
+		windows_close_current(context, NO_BMC_EVENT, FLAGS_NONE);
+	}
+
+	/* Offset the host has requested */
+	MSG_INFO("Host requested flash @ 0x%.8x\n", offset);
+	/* Check if we have an existing window */
+	context->current = windows_search(context, offset,
+					  context->version == API_VERSION_1);
+
+	if (!context->current) { /* No existing window */
+		MSG_DBG("No existing window which maps that flash offset\n");
+		rc = windows_create_map(context, &context->current,
+				       offset,
+				       context->version == API_VERSION_1);
+		if (rc < 0) { /* Unable to map offset */
+			MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n",
+				io->req.offset);
+			return rc;
+		}
+	}
+
+	MSG_INFO("Window @ %p for size 0x%.8x maps flash offset 0x%.8x\n",
+		 context->current->mem, context->current->size,
+		 context->current->flash_offset);
+
+	io->resp.lpc_address = get_lpc_addr_shifted(context);
+
+	return 0;
+}
+
+/*
  * get_suggested_timeout() - get the suggested timeout value in seconds
  * @context:	The mbox context pointer
  *
@@ -126,16 +192,35 @@ int protocol_v2_get_flash_info(struct mbox_context *context,
 	return 0;
 }
 
+int protocol_v2_create_read_window(struct mbox_context *context,
+				   struct protocol_create_window *io)
+{
+	int rc;
+
+	rc = protocol_v1_create_read_window(context, io);
+	if (rc < 0)
+		return rc;
+
+	io->resp.size = context->current->size >> context->block_size_shift;
+	io->resp.offset = context->current->flash_offset >>
+					context->block_size_shift;
+
+	return 0;
+}
+
 static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
 	.get_flash_info = protocol_v1_get_flash_info,
+	.create_read_window = protocol_v1_create_read_window,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v2_get_info,
 	.get_flash_info = protocol_v2_get_flash_info,
+	.create_read_window = protocol_v2_create_read_window,
+
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
