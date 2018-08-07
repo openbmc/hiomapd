@@ -168,9 +168,12 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
-	/* Host requested it -> No BMC Event */
-	windows_reset_all(context, NO_BMC_EVENT);
-	return lpc_reset(context);
+	int rc = context->protocol->reset(context);
+	if (rc < 0) {
+		return mbox_xlate_errno(context, rc);
+	}
+
+	return 0;
 }
 
 /*

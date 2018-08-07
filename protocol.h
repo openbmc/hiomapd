@@ -30,6 +30,7 @@ struct protocol_get_info {
 };
 
 struct protocol_ops {
+	int (*reset)(struct mbox_context *context);
 	int (*get_info)(struct mbox_context *context,
 			struct protocol_get_info *io);
 };
@@ -40,6 +41,7 @@ void protocol_free(struct mbox_context *context);
 int protocol_negotiate_version(struct mbox_context *context, uint8_t requested);
 
 /* Protocol v1 */
+int protocol_v1_reset(struct mbox_context *context);
 int protocol_v1_get_info(struct mbox_context *context,
 			 struct protocol_get_info *io);
 
