@@ -491,29 +491,19 @@ int mbox_handle_flush_window(struct mbox_context *context,
 int mbox_handle_close_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	uint8_t flags = 0;
+	struct protocol_close io = { 0 };
 	int rc;
 
-	/* Close the current window if there is one */
-	if (context->current) {
-		/* There is an implicit flush if it was a write window */
-		if (context->current_is_write) {
-			rc = mbox_handle_flush_window(context, NULL, NULL);
-			if (rc < 0) {
-				MSG_ERR("Couldn't Flush Write Window\n");
-				return rc;
-			}
-		}
-
-		if (context->version >= API_VERSION_2) {
-			flags = req->msg.args[0];
-		}
-
-		/* Host asked for it -> Don't set the BMC Event */
-		windows_close_current(context, NO_BMC_EVENT, flags);
+	if (context->version >= API_VERSION_2) {
+		io.req.flags = req->msg.args[0];
 	}
 
-	return 0;
+	rc = context->protocol->close(context, &io);
+	if (rc < 0) {
+		return mbox_xlate_errno(context, rc);
+	}
+
+	return rc;
 }
 
 /*
