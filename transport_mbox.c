@@ -238,19 +238,24 @@ int mbox_handle_mbox_info(struct mbox_context *context,
 int mbox_handle_flash_info(struct mbox_context *context,
 				  union mbox_regs *req, struct mbox_msg *resp)
 {
+	struct protocol_get_flash_info io;
+	int rc;
+
+	rc = context->protocol->get_flash_info(context, &io);
+	if (rc < 0) {
+		return mbox_xlate_errno(context, rc);
+	}
+
 	switch (context->version) {
 	case API_VERSION_1:
 		/* Both Sizes in Bytes */
-		put_u32(&resp->args[0], context->flash_size);
-		put_u32(&resp->args[4], context->mtd_info.erasesize);
+		put_u32(&resp->args[0], io.resp.v1.flash_size);
+		put_u32(&resp->args[4], io.resp.v1.erase_size);
 		break;
 	case API_VERSION_2:
 		/* Both Sizes in Block Size */
-		put_u16(&resp->args[0],
-			context->flash_size >> context->block_size_shift);
-		put_u16(&resp->args[2],
-			context->mtd_info.erasesize >>
-					context->block_size_shift);
+		put_u16(&resp->args[0], io.resp.v2.flash_size);
+		put_u16(&resp->args[2], io.resp.v2.erase_size);
 		break;
 	default:
 		MSG_ERR("API Version Not Valid - Invalid System State\n");

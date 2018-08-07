@@ -133,7 +133,6 @@ union mbox_regs {
 };
 
 struct mbox_context;
-
 typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
 				  struct mbox_msg *);
 
