@@ -30,6 +30,52 @@
 #include "windows.h"
 #include "lpc.h"
 
+struct errno_map {
+	int rc;
+	int mbox_errno;
+};
+
+static const struct errno_map errno_map_v1[] = {
+	{ 0, MBOX_R_SUCCESS },
+	{ EACCES, MBOX_R_PARAM_ERROR },
+	{ EBUSY, MBOX_R_SYSTEM_ERROR },
+	{ EINVAL, MBOX_R_PARAM_ERROR },
+	{ EPERM, MBOX_R_PARAM_ERROR },
+	{ ETIMEDOUT, MBOX_R_TIMEOUT },
+	{ -1, MBOX_R_SYSTEM_ERROR },
+};
+
+static const struct errno_map errno_map_v2[] = {
+	{ 0, MBOX_R_SUCCESS },
+	{ EACCES, MBOX_R_PARAM_ERROR },
+	{ EBUSY, MBOX_R_BUSY },
+	{ EINVAL, MBOX_R_PARAM_ERROR },
+	{ EPERM, MBOX_R_WINDOW_ERROR },
+	{ ETIMEDOUT, MBOX_R_TIMEOUT },
+	{ -1, MBOX_R_SYSTEM_ERROR },
+};
+
+static const struct errno_map *errno_maps[] = {
+	[0] = NULL,
+	[1] = errno_map_v1,
+	[2] = errno_map_v2,
+};
+
+static inline int mbox_xlate_errno(struct mbox_context *context,
+					     int rc)
+{
+	const struct errno_map *entry;
+
+	rc = -rc;
+	for(entry = errno_maps[context->version]; entry->rc != -1; entry++) {
+		if (rc == entry->rc) {
+			return -entry->mbox_errno;
+		}
+	}
+
+	return -entry->mbox_errno;
+}
+
 /*
  * write_bmc_event_reg() - Write to the BMC controlled status register (reg 15)
  * @context:	The mbox context pointer
@@ -128,25 +174,6 @@ int mbox_handle_reset(struct mbox_context *context,
 }
 
 /*
- * get_suggested_timeout() - get the suggested timeout value in seconds
- * @context:	The mbox context pointer
- *
- * Return:	Suggested timeout in seconds
- */
-static uint16_t get_suggested_timeout(struct mbox_context *context)
-{
-	struct window_context *window = windows_find_largest(context);
-	uint32_t max_size_mb = window ? (window->size >> 20) : 0;
-	uint16_t ret;
-
-	ret = align_up(max_size_mb * FLASH_ACCESS_MS_PER_MB, 1000) / 1000;
-
-	MSG_DBG("Suggested Timeout: %us, max window size: %uMB, for %dms/MB\n",
-		ret, max_size_mb, FLASH_ACCESS_MS_PER_MB);
-	return ret;
-}
-
-/*
  * Command: GET_MBOX_INFO
  * Get the API version, default window size and block size
  * We also set the LPC mapping to point to the reserved memory region here so
@@ -172,65 +199,23 @@ int mbox_handle_mbox_info(struct mbox_context *context,
 				 union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint8_t mbox_api_version = req->msg.args[0];
-	uint8_t old_api_version = context->version;
+	struct protocol_get_info io = {
+		.req = { .api_version = mbox_api_version }
+	};
 	int rc;
 
-	/* Check we support the version requested */
-	if (mbox_api_version < API_MIN_VERSION)
-		return -MBOX_R_PARAM_ERROR;
-
-	if (mbox_api_version > API_MAX_VERSION)
-		mbox_api_version = API_MAX_VERSION;
-
-	context->version = mbox_api_version;
-	MSG_INFO("Using Protocol Version: %d\n", context->version);
-
-	/*
-	 * The reset state is currently to have the LPC bus point directly to
-	 * flash, since we got a mbox_info command we know the host can talk
-	 * mbox so point the LPC bus mapping to the reserved memory region now
-	 * so the host can access what we put in it.
-	 */
-	rc = lpc_map_memory(context);
+	rc = context->protocol->get_info(context, &io);
 	if (rc < 0) {
-		return rc;
+		return mbox_xlate_errno(context, rc);
 	}
 
-	switch (context->version) {
-	case API_VERSION_1:
-		context->block_size_shift = BLOCK_SIZE_SHIFT_V1;
-		break;
-	default:
-		context->block_size_shift = log_2(context->mtd_info.erasesize);
-		break;
-	}
-	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
-		 1 << context->block_size_shift, context->block_size_shift);
-
-	/* Now we know the blocksize we can allocate the window dirty_bytemap */
-	if (mbox_api_version != old_api_version) {
-		windows_alloc_dirty_bytemap(context);
-	}
-	/* Reset if we were V1 since this required exact window mapping */
-	if (old_api_version == API_VERSION_1) {
-		/*
-		 * This will only set the BMC event if there was a current
-		 * window -> In which case we are better off notifying the
-		 * host.
-		 */
-		windows_reset_all(context, SET_BMC_EVENT);
-	}
-
-	resp->args[0] = mbox_api_version;
-	if (context->version == API_VERSION_1) {
-		put_u16(&resp->args[1], context->windows.default_size >>
-					context->block_size_shift);
-		put_u16(&resp->args[3], context->windows.default_size >>
-					context->block_size_shift);
-	}
-	if (context->version >= API_VERSION_2) {
-		resp->args[5] = context->block_size_shift;
-		put_u16(&resp->args[6], get_suggested_timeout(context));
+	resp->args[0] = io.resp.api_version;
+	if (io.resp.api_version == API_VERSION_1) {
+		put_u16(&resp->args[1], io.resp.v1.read_window_size);
+		put_u16(&resp->args[3], io.resp.v1.write_window_size);
+	} else if (io.resp.api_version >= API_VERSION_2) {
+		resp->args[5] = io.resp.v2.block_size_shift;
+		put_u16(&resp->args[6], io.resp.v2.timeout);
 	}
 
 	return 0;

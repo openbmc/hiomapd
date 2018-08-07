@@ -8,6 +8,8 @@
 #include <systemd/sd-bus.h>
 #include <poll.h>
 #include <stdbool.h>
+
+#include "protocol.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 enum api_version {
@@ -136,9 +138,11 @@ typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
 				  struct mbox_msg *);
 
 struct mbox_context {
+	enum api_version version;
+	const struct protocol_ops *protocol;
+
 /* System State */
 	enum mbox_state state;
-	enum api_version version;
 	struct pollfd fds[TOTAL_FDS];
 	sd_bus *bus;
 	bool terminate;
