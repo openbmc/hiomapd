@@ -231,6 +231,9 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	test.context.windows.num = n_windows;
 	test.context.windows.default_size = len;
 
+	rc = protocol_init(&test.context);
+	assert(rc == 0);
+
 	/*
 	 * We need to call __init_mbox_dev() to initialise the handler table.
 	 * However, afterwards we need to discard the fd of the clearly useless
