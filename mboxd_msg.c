@@ -422,6 +422,7 @@ int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint32_t offset, size;
+	int rc;
 
 	if (!(context->current && context->current_is_write)) {
 		MSG_ERR("Tried to call mark dirty without open write window\n");
@@ -460,8 +461,14 @@ int mbox_handle_dirty_window(struct mbox_context *context,
 		 offset << context->block_size_shift,
 		 size << context->block_size_shift);
 
-	return set_window_bytemap(context, context->current, offset, size,
+	rc = set_window_bytemap(context, context->current, offset, size,
 				  WINDOW_DIRTY);
+	if (rc < 0) {
+		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
+				       : -MBOX_R_SYSTEM_ERROR;
+	}
+
+	return rc;
 }
 
 /*
@@ -503,7 +510,8 @@ int mbox_handle_erase_window(struct mbox_context *context,
 	rc = set_window_bytemap(context, context->current, offset, size,
 				WINDOW_ERASED);
 	if (rc < 0) {
-		return rc;
+		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
+				       : -MBOX_R_SYSTEM_ERROR;
 	}
 
 	/* Write 0xFF to mem -> This ensures consistency between flash & ram */
@@ -609,10 +617,16 @@ int mbox_handle_flush_window(struct mbox_context *context,
 	}
 
 	/* Clear the dirty bytemap since we have written back all changes */
-	return set_window_bytemap(context, context->current, 0,
+	rc = set_window_bytemap(context, context->current, 0,
 				  context->current->size >>
 				  context->block_size_shift,
 				  WINDOW_CLEAN);
+	if (rc < 0) {
+		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
+				       : -MBOX_R_SYSTEM_ERROR;
+	}
+
+	return rc;
 }
 
 /*

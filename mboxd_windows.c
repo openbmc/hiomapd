@@ -369,7 +369,7 @@ int set_window_bytemap(struct mbox_context *context, struct window_context *cur,
 			offset << context->block_size_shift,
 			size << context->block_size_shift,
 			cur->size << context->block_size_shift);
-		return -MBOX_R_PARAM_ERROR;
+		return -EACCES;
 	}
 
 	memset(cur->dirty_bmap + offset, val, size);
