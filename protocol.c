@@ -130,6 +130,45 @@ int protocol_v1_create_window(struct mbox_context *context,
 	return 0;
 }
 
+int protocol_v1_mark_dirty(struct mbox_context *context,
+			   struct protocol_mark_dirty *io)
+{
+	uint32_t offset = io->req.v1.offset;
+	uint32_t size = io->req.v1.size;
+	uint32_t off;
+
+	if (!(context->current && context->current_is_write)) {
+		MSG_ERR("Tried to call mark dirty without open write window\n");
+		return -EPERM;
+	}
+
+	/* For V1 offset given relative to flash - we want the window */
+	off = offset - ((context->current->flash_offset) >>
+			context->block_size_shift);
+	if (off > offset) { /* Underflow - before current window */
+		MSG_ERR("Tried to mark dirty before start of window\n");
+		MSG_ERR("requested offset: 0x%x window start: 0x%x\n",
+				offset << context->block_size_shift,
+				context->current->flash_offset);
+		return -EINVAL;
+	}
+	offset = off;
+	/*
+	 * We only track dirty at the block level.
+	 * For protocol V1 we can get away with just marking the whole
+	 * block dirty.
+	 */
+	size = align_up(size, 1 << context->block_size_shift);
+	size >>= context->block_size_shift;
+
+	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
+		 offset << context->block_size_shift,
+		 size << context->block_size_shift);
+
+	return window_set_bytemap(context, context->current, offset, size,
+				  WINDOW_DIRTY);
+}
+
 /*
  * get_suggested_timeout() - get the suggested timeout value in seconds
  * @context:	The mbox context pointer
@@ -210,11 +249,28 @@ int protocol_v2_create_window(struct mbox_context *context,
 	return 0;
 }
 
+int protocol_v2_mark_dirty(struct mbox_context *context,
+			   struct protocol_mark_dirty *io)
+{
+	if (!(context->current && context->current_is_write)) {
+		MSG_ERR("Tried to call mark dirty without open write window\n");
+		return -EPERM;
+	}
+
+	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
+		 io->req.v2.offset << context->block_size_shift,
+		 io->req.v2.size << context->block_size_shift);
+
+	return window_set_bytemap(context, context->current, io->req.v2.offset,
+				  io->req.v2.size, WINDOW_DIRTY);
+}
+
 static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
 	.get_flash_info = protocol_v1_get_flash_info,
 	.create_window = protocol_v1_create_window,
+	.mark_dirty = protocol_v1_mark_dirty,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
@@ -222,6 +278,7 @@ static const struct protocol_ops protocol_ops_v2 = {
 	.get_info = protocol_v2_get_info,
 	.get_flash_info = protocol_v2_get_flash_info,
 	.create_window = protocol_v2_create_window,
+	.mark_dirty = protocol_v2_mark_dirty,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
