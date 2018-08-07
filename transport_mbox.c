@@ -515,10 +515,17 @@ int mbox_handle_close_window(struct mbox_context *context,
 int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
 			   struct mbox_msg *resp)
 {
-	uint8_t bmc_events = req->msg.args[0];
+	struct protocol_ack io;
+	int rc;
 
-	return clr_bmc_events(context, (bmc_events & BMC_EVENT_ACK_MASK),
-			      SET_BMC_EVENT);
+	io.req.flags = req->msg.args[0];
+
+	rc = context->protocol->ack(context, &io);
+	if (rc < 0) {
+		return mbox_xlate_errno(context, rc);
+	}
+
+	return 0;
 }
 
 /*

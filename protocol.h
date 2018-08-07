@@ -93,6 +93,12 @@ struct protocol_close {
 	} req;
 };
 
+struct protocol_ack {
+	struct {
+		uint8_t flags;
+	} req;
+};
+
 struct protocol_ops {
 	int (*reset)(struct mbox_context *context);
 	int (*get_info)(struct mbox_context *context,
@@ -106,6 +112,7 @@ struct protocol_ops {
 	int (*erase)(struct mbox_context *context, struct protocol_erase *io);
 	int (*flush)(struct mbox_context *context, struct protocol_flush *io);
 	int (*close)(struct mbox_context *context, struct protocol_close *io);
+	int (*ack)(struct mbox_context *context, struct protocol_ack *io);
 };
 
 int protocol_init(struct mbox_context *context);
@@ -125,6 +132,7 @@ int protocol_v1_mark_dirty(struct mbox_context *context,
 			   struct protocol_mark_dirty *io);
 int protocol_v1_flush(struct mbox_context *context, struct protocol_flush *io);
 int protocol_v1_close(struct mbox_context *context, struct protocol_close *io);
+int protocol_v1_ack(struct mbox_context *context, struct protocol_ack *io);
 
 /* Protocol v2 */
 int protocol_v2_get_info(struct mbox_context *context,
