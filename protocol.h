@@ -44,12 +44,27 @@ struct protocol_get_flash_info {
 	} resp;
 };
 
+struct protocol_create_window {
+	struct {
+		uint16_t offset;
+		uint16_t size;
+		uint8_t id;
+	} req;
+	struct {
+		uint16_t lpc_address;
+		uint16_t size;
+		uint16_t offset;
+	} resp;
+};
+
 struct protocol_ops {
 	int (*reset)(struct mbox_context *context);
 	int (*get_info)(struct mbox_context *context,
 			struct protocol_get_info *io);
 	int (*get_flash_info)(struct mbox_context *context,
 			      struct protocol_get_flash_info *io);
+	int (*create_read_window)(struct mbox_context *context,
+				  struct protocol_create_window *io);
 };
 
 int protocol_init(struct mbox_context *context);
@@ -63,11 +78,15 @@ int protocol_v1_get_info(struct mbox_context *context,
 			 struct protocol_get_info *io);
 int protocol_v1_get_flash_info(struct mbox_context *context,
 			       struct protocol_get_flash_info *io);
+int protocol_v1_create_read_window(struct mbox_context *context,
+				   struct protocol_create_window *io);
 
 /* Protocol v2 */
 int protocol_v2_get_info(struct mbox_context *context,
 			 struct protocol_get_info *io);
 int protocol_v2_get_flash_info(struct mbox_context *context,
 			       struct protocol_get_flash_info *io);
+int protocol_v2_create_read_window(struct mbox_context *context,
+				   struct protocol_create_window *io);
 
 #endif /* PROTOCOL_H */
