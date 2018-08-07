@@ -5,6 +5,7 @@ TEST_MBOX_VPNOR_SRCS = \
 
 TEST_MBOX_VPNOR_INTEG_SRCS = \
 	common.c \
+	protocol.c \
 	transport_mbox.c \
 	windows.c \
 	lpc.c \

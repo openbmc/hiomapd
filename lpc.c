@@ -170,7 +170,7 @@ int lpc_map_memory(struct mbox_context *context)
 		  &map)) {
 		MSG_ERR("Failed to point the LPC BUS to memory: %s\n",
 			strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	/* LPC now maps memory (keep suspended state) */

@@ -353,6 +353,11 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
+	rc = protocol_init(context);
+	if (rc) {
+		goto finish;
+	}
+
 	rc = init_mbox_dev(context);
 	if (rc) {
 		goto finish;
@@ -403,14 +408,15 @@ finish:
 	MSG_INFO("Daemon Exiting...\n");
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
+#ifdef VIRTUAL_PNOR_ENABLED
+	destroy_vpnor(context);
+#endif
 	dbus_free(context);
 	flash_dev_free(context);
 	lpc_dev_free(context);
 	free_mbox_dev(context);
 	windows_free(context);
-#ifdef VIRTUAL_PNOR_ENABLED
-	destroy_vpnor(context);
-#endif
+	protocol_free(context);
 	free(context);
 
 	return rc;
