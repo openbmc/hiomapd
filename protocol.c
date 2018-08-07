@@ -10,6 +10,13 @@
 #include "transport_mbox.h" /* TODO: Remove dependency on transport_mbox.h */
 #include "windows.h"
 
+int protocol_v1_reset(struct mbox_context *context)
+{
+	/* Host requested it -> No BMC Event */
+	windows_reset_all(context, NO_BMC_EVENT);
+	return lpc_reset(context);
+}
+
 int protocol_v1_get_info(struct mbox_context *context,
 			 struct protocol_get_info *io)
 {
@@ -100,10 +107,12 @@ int protocol_v2_get_info(struct mbox_context *context,
 }
 
 static const struct protocol_ops protocol_ops_v1 = {
+	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
+	.reset = protocol_v1_reset,
 	.get_info = protocol_v2_get_info,
 };
 
