@@ -169,6 +169,93 @@ int protocol_v1_mark_dirty(struct mbox_context *context,
 				  WINDOW_DIRTY);
 }
 
+static int generic_flush(struct mbox_context *context)
+{
+	int rc, i, offset, count;
+	uint8_t prev;
+
+	offset = 0;
+	count = 0;
+	prev = WINDOW_CLEAN;
+
+	MSG_INFO("Flush window @ %p for size 0x%.8x which maps flash @ 0x%.8x\n",
+		 context->current->mem, context->current->size,
+		 context->current->flash_offset);
+
+	/*
+	 * We look for streaks of the same type and keep a count, when the type
+	 * (dirty/erased) changes we perform the required action on the backing
+	 * store and update the current streak-type
+	 */
+	for (i = 0; i < (context->current->size >> context->block_size_shift);
+			i++) {
+		uint8_t cur = context->current->dirty_bmap[i];
+		if (cur != WINDOW_CLEAN) {
+			if (cur == prev) { /* Same as previous block, incrmnt */
+				count++;
+			} else if (prev == WINDOW_CLEAN) { /* Start of run */
+				offset = i;
+				count++;
+			} else { /* Change in streak type */
+				rc = window_flush(context, offset, count,
+						       prev);
+				if (rc < 0) {
+					return rc;
+				}
+				offset = i;
+				count = 1;
+			}
+		} else {
+			if (prev != WINDOW_CLEAN) { /* End of a streak */
+				rc = window_flush(context, offset, count,
+						       prev);
+				if (rc < 0) {
+					return rc;
+				}
+				offset = 0;
+				count = 0;
+			}
+		}
+		prev = cur;
+	}
+
+	if (prev != WINDOW_CLEAN) { /* Still the last streak to write */
+		rc = window_flush(context, offset, count, prev);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	/* Clear the dirty bytemap since we have written back all changes */
+	return window_set_bytemap(context, context->current, 0,
+				  context->current->size >>
+				  context->block_size_shift,
+				  WINDOW_CLEAN);
+}
+
+int protocol_v1_flush(struct mbox_context *context, struct protocol_flush *io)
+{
+	int rc;
+
+	if (!(context->current && context->current_is_write)) {
+		MSG_ERR("Tried to call flush without open write window\n");
+		return -EPERM;
+	}
+
+	/*
+	 * For V1 the Flush command acts much the same as the dirty command
+	 * except with a flush as well. Only do this on an actual flush
+	 * command not when we call flush because we've implicitly closed a
+	 * window because we might not have the required args in req.
+	 */
+	rc = protocol_v1_mark_dirty(context, (struct protocol_mark_dirty *)io);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return generic_flush(context);
+}
+
 /*
  * get_suggested_timeout() - get the suggested timeout value in seconds
  * @context:	The mbox context pointer
@@ -294,6 +381,16 @@ int protocol_v2_erase(struct mbox_context *context,
 	return 0;
 }
 
+int protocol_v2_flush(struct mbox_context *context, struct protocol_flush *io)
+{
+	if (!(context->current && context->current_is_write)) {
+		MSG_ERR("Tried to call flush without open write window\n");
+		return -EPERM;
+	}
+
+	return generic_flush(context);
+}
+
 static const struct protocol_ops protocol_ops_v1 = {
 	.reset = protocol_v1_reset,
 	.get_info = protocol_v1_get_info,
@@ -301,6 +398,7 @@ static const struct protocol_ops protocol_ops_v1 = {
 	.create_window = protocol_v1_create_window,
 	.mark_dirty = protocol_v1_mark_dirty,
 	.erase = NULL,
+	.flush = protocol_v1_flush,
 };
 
 static const struct protocol_ops protocol_ops_v2 = {
@@ -310,6 +408,7 @@ static const struct protocol_ops protocol_ops_v2 = {
 	.create_window = protocol_v2_create_window,
 	.mark_dirty = protocol_v2_mark_dirty,
 	.erase = protocol_v2_erase,
+	.flush = protocol_v2_flush,
 };
 
 static const struct protocol_ops *protocol_ops_map[] = {
