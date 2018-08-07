@@ -285,6 +285,29 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 	return lpc_addr >> context->block_size_shift;
 }
 
+int mbox_handle_create_window(struct mbox_context *context, bool ro,
+			      union mbox_regs *req, struct mbox_msg *resp)
+{
+	struct protocol_create_window io;
+	int rc;
+
+	io.req.offset = get_u16(&req->msg.args[0]);
+	io.req.ro = ro;
+
+	rc = context->protocol->create_window(context, &io);
+	if (rc < 0) {
+		return rc;
+	}
+
+	put_u16(&resp->args[0], io.resp.lpc_address);
+	if (context->version >= API_VERSION_2) {
+		put_u16(&resp->args[2], io.resp.size);
+		put_u16(&resp->args[4], io.resp.offset);
+	}
+
+	return 0;
+}
+
 /*
  * Command: CREATE_READ_WINDOW
  * Opens a read window
@@ -307,23 +330,10 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 int mbox_handle_read_window(struct mbox_context *context,
 				   union mbox_regs *req, struct mbox_msg *resp)
 {
-	struct protocol_create_window io;
-	int rc;
-
-	io.req.offset = get_u16(&req->msg.args[0]);
-
-	rc = context->protocol->create_read_window(context, &io);
+	int rc = mbox_handle_create_window(context, true, req, resp);
 	if (rc < 0) {
 		return mbox_xlate_errno(context, rc);
 	}
-
-	put_u16(&resp->args[0], io.resp.lpc_address);
-	if (context->version >= API_VERSION_2) {
-		put_u16(&resp->args[2], io.resp.size);
-		put_u16(&resp->args[4], io.resp.offset);
-	}
-
-	context->current_is_write = false;
 
 	return 0;
 }
@@ -350,19 +360,12 @@ int mbox_handle_read_window(struct mbox_context *context,
 int mbox_handle_write_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	int rc;
-
-	/*
-	 * This is very similar to opening a read window (exactly the same
-	 * for now infact)
-	 */
-	rc = mbox_handle_read_window(context, req, resp);
+	int rc = mbox_handle_create_window(context, false, req, resp);
 	if (rc < 0) {
-		return rc;
+		return mbox_xlate_errno(context, rc);
 	}
 
-	context->current_is_write = true;
-	return rc;
+	return 0;
 }
 
 /*
