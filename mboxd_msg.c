@@ -123,7 +123,7 @@ int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
 	/* Host requested it -> No BMC Event */
-	reset_all_windows(context, NO_BMC_EVENT);
+	windows_reset_all(context, NO_BMC_EVENT);
 	return lpc_reset(context);
 }
 
@@ -218,7 +218,7 @@ int mbox_handle_mbox_info(struct mbox_context *context,
 		 * window -> In which case we are better off notifying the
 		 * host.
 		 */
-		reset_all_windows(context, SET_BMC_EVENT);
+		windows_reset_all(context, SET_BMC_EVENT);
 	}
 
 	resp->args[0] = mbox_api_version;
