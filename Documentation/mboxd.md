@@ -25,7 +25,7 @@ functions from the various mboxd_*.c files.
 ```
 dbus.c -    Contains the handlers for the D-Bus commands which the daemon can
                   receive.
-mboxd_flash.c -   Contains the functions for performing flash access including
+flash.c -   Contains the functions for performing flash access including
                   read, write and erase.
 mboxd_lpc.c -     Contains the functions for controlling the LPC bus mapping
                   including pointing the bus so it maps flash and memory.
