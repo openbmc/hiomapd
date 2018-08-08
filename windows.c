@@ -444,12 +444,12 @@ void windows_reset_all(struct mbox_context *context, bool set_bmc_event)
 }
 
 /*
- * find_oldest_window() - Find the oldest (Least Recently Used) window
+ * windows_find_oldest() - Find the oldest (Least Recently Used) window
  * @context:		The mbox context pointer
  *
  * Return:	Pointer to the least recently used window
  */
-struct window_context *find_oldest_window(struct mbox_context *context)
+struct window_context *windows_find_oldest(struct mbox_context *context)
 {
 	struct window_context *oldest = NULL, *cur;
 	uint32_t min_age = context->windows.max_age + 1;
@@ -567,7 +567,7 @@ int create_map_window(struct mbox_context *context,
 	/* No uninitialised window found, we need to choose one to "evict" */
 	if (!cur) {
 		MSG_DBG("No uninitialised window, evicting one\n");
-		cur = find_oldest_window(context);
+		cur = windows_find_oldest(context);
 		window_reset(context, cur);
 	}
 
