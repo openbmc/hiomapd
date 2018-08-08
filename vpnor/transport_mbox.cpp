@@ -2,10 +2,10 @@
 
 extern "C" {
 #include "mbox.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 };
 
-#include "vpnor/mboxd_msg.hpp"
+#include "vpnor/transport_mbox.hpp"
 #include "vpnor/pnor_partition_table.hpp"
 
 // clang-format off

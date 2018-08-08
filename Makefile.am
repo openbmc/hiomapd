@@ -8,7 +8,7 @@ mboxd_SOURCES = \
 	control_legacy.c \
 	control_dbus.c \
 	lpc.c \
-	mboxd_msg.c \
+	transport_mbox.c \
 	windows.c \
 	mtd.c
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)

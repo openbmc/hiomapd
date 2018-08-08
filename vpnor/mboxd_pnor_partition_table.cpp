@@ -13,7 +13,7 @@ extern "C" {
 #include "xyz/openbmc_project/Common/error.hpp"
 #include <phosphor-logging/elog-errors.hpp>
 #include <experimental/filesystem>
-#include "vpnor/mboxd_msg.hpp"
+#include "vpnor/transport_mbox.hpp"
 
 int init_vpnor(struct mbox_context *context)
 {

@@ -19,7 +19,7 @@ test_flash_write_SOURCES = \
 	%reldir%/tmpf.c
 
 TEST_MBOX_SRCS = \
-	mboxd_msg.c \
+	transport_mbox.c \
 	windows.c \
 	lpc.c \
 	lpc_reset.c \
