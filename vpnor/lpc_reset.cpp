@@ -17,8 +17,11 @@
  *
  */
 
+extern "C" {
 #include "mbox.h"
 #include "lpc.h"
+}
+
 #include "mboxd_pnor_partition_table.h"
 
 /*
