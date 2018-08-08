@@ -93,12 +93,12 @@ void lpc_dev_free(struct mbox_context *context)
 }
 
 /*
- * point_to_flash() - Point the lpc bus mapping to the actual flash device
+ * lpc_map_flash() - Point the lpc bus mapping to the actual flash device
  * @context:	The mbox context pointer
  *
  * Return:	0 on success otherwise negative error code
  */
-int point_to_flash(struct mbox_context *context)
+int lpc_map_flash(struct mbox_context *context)
 {
 	struct aspeed_lpc_ctrl_mapping map = {
 		.window_type = ASPEED_LPC_CTRL_WINDOW_FLASH,
