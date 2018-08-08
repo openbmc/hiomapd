@@ -222,7 +222,6 @@ static int handle_cmd_resume(struct mboxctl_context *context, char *sarg)
 	if (rc < 0) {
 		MSG_ERR("Failed to init method call: %s\n",
 			strerror(-rc));
-		rc = -E_DBUS_INTERNAL;
 		goto out;
 	}
 
@@ -241,14 +240,12 @@ static int handle_cmd_resume(struct mboxctl_context *context, char *sarg)
 	if (rc < 0) {
 		MSG_ERR("Failed to add args to message: %s\n",
 			strerror(-rc));
-		rc = -E_DBUS_INTERNAL;
 		goto out;
 	}
 
 	rc = sd_bus_call(context->bus, m, 0, &error, &n);
 	if (rc < 0) {
 		MSG_ERR("Failed to post message: %s\n", strerror(-rc));
-		rc = -E_DBUS_INTERNAL;
 		goto out;
 	}
 
