@@ -84,7 +84,7 @@ int lpc_dev_init(struct mbox_context *context)
 	return __lpc_dev_init(context, LPC_CTRL_PATH);
 }
 
-void free_lpc_dev(struct mbox_context *context)
+void lpc_dev_free(struct mbox_context *context)
 {
 	if (context->mem) {
 		munmap(context->mem, context->mem_size);
