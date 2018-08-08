@@ -334,7 +334,7 @@ int mbox_handle_read_window(struct mbox_context *context,
 	flash_offset = get_u16(&req->msg.args[0]) << context->block_size_shift;
 	MSG_INFO("Host requested flash @ 0x%.8x\n", flash_offset);
 	/* Check if we have an existing window */
-	context->current = search_windows(context, flash_offset,
+	context->current = windows_search(context, flash_offset,
 					  context->version == API_VERSION_1);
 
 	if (!context->current) { /* No existing window */
