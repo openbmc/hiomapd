@@ -6,7 +6,7 @@
 #include "dbus.h"
 #include "mbox.h"
 #include "flash.h"
-#include "mboxd_lpc.h"
+#include "lpc.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
 
