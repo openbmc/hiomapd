@@ -217,7 +217,7 @@ int write_from_window_v1(struct mbox_context *context,
 	 * We need to erase the flash from low_mem.flash_offset->
 	 * high_mem.flash_offset + high_mem.size
 	 */
-	rc = erase_flash(context, low_mem.flash_offset,
+	rc = flash_erase(context, low_mem.flash_offset,
 			 (high_mem.flash_offset - low_mem.flash_offset) +
 			 high_mem.size);
 	if (rc < 0) {
@@ -285,7 +285,7 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 	switch (type) {
 	case WINDOW_ERASED: /* >= V2 ONLY -> block_size == erasesize */
 		flash_offset = context->current->flash_offset + offset_bytes;
-		rc = erase_flash(context, flash_offset, count_bytes);
+		rc = flash_erase(context, flash_offset, count_bytes);
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash\n");
 			return rc;
@@ -305,7 +305,7 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 		flash_offset = context->current->flash_offset + offset_bytes;
 
 		/* Erase the flash */
-		rc = erase_flash(context, flash_offset, count_bytes);
+		rc = flash_erase(context, flash_offset, count_bytes);
 		if (rc < 0) {
 			return rc;
 		}

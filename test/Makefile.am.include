@@ -6,8 +6,8 @@ test_flash_copy_SOURCES = \
 	common.c mtd.c \
 	%reldir%/tmpf.c
 
-test_erase_flash_SOURCES = \
-	%reldir%/erase_flash.c \
+test_flash_erase_SOURCES = \
+	%reldir%/flash_erase.c \
 	flash.c \
 	common.c \
 	%reldir%/tmpf.c
@@ -100,7 +100,7 @@ test_get_mbox_info_v2_timeout_SOURCES = %reldir%/get_mbox_info_v2_timeout.c \
 check_PROGRAMS += \
 		%reldir%/sanity \
 		%reldir%/flash_copy \
-		%reldir%/erase_flash \
+		%reldir%/flash_erase \
 		%reldir%/write_flash \
 		%reldir%/get_mbox_info_v2 \
 		%reldir%/reset_state \

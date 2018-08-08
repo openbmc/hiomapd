@@ -101,7 +101,7 @@ int flash_set_bytemap(struct mbox_context* context, uint32_t offset,
     return 0;
 }
 
-int erase_flash(struct mbox_context* context, uint32_t offset, uint32_t count)
+int flash_erase(struct mbox_context* context, uint32_t offset, uint32_t count)
 {
     // No-op
     return 0;
