@@ -29,7 +29,7 @@ struct window_context *windows_find_oldest(struct mbox_context *context);
 struct window_context *windows_find_largest(struct mbox_context *context);
 struct window_context *windows_search(struct mbox_context *context,
 				      uint32_t offset, bool exact);
-int create_map_window(struct mbox_context *context,
+int windows_create_map(struct mbox_context *context,
 		      struct window_context **this_window,
 		      uint32_t offset, bool exact);
 
