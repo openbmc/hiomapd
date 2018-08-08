@@ -83,12 +83,12 @@ static int init_window_mem(struct mbox_context *context)
 	return 0;
 }
 /*
- * init_windows() - Initalise the window cache
+ * windows_init() - Initalise the window cache
  * @context:    The mbox context pointer
  *
  * Return:      0 on success otherwise negative
  */
-int init_windows(struct mbox_context *context)
+int windows_init(struct mbox_context *context)
 {
 	int i;
 
