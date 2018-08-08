@@ -191,7 +191,7 @@ int write_from_window_v1(struct mbox_context *context,
 			MSG_ERR("Unable to allocate memory\n");
 			return -MBOX_R_SYSTEM_ERROR;
 		}
-		rc = copy_flash(context, low_mem.flash_offset,
+		rc = flash_copy(context, low_mem.flash_offset,
 				low_mem.mem, low_mem.size);
 		if (rc < 0) {
 			goto out;
@@ -206,7 +206,7 @@ int write_from_window_v1(struct mbox_context *context,
 			rc = -MBOX_R_SYSTEM_ERROR;
 			goto out;
 		}
-		rc = copy_flash(context, high_mem.flash_offset,
+		rc = flash_copy(context, high_mem.flash_offset,
 				high_mem.mem, high_mem.size);
 		if (rc < 0) {
 			goto out;
@@ -619,7 +619,7 @@ int create_map_window(struct mbox_context *context,
 	}
 
 	/* Copy from flash into the window buffer */
-	rc = copy_flash(context, offset, cur->mem, cur->size);
+	rc = flash_copy(context, offset, cur->mem, cur->size);
 	if (rc < 0) {
 		/* We don't know how much we've copied -> better reset window */
 		reset_window(context, cur);

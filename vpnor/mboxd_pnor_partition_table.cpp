@@ -102,14 +102,14 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
         size_t tocOffset = 0;
 
         // Copy TOC
-        copy_flash(&local, tocOffset,
+        flash_copy(&local, tocOffset,
                    static_cast<uint8_t *>(context->mem) + tocStart,
                    blTable.capacity());
         const pnor_partition &partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
         // Copy HBB
-        copy_flash(&local, hbbOffset,
+        flash_copy(&local, hbbOffset,
                    static_cast<uint8_t *>(context->mem) + hbbOffset, hbbSize);
     }
     catch (err::InternalFailure &e)
