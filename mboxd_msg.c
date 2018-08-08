@@ -327,7 +327,7 @@ int mbox_handle_read_window(struct mbox_context *context,
 				return rc;
 			}
 		}
-		close_current_window(context, NO_BMC_EVENT, FLAGS_NONE);
+		windows_close_current(context, NO_BMC_EVENT, FLAGS_NONE);
 	}
 
 	/* Offset the host has requested */
@@ -662,7 +662,7 @@ int mbox_handle_close_window(struct mbox_context *context,
 		}
 
 		/* Host asked for it -> Don't set the BMC Event */
-		close_current_window(context, NO_BMC_EVENT, flags);
+		windows_close_current(context, NO_BMC_EVENT, flags);
 	}
 
 	return 0;
