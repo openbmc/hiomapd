@@ -112,7 +112,7 @@ int main(void)
 	flash_dev_init(&context);
 
 	/* Erase from an unknown state */
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -124,7 +124,7 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase an erased flash */
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 0);
@@ -134,7 +134,7 @@ int main(void)
 	/* Erase written flash */
 	rc = write_flash(&context, 0, data, sizeof(data));
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -148,7 +148,7 @@ int main(void)
 	/* Erase the start of flash */
 	rc = write_flash(&context, 0, data, sizeof(data) - 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -162,7 +162,7 @@ int main(void)
 	/* Erase the end of flash */
 	rc = write_flash(&context, 1, data, sizeof(data) - 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -177,7 +177,7 @@ int main(void)
 	rc = write_flash(&context, 0, data, 1);
 	rc = write_flash(&context, 2, data, 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 2);
@@ -193,7 +193,7 @@ int main(void)
 	/* Erase the middle of flash */
 	rc = write_flash(&context, 1, data, 1);
 	assert(rc == 0);
-	rc = erase_flash(&context, 0, sizeof(data));
+	rc = flash_erase(&context, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
