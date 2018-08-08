@@ -19,7 +19,8 @@ if VIRTUAL_PNOR_ENABLED
 include vpnor/Makefile.am.include
 else
 mboxd_SOURCES += flash.c \
-	lpc_reset.c
+	lpc_reset.c \
+	protocol_negotiate_version.c
 endif
 
 mboxctl_SOURCES = mboxctl.c
