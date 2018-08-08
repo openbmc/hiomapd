@@ -135,7 +135,7 @@ int mbox_handle_reset(struct mbox_context *context,
  */
 static uint16_t get_suggested_timeout(struct mbox_context *context)
 {
-	struct window_context *window = find_largest_window(context);
+	struct window_context *window = windows_find_largest(context);
 	uint32_t max_size_mb = window ? (window->size >> 20) : 0;
 	uint16_t ret;
 
