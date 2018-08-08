@@ -4,7 +4,7 @@
 #include "pnor_partition_table.hpp"
 #include "common.h"
 #include "mbox.h"
-#include "mboxd_flash.h"
+#include "flash.h"
 #include "pnor_partition_table.hpp"
 #include "config.h"
 #include "xyz/openbmc_project/Common/error.hpp"

@@ -3,7 +3,7 @@
 #include "pnor_partition.hpp"
 #include "pnor_partition_table.hpp"
 #include "config.h"
-#include "mboxd_flash.h"
+#include "flash.h"
 #include "mboxd_pnor_partition_table.h"
 #include "xyz/openbmc_project/Common/error.hpp"
 #include <phosphor-logging/log.hpp>

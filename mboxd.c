@@ -31,7 +31,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
-#include "mboxd_flash.h"
+#include "flash.h"
 #include "mboxd_lpc.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"

@@ -29,7 +29,7 @@
 #include "common.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
-#include "mboxd_flash.h"
+#include "flash.h"
 
 /* Initialisation Functions */
 
