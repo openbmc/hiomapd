@@ -339,7 +339,7 @@ int mbox_handle_read_window(struct mbox_context *context,
 
 	if (!context->current) { /* No existing window */
 		MSG_DBG("No existing window which maps that flash offset\n");
-		rc = create_map_window(context, &context->current, flash_offset,
+		rc = windows_create_map(context, &context->current, flash_offset,
 				       context->version == API_VERSION_1);
 		if (rc < 0) { /* Unable to map offset */
 			MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n"
