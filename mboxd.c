@@ -140,7 +140,7 @@ static int poll_loop(struct mbox_context *context)
 			case SIGHUP:
 				/* Host didn't request reset -> Notify it */
 				reset_all_windows(context, SET_BMC_EVENT);
-				rc = reset_lpc(context);
+				rc = lpc_reset(context);
 				if (rc < 0) {
 					MSG_ERR("WARNING: Failed to point the "
 						"LPC bus back to flash on "
@@ -178,7 +178,7 @@ static int poll_loop(struct mbox_context *context)
 	/* Best to reset windows and the lpc mapping for safety */
 	/* Host didn't request reset -> Notify it */
 	reset_all_windows(context, SET_BMC_EVENT);
-	rc = reset_lpc(context);
+	rc = lpc_reset(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {
 		MSG_ERR("WARNING: Failed to point the LPC bus back to flash\n"
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
 #endif
 
 	/* Set the LPC bus mapping */
-	rc = reset_lpc(context);
+	rc = lpc_reset(context);
 	if (rc) {
 		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}

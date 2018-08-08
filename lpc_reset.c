@@ -7,12 +7,12 @@
 #include "lpc.h"
 
 /*
- * reset_lpc() - Reset the lpc bus mapping
+ * lpc_reset() - Reset the lpc bus mapping
  * @context:	The mbox context pointer
  *
  * Return:	0 on success otherwise negative error code
  */
-int reset_lpc(struct mbox_context *context)
+int lpc_reset(struct mbox_context *context)
 {
 	return lpc_map_flash(context);
 }
