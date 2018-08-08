@@ -351,7 +351,7 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
 }
 
 /*
- * set_window_bytemap() - Set the window bytemap
+ * window_set_bytemap() - Set the window bytemap
  * @context:	The mbox context pointer
  * @cur:	The window to set the bytemap of
  * @offset:	Where in the window to set the bytemap (blocks)
@@ -360,7 +360,7 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
  *
  * Return:	0 on success otherwise negative error code
  */
-int set_window_bytemap(struct mbox_context *context, struct window_context *cur,
+int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 		       uint32_t offset, uint32_t size, uint8_t val)
 {
 	if (offset + size > (cur->size >> context->block_size_shift)) {
@@ -415,7 +415,7 @@ void reset_window(struct mbox_context *context, struct window_context *window)
 	window->flash_offset = FLASH_OFFSET_UNINIT;
 	window->size = context->windows.default_size;
 	if (window->dirty_bmap) { /* Might not have been allocated */
-		set_window_bytemap(context, window, 0,
+		window_set_bytemap(context, window, 0,
 				   window->size >> context->block_size_shift,
 				   WINDOW_CLEAN);
 	}
@@ -660,7 +660,7 @@ int create_map_window(struct mbox_context *context,
 	}
 
 	/* Clear the bytemap of the window just loaded -> we know it's clean */
-	set_window_bytemap(context, cur, 0,
+	window_set_bytemap(context, cur, 0,
 			   cur->size >> context->block_size_shift,
 			   WINDOW_CLEAN);
 
