@@ -140,12 +140,12 @@ void windows_free(struct mbox_context *context)
 /* Write from Window Functions */
 
 /*
- * write_from_window_v1() - Handle writing when erase and block size differ
+ * window_flush_v1() - Handle writing when erase and block size differ
  * @context:		The mbox context pointer
  * @offset_bytes:	The offset in the current window to write from (bytes)
  * @count_bytes:	Number of bytes to write
  *
- * Handle a write_from_window for dirty memory when block_size is less than the
+ * Handle a window_flush for dirty memory when block_size is less than the
  * flash erase size
  * This requires us to be a bit careful because we might have to erase more
  * than we want to write which could result in data loss if we don't have the
@@ -154,7 +154,7 @@ void windows_free(struct mbox_context *context)
  *
  * Return:	0 on success otherwise negative error code
  */
-int write_from_window_v1(struct mbox_context *context,
+int window_flush_v1(struct mbox_context *context,
 			 uint32_t offset_bytes, uint32_t count_bytes)
 {
 	int rc;
@@ -267,7 +267,7 @@ out:
 }
 
 /*
- * write_from_window() - Write back to the flash from the current window
+ * window_flush() - Write back to the flash from the current window
  * @context:		The mbox context pointer
  * @offset_bytes:	The offset in the current window to write from (blocks)
  * @count_bytes:	Number of blocks to write
@@ -275,7 +275,7 @@ out:
  *
  * Return:	0 on success otherwise negative error code
  */
-int write_from_window(struct mbox_context *context, uint32_t offset,
+int window_flush(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t type)
 {
 	int rc;
@@ -299,7 +299,7 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 		 */
 		if (log_2(context->mtd_info.erasesize) !=
 						context->block_size_shift) {
-			return write_from_window_v1(context, offset_bytes,
+			return window_flush_v1(context, offset_bytes,
 						    count_bytes);
 		}
 		flash_offset = context->current->flash_offset + offset_bytes;
