@@ -468,12 +468,12 @@ struct window_context *windows_find_oldest(struct mbox_context *context)
 }
 
 /*
- * find_largest_window() - Find the largest window in the window cache
+ * windows_find_largest() - Find the largest window in the window cache
  * @context:	The mbox context pointer
  *
  * Return:	The largest window
  */
-struct window_context *find_largest_window(struct mbox_context *context)
+struct window_context *windows_find_largest(struct mbox_context *context)
 {
 	struct window_context *largest = NULL, *cur;
 	uint32_t max_size = 0;
