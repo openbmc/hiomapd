@@ -12,10 +12,10 @@
 
 extern "C" {
 #include "common.h"
+#include "flash.h"
 }
 
 #include "config.h"
-#include "flash.h"
 #include "mboxd_pnor_partition_table.h"
 #include "pnor_partition.hpp"
 #include "pnor_partition_table.hpp"
