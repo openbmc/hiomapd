@@ -28,7 +28,7 @@
 #include "common.h"
 #include "mboxd_msg.h"
 #include "mboxd_windows.h"
-#include "mboxd_lpc.h"
+#include "lpc.h"
 
 /*
  * write_bmc_event_reg() - Write to the BMC controlled status register (reg 15)

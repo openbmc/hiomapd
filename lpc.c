@@ -26,7 +26,7 @@
 
 #include "mbox.h"
 #include "common.h"
-#include "mboxd_lpc.h"
+#include "lpc.h"
 #include "flash.h"
 #include <linux/aspeed-lpc-ctrl.h>
 
