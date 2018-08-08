@@ -4,8 +4,8 @@
 #ifndef WINDOWS_H
 #define WINDOWS_H
 
-#define NO_FLUSH	false
-#define WITH_FLUSH	true
+#define WINDOWS_NO_FLUSH	false
+#define WINDOWS_WITH_FLUSH	true
 
 #include "mbox.h"
 
