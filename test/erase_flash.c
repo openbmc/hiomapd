@@ -204,7 +204,7 @@ int main(void)
 	recorded = NULL;
 	n_ioctls = 0;
 
-	free_flash_dev(&context);
+	flash_dev_free(&context);
 
 	return rc;
 }

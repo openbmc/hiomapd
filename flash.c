@@ -97,7 +97,7 @@ out:
 	return rc;
 }
 
-void free_flash_dev(struct mbox_context *context)
+void flash_dev_free(struct mbox_context *context)
 {
 	free(context->flash_bmap);
 	close(context->fds[MTD_FD].fd);

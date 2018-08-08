@@ -10,7 +10,7 @@
 #include "mbox.h"
 
 int flash_dev_init(struct mbox_context *context);
-void free_flash_dev(struct mbox_context *context);
+void flash_dev_free(struct mbox_context *context);
 int64_t copy_flash(struct mbox_context *context, uint32_t offset, void *mem,
 		   uint32_t size);
 int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
