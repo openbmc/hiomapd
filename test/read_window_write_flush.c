@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #include "mbox.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 
 #include "test/mbox.h"
 #include "test/system.h"

@@ -9,7 +9,7 @@
 
 #include "common.h"
 #include "mbox.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 
 #include "tmpf.h"
 

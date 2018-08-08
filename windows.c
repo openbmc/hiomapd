@@ -27,7 +27,7 @@
 
 #include "mbox.h"
 #include "common.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 #include "windows.h"
 #include "flash.h"
 
@@ -369,7 +369,7 @@ int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 			offset << context->block_size_shift,
 			size << context->block_size_shift,
 			cur->size << context->block_size_shift);
-		return -EACCES;
+		return -EINVAL;
 	}
 
 	memset(cur->dirty_bmap + offset, val, size);

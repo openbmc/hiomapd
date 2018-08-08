@@ -33,7 +33,7 @@
 #include "control_dbus.h"
 #include "flash.h"
 #include "lpc.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 #include "windows.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
