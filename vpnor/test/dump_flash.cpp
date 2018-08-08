@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 extern "C" {

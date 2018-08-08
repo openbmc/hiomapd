@@ -26,7 +26,7 @@
 
 #include "mbox.h"
 #include "common.h"
-#include "mboxd_msg.h"
+#include "transport_mbox.h"
 #include "windows.h"
 #include "lpc.h"
 
