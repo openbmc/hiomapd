@@ -461,7 +461,7 @@ int mbox_handle_dirty_window(struct mbox_context *context,
 		 offset << context->block_size_shift,
 		 size << context->block_size_shift);
 
-	rc = set_window_bytemap(context, context->current, offset, size,
+	rc = window_set_bytemap(context, context->current, offset, size,
 				  WINDOW_DIRTY);
 	if (rc < 0) {
 		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
@@ -507,7 +507,7 @@ int mbox_handle_erase_window(struct mbox_context *context,
 		 offset << context->block_size_shift,
 		 size << context->block_size_shift);
 
-	rc = set_window_bytemap(context, context->current, offset, size,
+	rc = window_set_bytemap(context, context->current, offset, size,
 				WINDOW_ERASED);
 	if (rc < 0) {
 		return (rc == -EACCES) ? -MBOX_R_PARAM_ERROR
@@ -617,7 +617,7 @@ int mbox_handle_flush_window(struct mbox_context *context,
 	}
 
 	/* Clear the dirty bytemap since we have written back all changes */
-	rc = set_window_bytemap(context, context->current, 0,
+	rc = window_set_bytemap(context, context->current, 0,
 				  context->current->size >>
 				  context->block_size_shift,
 				  WINDOW_CLEAN);
