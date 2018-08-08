@@ -13,7 +13,7 @@
 #include "config.h"
 #include "common.h"
 #include "mbox.h"
-#include "mboxd_flash.h"
+#include "flash.h"
 
 #include "vpnor/test/tmpd.hpp"
 
