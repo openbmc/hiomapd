@@ -138,7 +138,7 @@ int point_to_flash(struct mbox_context *context)
 	 * Since the host now has access to the flash it can change it out from
 	 * under us
 	 */
-	return set_flash_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
+	return flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 }
 
 /*
