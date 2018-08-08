@@ -42,7 +42,7 @@ int main(void)
     init_vpnor_from_paths(ctx);
 
     /* Test */
-    rc = write_flash(ctx, 0x1000, src, sizeof(src));
+    rc = flash_write(ctx, 0x1000, src, sizeof(src));
 
     /* Verify we can't write to RO partitions */
     assert(rc != 0);

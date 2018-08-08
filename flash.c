@@ -259,7 +259,7 @@ int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
 }
 
 /*
- * write_flash() - Write the flash from a provided buffer
+ * flash_write() - Write the flash from a provided buffer
  * @context:	The mbox context pointer
  * @offset:	The flash offset to write to (bytes)
  * @buf:	The buffer to write from (must be of atleast size)
@@ -267,7 +267,7 @@ int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
  *
  * Return:	0 on success otherwise negative error code
  */
-int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
+int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
 		uint32_t count)
 {
 	uint32_t buf_offset = 0;
