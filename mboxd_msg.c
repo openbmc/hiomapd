@@ -191,7 +191,7 @@ int mbox_handle_mbox_info(struct mbox_context *context,
 	 * mbox so point the LPC bus mapping to the reserved memory region now
 	 * so the host can access what we put in it.
 	 */
-	rc = point_to_memory(context);
+	rc = lpc_map_memory(context);
 	if (rc < 0) {
 		return rc;
 	}
