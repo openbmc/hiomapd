@@ -42,7 +42,7 @@ struct StringDeleter
 };
 using StringPtr = std::unique_ptr<char, StringDeleter>;
 
-int init_flash_dev(struct mbox_context* context)
+int flash_dev_init(struct mbox_context* context)
 {
     StringPtr filename(get_dev_mtd());
     int fd = 0;
