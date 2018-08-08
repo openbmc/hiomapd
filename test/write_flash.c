@@ -99,7 +99,7 @@ int main(void)
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
-	free_flash_dev(context);
+	flash_dev_free(context);
 
 	return rc;
 }

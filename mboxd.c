@@ -404,7 +404,7 @@ finish:
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
 	dbus_free(context);
-	free_flash_dev(context);
+	flash_dev_free(context);
 	free_lpc_dev(context);
 	free_mbox_dev(context);
 	free_windows(context);
