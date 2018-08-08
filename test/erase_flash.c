@@ -109,7 +109,7 @@ int main(void)
 	n_ioctls = 0;
 	recorded = NULL;
 
-	init_flash_dev(&context);
+	flash_dev_init(&context);
 
 	/* Erase from an unknown state */
 	rc = erase_flash(&context, 0, sizeof(data));

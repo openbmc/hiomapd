@@ -63,7 +63,7 @@ int main(void)
 
 	mbox_vlog = &mbox_log_console;
 
-	rc = init_flash_dev(context);
+	rc = flash_dev_init(context);
 	assert(rc == 0);
 
 	map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, tmp->fd, 0);

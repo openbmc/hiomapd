@@ -242,7 +242,7 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;
 
-	rc = init_flash_dev(&test.context);
+	rc = flash_dev_init(&test.context);
 	assert(rc == 0);
 
 	rc = fallocate(test.flash.fd, 0, 0, test.context.mtd_info.size);
