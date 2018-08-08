@@ -331,10 +331,10 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 /* Window Management Functions */
 
 /*
- * alloc_window_dirty_bytemap() - (re)allocate all the window dirty bytemaps
+ * windows_alloc_dirty_bytemap() - (re)allocate all the window dirty bytemaps
  * @context:		The mbox context pointer
  */
-void alloc_window_dirty_bytemap(struct mbox_context *context)
+void windows_alloc_dirty_bytemap(struct mbox_context *context)
 {
 	struct window_context *cur;
 	int i;

@@ -209,7 +209,7 @@ int mbox_handle_mbox_info(struct mbox_context *context,
 
 	/* Now we know the blocksize we can allocate the window dirty_bytemap */
 	if (mbox_api_version != old_api_version) {
-		alloc_window_dirty_bytemap(context);
+		windows_alloc_dirty_bytemap(context);
 	}
 	/* Reset if we were V1 since this required exact window mapping */
 	if (old_api_version == API_VERSION_1) {
