@@ -30,7 +30,7 @@
 #include "common.h"
 #include "flash.h"
 
-int init_flash_dev(struct mbox_context *context)
+int flash_dev_init(struct mbox_context *context)
 {
 	char *filename = get_dev_mtd();
 	int fd, rc = 0;
