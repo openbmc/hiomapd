@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright (C) 2018 IBM Corp. */
 
-#ifndef MBOXD_WINDOWS_H
-#define MBOXD_WINDOWS_H
+#ifndef WINDOWS_H
+#define WINDOWS_H
 
 #define NO_FLUSH	false
 #define WITH_FLUSH	true
@@ -33,4 +33,4 @@ int create_map_window(struct mbox_context *context,
 		      struct window_context **this_window,
 		      uint32_t offset, bool exact);
 
-#endif /* MBOXD_WINDOWS_H */
+#endif /* WINDOWS_H */
