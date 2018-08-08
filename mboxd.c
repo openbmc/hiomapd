@@ -34,7 +34,7 @@
 #include "flash.h"
 #include "lpc.h"
 #include "mboxd_msg.h"
-#include "mboxd_windows.h"
+#include "windows.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 #define USAGE \
