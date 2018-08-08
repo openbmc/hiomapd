@@ -13,7 +13,7 @@ int flash_dev_init(struct mbox_context *context);
 void flash_dev_free(struct mbox_context *context);
 int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
 		   uint32_t size);
-int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
+int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val);
 int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count);
 int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
