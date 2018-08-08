@@ -139,7 +139,7 @@ static int poll_loop(struct mbox_context *context)
 				break;
 			case SIGHUP:
 				/* Host didn't request reset -> Notify it */
-				reset_all_windows(context, SET_BMC_EVENT);
+				windows_reset_all(context, SET_BMC_EVENT);
 				rc = lpc_reset(context);
 				if (rc < 0) {
 					MSG_ERR("WARNING: Failed to point the "
@@ -177,7 +177,7 @@ static int poll_loop(struct mbox_context *context)
 
 	/* Best to reset windows and the lpc mapping for safety */
 	/* Host didn't request reset -> Notify it */
-	reset_all_windows(context, SET_BMC_EVENT);
+	windows_reset_all(context, SET_BMC_EVENT);
 	rc = lpc_reset(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {

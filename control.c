@@ -47,7 +47,7 @@ int control_reset(struct mbox_context *context)
 	 * mapping back to flash, or memory in case we're using a virtual pnor.
 	 * Better set the bmc event to notify the host of this.
 	 */
-	reset_all_windows(context, SET_BMC_EVENT);
+	windows_reset_all(context, SET_BMC_EVENT);
 	rc = lpc_reset(context);
 	if (rc < 0) {
 		return rc;
@@ -71,7 +71,7 @@ int control_modified(struct mbox_context *context)
 	flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 
 	/* Force daemon to reload all windows -> Set BMC event to notify host */
-	reset_all_windows(context, SET_BMC_EVENT);
+	windows_reset_all(context, SET_BMC_EVENT);
 
 	return 0;
 }
