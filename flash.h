@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright (C) 2018 IBM Corp. */
 
-#ifndef MBOXD_FLASH_H
-#define MBOXD_FLASH_H
+#ifndef FLASH_H
+#define FLASH_H
 
 #define FLASH_DIRTY	0x00
 #define FLASH_ERASED	0x01
@@ -26,4 +26,4 @@ int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
 #ifdef __cplusplus
 }
 #endif
-#endif /* MBOXD_FLASH_H */
+#endif /* FLASH_H */
