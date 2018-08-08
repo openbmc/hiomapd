@@ -47,7 +47,7 @@ int main(void)
 
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
     root.write("TEST1", data, sizeof(data));
-    /* write_flash doesn't copy the file for us */
+    /* flash_write doesn't copy the file for us */
     assert(fs::copy_file(root.ro() / "TEST1", root.rw() / "TEST1"));
     fs::path patch = root.patch() / "TEST1";
     assert(fs::copy_file(root.ro() / "TEST1", patch));
@@ -56,7 +56,7 @@ int main(void)
 
     /* Test */
     memset(src, 0x33, sizeof(src));
-    rc = write_flash(ctx, 0x1000, src, sizeof(src));
+    rc = flash_write(ctx, 0x1000, src, sizeof(src));
     assert(rc == 0);
 
     /* Check that RW file is unmodified after the patch write */

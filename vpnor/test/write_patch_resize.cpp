@@ -48,7 +48,7 @@ int main(void)
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
     std::vector<uint8_t> roContent(PART_SIZE, 0xff);
     root.write("TEST1", roContent.data(), roContent.size());
-    /* write_flash doesn't copy the file for us */
+    /* flash_write doesn't copy the file for us */
     std::vector<uint8_t> patchContent(PATCH_SIZE, 0xaa);
     root.patch("TEST1", patchContent.data(), patchContent.size());
 
@@ -56,7 +56,7 @@ int main(void)
 
     /* Test */
     std::vector<uint8_t> update(UPDATE_SIZE, 0x55);
-    rc = write_flash(ctx, 0x1000, update.data(), update.size());
+    rc = flash_write(ctx, 0x1000, update.data(), update.size());
     assert(rc == 0);
 
     /* Check that PATCH is modified with the new data */
