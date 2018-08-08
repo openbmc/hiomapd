@@ -12,7 +12,9 @@
 #include "config.h"
 #include "common.h"
 #include "mbox.h"
+extern "C" {
 #include "flash.h"
+}
 
 #include "vpnor/test/tmpd.hpp"
 
