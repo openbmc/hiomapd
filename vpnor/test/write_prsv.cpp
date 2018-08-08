@@ -45,7 +45,7 @@ int main(void)
 
     /* Test */
     memset(src, 0xaa, sizeof(src));
-    rc = write_flash(ctx, 0x1000, src, sizeof(src));
+    rc = flash_write(ctx, 0x1000, src, sizeof(src));
     assert(rc == 0);
 
     /* Verify */

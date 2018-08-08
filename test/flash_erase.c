@@ -132,7 +132,7 @@ int main(void)
 	memset(data, 0xaa, sizeof(data));
 
 	/* Erase written flash */
-	rc = write_flash(&context, 0, data, sizeof(data));
+	rc = flash_write(&context, 0, data, sizeof(data));
 	assert(rc == 0);
 	rc = flash_erase(&context, 0, sizeof(data));
 
@@ -146,7 +146,7 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase the start of flash */
-	rc = write_flash(&context, 0, data, sizeof(data) - 1);
+	rc = flash_write(&context, 0, data, sizeof(data) - 1);
 	assert(rc == 0);
 	rc = flash_erase(&context, 0, sizeof(data));
 
@@ -160,7 +160,7 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase the end of flash */
-	rc = write_flash(&context, 1, data, sizeof(data) - 1);
+	rc = flash_write(&context, 1, data, sizeof(data) - 1);
 	assert(rc == 0);
 	rc = flash_erase(&context, 0, sizeof(data));
 
@@ -174,8 +174,8 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase each end of flash */
-	rc = write_flash(&context, 0, data, 1);
-	rc = write_flash(&context, 2, data, 1);
+	rc = flash_write(&context, 0, data, 1);
+	rc = flash_write(&context, 2, data, 1);
 	assert(rc == 0);
 	rc = flash_erase(&context, 0, sizeof(data));
 
@@ -191,7 +191,7 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase the middle of flash */
-	rc = write_flash(&context, 1, data, 1);
+	rc = flash_write(&context, 1, data, 1);
 	assert(rc == 0);
 	rc = flash_erase(&context, 0, sizeof(data));
 

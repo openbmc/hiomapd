@@ -16,7 +16,7 @@ int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
 int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val);
 int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count);
-int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
+int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
 		uint32_t count);
 
 #endif /* FLASH_H */

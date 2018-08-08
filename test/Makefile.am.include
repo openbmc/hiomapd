@@ -12,8 +12,8 @@ test_flash_erase_SOURCES = \
 	common.c \
 	%reldir%/tmpf.c
 
-test_write_flash_SOURCES = \
-	%reldir%/write_flash.c \
+test_flash_write_SOURCES = \
+	%reldir%/flash_write.c \
 	flash.c \
 	common.c \
 	%reldir%/tmpf.c
@@ -101,7 +101,7 @@ check_PROGRAMS += \
 		%reldir%/sanity \
 		%reldir%/flash_copy \
 		%reldir%/flash_erase \
-		%reldir%/write_flash \
+		%reldir%/flash_write \
 		%reldir%/get_mbox_info_v2 \
 		%reldir%/reset_state \
 		%reldir%/get_flash_info_v2 \
