@@ -587,7 +587,7 @@ int mbox_handle_flush_window(struct mbox_context *context,
 				offset = i;
 				count++;
 			} else { /* Change in streak type */
-				rc = write_from_window(context, offset, count,
+				rc = window_flush(context, offset, count,
 						       prev);
 				if (rc < 0) {
 					return rc;
@@ -597,7 +597,7 @@ int mbox_handle_flush_window(struct mbox_context *context,
 			}
 		} else {
 			if (prev != WINDOW_CLEAN) { /* End of a streak */
-				rc = write_from_window(context, offset, count,
+				rc = window_flush(context, offset, count,
 						       prev);
 				if (rc < 0) {
 					return rc;
@@ -610,7 +610,7 @@ int mbox_handle_flush_window(struct mbox_context *context,
 	}
 
 	if (prev != WINDOW_CLEAN) { /* Still the last streak to write */
-		rc = write_from_window(context, offset, count, prev);
+		rc = window_flush(context, offset, count, prev);
 		if (rc < 0) {
 			return rc;
 		}
