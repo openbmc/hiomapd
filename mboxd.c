@@ -407,7 +407,7 @@ finish:
 	flash_dev_free(context);
 	lpc_dev_free(context);
 	free_mbox_dev(context);
-	free_windows(context);
+	windows_free(context);
 #ifdef VIRTUAL_PNOR_ENABLED
 	destroy_vpnor(context);
 #endif
