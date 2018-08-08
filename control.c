@@ -48,7 +48,7 @@ int control_reset(struct mbox_context *context)
 	 * Better set the bmc event to notify the host of this.
 	 */
 	reset_all_windows(context, SET_BMC_EVENT);
-	rc = reset_lpc(context);
+	rc = lpc_reset(context);
 	if (rc < 0) {
 		return rc;
 	}
