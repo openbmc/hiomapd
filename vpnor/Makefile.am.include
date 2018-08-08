@@ -3,7 +3,7 @@ mboxd_SOURCES += %reldir%/pnor_partition_table.cpp \
 	%reldir%/flash.cpp \
 	%reldir%/pnor_partition.cpp \
 	%reldir%/lpc_reset.cpp \
-	%reldir%/mboxd_msg.cpp
+	%reldir%/transport_mbox.cpp
 
 mboxd_LDFLAGS += -lstdc++fs \
 	$(SDBUSPLUS_LIBS) \

@@ -29,7 +29,7 @@ flash.c -   Contains the functions for performing flash access including
                   read, write and erase.
 lpc.c -     Contains the functions for controlling the LPC bus mapping
                   including pointing the bus so it maps flash and memory.
-mboxd_msg.c -     Contains the handlers for the mbox commands which the daemon
+transport_mbox.c -     Contains the handlers for the mbox commands which the daemon
                   can receive.
 windows.c - Contains the functions for managing the window cache.
 ```

@@ -5,13 +5,13 @@ TEST_MBOX_VPNOR_SRCS = \
 
 TEST_MBOX_VPNOR_INTEG_SRCS = \
 	common.c \
-	mboxd_msg.c \
+	transport_mbox.c \
 	windows.c \
 	lpc.c \
 	vpnor/lpc_reset.cpp \
 	vpnor/mboxd_pnor_partition_table.cpp \
 	vpnor/flash.cpp \
-	vpnor/mboxd_msg.cpp \
+	vpnor/transport_mbox.cpp \
 	vpnor/pnor_partition.cpp \
 	vpnor/pnor_partition_table.cpp \
 	%reldir%/tmpd.cpp
