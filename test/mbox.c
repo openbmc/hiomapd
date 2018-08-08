@@ -17,7 +17,7 @@
 #include "flash.h"
 #include "lpc.h"
 #include "mboxd_msg.h"
-#include "mboxd_windows.h"
+#include "windows.h"
 
 #include "test/mbox.h"
 
