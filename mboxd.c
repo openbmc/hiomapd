@@ -369,7 +369,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = init_flash_dev(context);
+	rc = flash_dev_init(context);
 	if (rc) {
 		goto finish;
 	}
