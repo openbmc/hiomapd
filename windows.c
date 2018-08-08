@@ -492,7 +492,7 @@ struct window_context *windows_find_largest(struct mbox_context *context)
 }
 
 /*
- * search_windows() - Search the window cache for a window containing offset
+ * windows_search() - Search the window cache for a window containing offset
  * @context:	The mbox context pointer
  * @offset:	Absolute flash offset to search for (bytes)
  * @exact:	If the window must exactly map the requested offset
@@ -505,7 +505,7 @@ struct window_context *windows_find_largest(struct mbox_context *context)
  * Return:	Pointer to a window containing the requested offset otherwise
  *		NULL
  */
-struct window_context *search_windows(struct mbox_context *context,
+struct window_context *windows_search(struct mbox_context *context,
 				      uint32_t offset, bool exact)
 {
 	struct window_context *cur;
@@ -562,7 +562,7 @@ int create_map_window(struct mbox_context *context,
 		exact ? "exactly" : "");
 
 	/* Search for an uninitialised window, use this before evicting */
-	cur = search_windows(context, FLASH_OFFSET_UNINIT, true);
+	cur = windows_search(context, FLASH_OFFSET_UNINIT, true);
 
 	/* No uninitialised window found, we need to choose one to "evict" */
 	if (!cur) {
@@ -651,7 +651,7 @@ int create_map_window(struct mbox_context *context,
 		for (i = offset; i < (offset + cur->size); i += (cur->size - 1)) {
 			struct window_context *tmp = NULL;
 			do {
-				tmp = search_windows(context, i, false);
+				tmp = windows_search(context, i, false);
 				if (tmp) {
 					window_reset(context, tmp);
 				}
