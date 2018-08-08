@@ -537,7 +537,7 @@ struct window_context *windows_search(struct mbox_context *context,
 }
 
 /*
- * create_map_window() - Create a window mapping which maps the requested offset
+ * windows_create_map() - Create a window mapping which maps the requested offset
  * @context:		The mbox context pointer
  * @this_window:	A pointer to update to the "new" window
  * @offset:		Absolute flash offset to create a mapping for (bytes)
@@ -551,7 +551,7 @@ struct window_context *windows_search(struct mbox_context *context,
  *
  * Return:	0 on success otherwise negative error code
  */
-int create_map_window(struct mbox_context *context,
+int windows_create_map(struct mbox_context *context,
 		      struct window_context **this_window, uint32_t offset,
 		      bool exact)
 {
