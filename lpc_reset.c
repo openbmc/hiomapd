@@ -14,5 +14,5 @@
  */
 int reset_lpc(struct mbox_context *context)
 {
-	return point_to_flash(context);
+	return lpc_map_flash(context);
 }
