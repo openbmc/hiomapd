@@ -1,6 +1,6 @@
 mboxd_SOURCES += %reldir%/pnor_partition_table.cpp \
 	%reldir%/mboxd_pnor_partition_table.cpp \
-	%reldir%/mboxd_flash.cpp \
+	%reldir%/flash.cpp \
 	%reldir%/pnor_partition.cpp \
 	%reldir%/mboxd_lpc_reset.cpp \
 	%reldir%/mboxd_msg.cpp

@@ -28,7 +28,7 @@
 
 #include "mbox.h"
 #include "common.h"
-#include "mboxd_flash.h"
+#include "flash.h"
 
 int init_flash_dev(struct mbox_context *context)
 {
