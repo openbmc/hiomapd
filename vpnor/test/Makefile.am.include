@@ -6,7 +6,7 @@ TEST_MBOX_VPNOR_SRCS = \
 TEST_MBOX_VPNOR_INTEG_SRCS = \
 	common.c \
 	mboxd_msg.c \
-	mboxd_windows.c \
+	windows.c \
 	lpc.c \
 	vpnor/lpc_reset.cpp \
 	vpnor/mboxd_pnor_partition_table.cpp \

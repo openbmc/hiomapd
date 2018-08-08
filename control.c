@@ -8,7 +8,7 @@
 #include "flash.h"
 #include "lpc.h"
 #include "mboxd_msg.h"
-#include "mboxd_windows.h"
+#include "windows.h"
 
 int control_ping(struct mbox_context *context)
 {
