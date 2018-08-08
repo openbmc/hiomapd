@@ -47,7 +47,7 @@ static const struct errno_map errno_map_v1[] = {
 
 static const struct errno_map errno_map_v2[] = {
 	{ 0, MBOX_R_SUCCESS },
-	{ EACCES, MBOX_R_PARAM_ERROR },
+	{ EACCES, MBOX_R_WINDOW_ERROR },
 	{ EBUSY, MBOX_R_BUSY },
 	{ EINVAL, MBOX_R_PARAM_ERROR },
 	{ EPERM, MBOX_R_WINDOW_ERROR },
