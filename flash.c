@@ -120,7 +120,7 @@ static inline bool flash_is_erased(struct mbox_context *context,
 }
 
 /*
- * set_flash_bytemap() - Set the flash erased bytemap
+ * flash_set_bytemap() - Set the flash erased bytemap
  * @context:	The mbox context pointer
  * @offset:	The flash offset to set (bytes)
  * @count:	Number of bytes to set
@@ -131,7 +131,7 @@ static inline bool flash_is_erased(struct mbox_context *context,
  *
  * Return:	0 if success otherwise negative error code
  */
-int set_flash_bytemap(struct mbox_context *context, uint32_t offset,
+int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val)
 {
 	if ((offset + count) > context->flash_size) {
@@ -189,7 +189,7 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 				return -MBOX_R_SYSTEM_ERROR;
 			}
 			/* Mark ERASED where we just erased */
-			set_flash_bytemap(context, erase_info.start,
+			flash_set_bytemap(context, erase_info.start,
 					  erase_info.length, FLASH_ERASED);
 			erase_info.start = 0;
 			erase_info.length = 0;
@@ -209,7 +209,7 @@ int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
 			return -MBOX_R_SYSTEM_ERROR;
 		}
 		/* Mark ERASED where we just erased */
-		set_flash_bytemap(context, erase_info.start, erase_info.length,
+		flash_set_bytemap(context, erase_info.start, erase_info.length,
 				  FLASH_ERASED);
 	}
 
@@ -289,7 +289,7 @@ int write_flash(struct mbox_context *context, uint32_t offset, void *buf,
 			return -MBOX_R_WRITE_ERROR;
 		}
 		/* Mark *NOT* erased where we just wrote */
-		set_flash_bytemap(context, offset + buf_offset, rc,
+		flash_set_bytemap(context, offset + buf_offset, rc,
 				  FLASH_DIRTY);
 		count -= rc;
 		buf_offset += rc;
