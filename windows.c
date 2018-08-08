@@ -121,10 +121,10 @@ int windows_init(struct mbox_context *context)
 }
 
 /*
- * free_windows() - Free the window cache
+ * windows_free() - Free the window cache
  * @context:	The mbox context pointer
  */
-void free_windows(struct mbox_context *context)
+void windows_free(struct mbox_context *context)
 {
 	int i;
 
