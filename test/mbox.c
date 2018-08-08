@@ -254,7 +254,7 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	rc = fallocate(test.lpc.fd, 0, 0, test.context.mem_size);
 	assert(rc == 0);
 
-	rc = init_windows(&test.context);
+	rc = windows_init(&test.context);
 	assert(rc == 0);
 
 	return rc ? NULL : &test.context;

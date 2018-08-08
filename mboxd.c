@@ -364,7 +364,7 @@ int main(int argc, char **argv)
 	}
 
 	/* We've found the reserved memory region -> we can assign to windows */
-	rc = init_windows(context);
+	rc = windows_init(context);
 	if (rc) {
 		goto finish;
 	}
