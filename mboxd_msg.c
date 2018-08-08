@@ -124,7 +124,7 @@ int mbox_handle_reset(struct mbox_context *context,
 {
 	/* Host requested it -> No BMC Event */
 	reset_all_windows(context, NO_BMC_EVENT);
-	return reset_lpc(context);
+	return lpc_reset(context);
 }
 
 /*
