@@ -149,14 +149,14 @@ int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
 }
 
 /*
- * erase_flash() - Erase the flash
+ * flash_erase() - Erase the flash
  * @context:	The mbox context pointer
  * @offset:	The flash offset to erase (bytes)
  * @size:	The number of bytes to erase
  *
  * Return:	0 on success otherwise negative error code
  */
-int erase_flash(struct mbox_context *context, uint32_t offset, uint32_t count)
+int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
 {
 	const uint32_t erase_size = 1 << context->erase_size_shift;
 	struct erase_info_user erase_info = { 0 };
