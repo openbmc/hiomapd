@@ -405,7 +405,7 @@ finish:
 
 	dbus_free(context);
 	flash_dev_free(context);
-	free_lpc_dev(context);
+	lpc_dev_free(context);
 	free_mbox_dev(context);
 	free_windows(context);
 #ifdef VIRTUAL_PNOR_ENABLED
