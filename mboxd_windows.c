@@ -228,13 +228,13 @@ int write_from_window_v1(struct mbox_context *context,
 	/* Write back over the erased area */
 	if (low_mem.mem) {
 		/* Exceed window at the start */
-		rc = write_flash(context, low_mem.flash_offset, low_mem.mem,
+		rc = flash_write(context, low_mem.flash_offset, low_mem.mem,
 				 low_mem.size);
 		if (rc < 0) {
 			goto out;
 		}
 	}
-	rc = write_flash(context, flash_offset,
+	rc = flash_write(context, flash_offset,
 			 context->current->mem + offset_bytes, count_bytes);
 	if (rc < 0) {
 		goto out;
@@ -245,14 +245,14 @@ int write_from_window_v1(struct mbox_context *context,
 	 */
 	if (high_mem.mem) {
 		/* Exceed window at the end */
-		rc = write_flash(context, high_mem.flash_offset, high_mem.mem,
+		rc = flash_write(context, high_mem.flash_offset, high_mem.mem,
 				 high_mem.size);
 		if (rc < 0) {
 			goto out;
 		}
 	} else {
 		/* Write from the current window - it's atleast that big */
-		rc = write_flash(context, high_mem.flash_offset,
+		rc = flash_write(context, high_mem.flash_offset,
 				 context->current->mem + offset_bytes +
 				 count_bytes, high_mem.size);
 		if (rc < 0) {
@@ -311,7 +311,7 @@ int write_from_window(struct mbox_context *context, uint32_t offset,
 		}
 
 		/* Write to the erased flash */
-		rc = write_flash(context, flash_offset,
+		rc = flash_write(context, flash_offset,
 				 context->current->mem + offset_bytes,
 				 count_bytes);
 		if (rc < 0) {

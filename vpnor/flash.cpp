@@ -158,7 +158,7 @@ int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
          * Hooo boy. Pretend that this is valid flash so we don't have
          * discontiguous regions presented to the host. Instead, fill a window
          * with 0xff so the 'flash' looks erased. Writes to such regions are
-         * dropped on the floor, see the implementation of write_flash() below.
+         * dropped on the floor, see the implementation of flash_write() below.
          */
         MSG_INFO("Host requested unmapped region of %" PRId32
                  " bytes at offset 0x%" PRIx32 "\n",
@@ -177,7 +177,7 @@ int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
 }
 
 /*
- * write_flash() - Write to the virtual pnor from a provided buffer
+ * flash_write() - Write to the virtual pnor from a provided buffer
  * @context: The mbox context pointer
  * @offset:  The flash offset to write to (bytes)
  * @buf:     The buffer to write from (must be of atleast size)
@@ -186,7 +186,7 @@ int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
  * Return:  0 on success otherwise negative error code
  */
 
-int write_flash(struct mbox_context* context, uint32_t offset, void* buf,
+int flash_write(struct mbox_context* context, uint32_t offset, void* buf,
                 uint32_t count)
 {
 

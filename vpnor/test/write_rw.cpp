@@ -40,13 +40,13 @@ int main(void)
     verbosity = (verbose)2;
 
     test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    /* write_flash() doesn't copy the file for us */
+    /* flash_write() doesn't copy the file for us */
     assert(fs::copy_file(root.ro() / "TEST1", root.rw() / "TEST1"));
     init_vpnor_from_paths(ctx);
 
     /* Test */
     memset(src, 0xbb, sizeof(src));
-    rc = write_flash(ctx, 0x1000, src, sizeof(src));
+    rc = flash_write(ctx, 0x1000, src, sizeof(src));
     assert(rc == 0);
     fd = open((root.rw() / "TEST1").c_str(), O_RDONLY);
     map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
@@ -56,31 +56,31 @@ int main(void)
 
     /* Ensure single byte writes function */
     memset(src, 0xcc, sizeof(src));
-    rc = write_flash(ctx, 0x1000, src, sizeof(src));
+    rc = flash_write(ctx, 0x1000, src, sizeof(src));
     assert(rc == 0);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
 
     src[0] = 0xff;
-    rc = write_flash(ctx, 0x1000, src, 1);
+    rc = flash_write(ctx, 0x1000, src, 1);
     assert(rc == 0);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
 
     src[1] = 0xff;
-    rc = write_flash(ctx, 0x1000 + 1, &src[1], 1);
+    rc = flash_write(ctx, 0x1000 + 1, &src[1], 1);
     assert(rc == 0);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
 
     src[2] = 0xff;
-    rc = write_flash(ctx, 0x1000 + 2, &src[2], 1);
+    rc = flash_write(ctx, 0x1000 + 2, &src[2], 1);
     assert(rc == 0);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
 
     /* Writes past the end of the partition should fail */
-    rc = write_flash(ctx, 0x1000 + 0xff9, src, sizeof(src));
+    rc = flash_write(ctx, 0x1000 + 0xff9, src, sizeof(src));
     assert(rc < 0);
 
     /* Check that RW file is unmodified after the bad write */
