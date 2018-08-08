@@ -68,7 +68,7 @@ int control_kill(struct mbox_context *context)
 int control_modified(struct mbox_context *context)
 {
 	/* Flash has been modified - can no longer trust our erased bytemap */
-	set_flash_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
+	flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 
 	/* Force daemon to reload all windows -> Set BMC event to notify host */
 	reset_all_windows(context, SET_BMC_EVENT);

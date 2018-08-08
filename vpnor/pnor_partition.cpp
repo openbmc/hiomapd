@@ -154,7 +154,7 @@ size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
     else
     {
         memcpy((char *)map + offset, buf, len);
-        set_flash_bytemap(ctx, base + offset, len, FLASH_DIRTY);
+        flash_set_bytemap(ctx, base + offset, len, FLASH_DIRTY);
     }
     munmap(map, fileSize);
     close(fd);
