@@ -208,7 +208,7 @@ void cleanup(void)
 }
 
 int __init_mbox_dev(struct mbox_context *context, const char *path);
-int __init_lpc_dev(struct mbox_context *context, const char *path);
+int __lpc_dev_init(struct mbox_context *context, const char *path);
 
 struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 {
@@ -248,7 +248,7 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	rc = fallocate(test.flash.fd, 0, 0, test.context.mtd_info.size);
 	assert(rc == 0);
 
-	rc = __init_lpc_dev(&test.context, test.lpc.path);
+	rc = __lpc_dev_init(&test.context, test.lpc.path);
 	assert(rc == 0);
 
 	rc = fallocate(test.lpc.fd, 0, 0, test.context.mem_size);

@@ -358,7 +358,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = init_lpc_dev(context);
+	rc = lpc_dev_init(context);
 	if (rc) {
 		goto finish;
 	}

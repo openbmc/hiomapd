@@ -32,7 +32,7 @@
 
 #define LPC_CTRL_PATH		"/dev/aspeed-lpc-ctrl"
 
-int __init_lpc_dev(struct mbox_context *context, const char *path)
+int __lpc_dev_init(struct mbox_context *context, const char *path)
 {
 	struct aspeed_lpc_ctrl_mapping map = {
 		.window_type = ASPEED_LPC_CTRL_WINDOW_MEMORY,
@@ -79,9 +79,9 @@ int __init_lpc_dev(struct mbox_context *context, const char *path)
 	return 0;
 }
 
-int init_lpc_dev(struct mbox_context *context)
+int lpc_dev_init(struct mbox_context *context)
 {
-	return __init_lpc_dev(context, LPC_CTRL_PATH);
+	return __lpc_dev_init(context, LPC_CTRL_PATH);
 }
 
 void free_lpc_dev(struct mbox_context *context)
