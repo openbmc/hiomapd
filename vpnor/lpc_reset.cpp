@@ -44,5 +44,5 @@ int reset_lpc(struct mbox_context *context)
     if (rc < 0)
         return rc;
 
-    return point_to_memory(context);
+    return lpc_map_memory(context);
 }
