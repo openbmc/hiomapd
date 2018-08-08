@@ -7,7 +7,7 @@ mboxd_SOURCES = \
 	control.c \
 	control_legacy.c \
 	control_dbus.c \
-	mboxd_lpc.c \
+	lpc.c \
 	mboxd_msg.c \
 	mboxd_windows.c \
 	mtd.c
@@ -18,7 +18,7 @@ if VIRTUAL_PNOR_ENABLED
 include vpnor/Makefile.am.include
 else
 mboxd_SOURCES += flash.c \
-	mboxd_lpc_reset.c
+	lpc_reset.c
 endif
 
 mboxctl_SOURCES = mboxctl.c

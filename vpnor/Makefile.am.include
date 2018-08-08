@@ -2,7 +2,7 @@ mboxd_SOURCES += %reldir%/pnor_partition_table.cpp \
 	%reldir%/mboxd_pnor_partition_table.cpp \
 	%reldir%/flash.cpp \
 	%reldir%/pnor_partition.cpp \
-	%reldir%/mboxd_lpc_reset.cpp \
+	%reldir%/lpc_reset.cpp \
 	%reldir%/mboxd_msg.cpp
 
 mboxd_LDFLAGS += -lstdc++fs \

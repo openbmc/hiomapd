@@ -18,7 +18,7 @@
  */
 
 #include "mbox.h"
-#include "mboxd_lpc.h"
+#include "lpc.h"
 #include "mboxd_pnor_partition_table.h"
 
 /*

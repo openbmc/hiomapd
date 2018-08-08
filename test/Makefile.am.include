@@ -21,8 +21,8 @@ test_flash_write_SOURCES = \
 TEST_MBOX_SRCS = \
 	mboxd_msg.c \
 	mboxd_windows.c \
-	mboxd_lpc.c \
-	mboxd_lpc_reset.c \
+	lpc.c \
+	lpc_reset.c \
 	common.c \
 	flash.c
 
