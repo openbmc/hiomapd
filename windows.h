@@ -24,7 +24,7 @@ int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 void windows_close_current(struct mbox_context *context, bool set_bmc_event,
 			  uint8_t flags);
 void window_reset(struct mbox_context *context, struct window_context *window);
-void reset_all_windows(struct mbox_context *context, bool set_bmc_event);
+void windows_reset_all(struct mbox_context *context, bool set_bmc_event);
 struct window_context *find_oldest_window(struct mbox_context *context);
 struct window_context *find_largest_window(struct mbox_context *context);
 struct window_context *search_windows(struct mbox_context *context,

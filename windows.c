@@ -423,11 +423,11 @@ void window_reset(struct mbox_context *context, struct window_context *window)
 }
 
 /*
- * reset_all_windows() - Reset all windows to a well defined default state
+ * windows_reset_all() - Reset all windows to a well defined default state
  * @context:		The mbox context pointer
  * @set_bmc_event:	If any state change should be indicated to the host
  */
-void reset_all_windows(struct mbox_context *context, bool set_bmc_event)
+void windows_reset_all(struct mbox_context *context, bool set_bmc_event)
 {
 	int i;
 
