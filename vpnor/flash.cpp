@@ -108,16 +108,16 @@ int erase_flash(struct mbox_context* context, uint32_t offset, uint32_t count)
 }
 
 /*
- * copy_flash() - Copy data from the virtual pnor into a provided buffer
+ * flash_copy() - Copy data from the virtual pnor into a provided buffer
  * @context:    The mbox context pointer
  * @offset:     The pnor offset to copy from (bytes)
  * @mem:        The buffer to copy into (must be of atleast 'size' bytes)
  * @size:       The number of bytes to copy
  * Return:      Number of bytes copied on success, otherwise negative error
- *              code. copy_flash will copy at most 'size' bytes, but it may
+ *              code. flash_copy will copy at most 'size' bytes, but it may
  *              copy less.
  */
-int64_t copy_flash(struct mbox_context* context, uint32_t offset, void* mem,
+int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
                    uint32_t size)
 {
     vpnor::partition::Table* table;

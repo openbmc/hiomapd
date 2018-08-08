@@ -68,7 +68,7 @@ int main(void)
 
 	context.fds[MTD_FD].fd = tmp.fd;
 
-	copy_flash(&context, 0, dst, TEST_SIZE);
+	flash_copy(&context, 0, dst, TEST_SIZE);
 	assert(0 == memcmp(src, dst, TEST_SIZE));
 
 free:

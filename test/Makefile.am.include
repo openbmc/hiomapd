@@ -1,7 +1,7 @@
 test_sanity_SOURCES = %reldir%/sanity.c
 
-test_copy_flash_SOURCES = \
-	%reldir%/copy_flash.c \
+test_flash_copy_SOURCES = \
+	%reldir%/flash_copy.c \
 	flash.c \
 	common.c mtd.c \
 	%reldir%/tmpf.c
@@ -99,7 +99,7 @@ test_get_mbox_info_v2_timeout_SOURCES = %reldir%/get_mbox_info_v2_timeout.c \
 
 check_PROGRAMS += \
 		%reldir%/sanity \
-		%reldir%/copy_flash \
+		%reldir%/flash_copy \
 		%reldir%/erase_flash \
 		%reldir%/write_flash \
 		%reldir%/get_mbox_info_v2 \
