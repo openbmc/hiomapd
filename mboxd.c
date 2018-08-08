@@ -50,8 +50,57 @@
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
 
-int mboxd_dbus_init(struct mbox_context *context);
-void mboxd_dbus_free(struct mbox_context *context);
+static int dbus_init(struct mbox_context *context)
+{
+	int rc;
+
+	rc = sd_bus_default_system(&context->bus);
+	if (rc < 0) {
+		MSG_ERR("Failed to connect to the system bus: %s\n",
+			strerror(-rc));
+		return rc;
+	}
+
+	rc = control_legacy_init(context);
+	if (rc < 0) {
+		MSG_ERR("Failed to initialise legacy DBus interface: %s\n",
+			strerror(-rc));
+		return rc;
+	}
+
+	rc = control_dbus_init(context);
+	if (rc < 0) {
+		MSG_ERR("Failed to initialise DBus control interface: %s\n",
+			strerror(-rc));
+		return rc;
+	}
+
+	rc = sd_bus_request_name(context->bus, MBOX_DBUS_NAME,
+				 SD_BUS_NAME_ALLOW_REPLACEMENT |
+				 SD_BUS_NAME_REPLACE_EXISTING);
+	if (rc < 0) {
+		MSG_ERR("Failed to request name on the bus: %s\n",
+			strerror(-rc));
+		return rc;
+	}
+
+	rc = sd_bus_get_fd(context->bus);
+	if (rc < 0) {
+		MSG_ERR("Failed to get bus fd: %s\n", strerror(-rc));
+		return rc;
+	}
+
+	context->fds[DBUS_FD].fd = rc;
+
+	return 0;
+}
+
+static void dbus_free(struct mbox_context *context)
+{
+	control_dbus_free(context);
+	control_legacy_free(context);
+	sd_bus_unref(context->bus);
+}
 
 static int poll_loop(struct mbox_context *context)
 {
@@ -325,7 +374,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = mboxd_dbus_init(context);
+	rc = dbus_init(context);
 	if (rc) {
 		goto finish;
 	}
@@ -354,7 +403,7 @@ finish:
 	MSG_INFO("Daemon Exiting...\n");
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
-	mboxd_dbus_free(context);
+	dbus_free(context);
 	free_flash_dev(context);
 	free_lpc_dev(context);
 	free_mbox_dev(context);

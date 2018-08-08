@@ -82,7 +82,7 @@ int control_suspend(struct mbox_context *context)
 
 	if (context->state & STATE_SUSPENDED) {
 		/* Already Suspended */
-		return DBUS_SUCCESS;
+		return 0;
 	}
 
 	/* Nothing to check - Just set the bit to notify the host */
@@ -102,7 +102,7 @@ int control_resume(struct mbox_context *context, bool modified)
 
 	if (!(context->state & STATE_SUSPENDED)) {
 		/* We weren't suspended... */
-		return DBUS_SUCCESS;
+		return 0;
 	}
 
 	if (modified) {
@@ -112,9 +112,8 @@ int control_resume(struct mbox_context *context, bool modified)
 
 	/* Clear the bit and send the BMC Event to the host */
 	rc = clr_bmc_events(context, BMC_EVENT_FLASH_CTRL_LOST, SET_BMC_EVENT);
-
 	if (rc < 0) {
-		rc = -E_DBUS_HARDWARE;
+		return rc;
 	}
 	context->state &= ~STATE_SUSPENDED;
 
