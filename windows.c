@@ -406,11 +406,11 @@ void windows_close_current(struct mbox_context *context, bool set_bmc_event,
 }
 
 /*
- * reset_window() - Reset a window context to a well defined default state
+ * window_reset() - Reset a window context to a well defined default state
  * @context:   	The mbox context pointer
  * @window:	The window to reset
  */
-void reset_window(struct mbox_context *context, struct window_context *window)
+void window_reset(struct mbox_context *context, struct window_context *window)
 {
 	window->flash_offset = FLASH_OFFSET_UNINIT;
 	window->size = context->windows.default_size;
@@ -437,7 +437,7 @@ void reset_all_windows(struct mbox_context *context, bool set_bmc_event)
 		windows_close_current(context, set_bmc_event, FLAGS_NONE);
 	}
 	for (i = 0; i < context->windows.num; i++) {
-		reset_window(context, &context->windows.window[i]);
+		window_reset(context, &context->windows.window[i]);
 	}
 
 	context->windows.max_age = 0;
@@ -568,7 +568,7 @@ int create_map_window(struct mbox_context *context,
 	if (!cur) {
 		MSG_DBG("No uninitialised window, evicting one\n");
 		cur = find_oldest_window(context);
-		reset_window(context, cur);
+		window_reset(context, cur);
 	}
 
 /*
@@ -622,7 +622,7 @@ int create_map_window(struct mbox_context *context,
 	rc = flash_copy(context, offset, cur->mem, cur->size);
 	if (rc < 0) {
 		/* We don't know how much we've copied -> better reset window */
-		reset_window(context, cur);
+		window_reset(context, cur);
 		return rc;
 	}
 	/*
@@ -653,7 +653,7 @@ int create_map_window(struct mbox_context *context,
 			do {
 				tmp = search_windows(context, i, false);
 				if (tmp) {
-					reset_window(context, tmp);
+					window_reset(context, tmp);
 				}
 			} while (tmp);
 		}
