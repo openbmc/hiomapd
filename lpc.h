@@ -5,7 +5,7 @@
 #define LPC_H
 
 int lpc_dev_init(struct mbox_context *context);
-void free_lpc_dev(struct mbox_context *context);
+void lpc_dev_free(struct mbox_context *context);
 int point_to_flash(struct mbox_context *context);
 int point_to_memory(struct mbox_context *context);
 int reset_lpc(struct mbox_context *context);
