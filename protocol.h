@@ -120,6 +120,14 @@ void protocol_free(struct mbox_context *context);
 
 int protocol_negotiate_version(struct mbox_context *context, uint8_t requested);
 
+#define EVENT_SUPPRESS		false
+#define EVENT_TRIGGER		true
+
+int protocol_events_set(struct mbox_context *context, uint8_t bmc_event,
+			bool write_back);
+int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event,
+			  bool write_back);
+
 /* Protocol v1 */
 int protocol_v1_reset(struct mbox_context *context);
 int protocol_v1_get_info(struct mbox_context *context,

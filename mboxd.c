@@ -139,7 +139,7 @@ static int poll_loop(struct mbox_context *context)
 				break;
 			case SIGHUP:
 				/* Host didn't request reset -> Notify it */
-				windows_reset_all(context, SET_BMC_EVENT);
+				windows_reset_all(context, EVENT_TRIGGER);
 				rc = lpc_reset(context);
 				if (rc < 0) {
 					MSG_ERR("WARNING: Failed to point the "
@@ -177,7 +177,7 @@ static int poll_loop(struct mbox_context *context)
 
 	/* Best to reset windows and the lpc mapping for safety */
 	/* Host didn't request reset -> Notify it */
-	windows_reset_all(context, SET_BMC_EVENT);
+	windows_reset_all(context, EVENT_TRIGGER);
 	rc = lpc_reset(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {
@@ -394,7 +394,7 @@ int main(int argc, char **argv)
 		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}
 
-	rc = set_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
+	rc = protocol_events_set(context, BMC_EVENT_DAEMON_READY, EVENT_TRIGGER);
 	if (rc) {
 		goto finish;
 	}
@@ -406,7 +406,7 @@ int main(int argc, char **argv)
 
 finish:
 	MSG_INFO("Daemon Exiting...\n");
-	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
+	protocol_events_clear(context, BMC_EVENT_DAEMON_READY, EVENT_TRIGGER);
 
 #ifdef VIRTUAL_PNOR_ENABLED
 	destroy_vpnor(context);
