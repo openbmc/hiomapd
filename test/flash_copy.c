@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "common.h"
-#include "mbox.h"
+#include "mboxd.h"
 #include "flash.h"
 
 #include "test/tmpf.h"

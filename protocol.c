@@ -7,9 +7,11 @@
 
 #include "common.h"
 #include "flash.h"
-#include "mbox.h"
+#include "mboxd.h"
 #include "lpc.h"
 #include "windows.h"
+
+#define BLOCK_SIZE_SHIFT_V1		12 /* 4K */
 
 /*
  * protocol_events_set() - Set BMC events

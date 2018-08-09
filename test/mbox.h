@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "mbox.h"
+#include "mboxd.h"
 #include "transport_mbox.h"
 
 #include "tmpf.h"

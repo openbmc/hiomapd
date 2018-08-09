@@ -1,7 +1,7 @@
 #ifndef DBUS_CONTROL_H
 #define DBUS_CONTROL_H
 
-#include "mbox.h"
+struct mbox_context;
 
 int control_dbus_init(struct mbox_context *context);
 void control_dbus_free(struct mbox_context *context);

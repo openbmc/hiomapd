@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mbox.h"
+#include "mboxd.h"
 #include "flash.h"
 #include "lpc.h"
 #include "transport_mbox.h"
