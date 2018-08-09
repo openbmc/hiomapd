@@ -4,7 +4,7 @@
 #ifndef TRANSPORT_H
 #define TRANSPORT_H
 
-#include "mbox.h"
+struct mbox_context;
 
 struct transport_ops {
 	int (*flush_events)(struct mbox_context *context);

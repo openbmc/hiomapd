@@ -2,13 +2,16 @@
 // Copyright (C) 2018 IBM Corp.
 
 #include <assert.h>
+#include <mtd/mtd-abi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "mbox.h"
+#include "common.h"
+#include "mboxd.h"
 #include "flash.h"
 
 #include "test/tmpf.h"

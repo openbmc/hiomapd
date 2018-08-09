@@ -7,8 +7,9 @@
 #include <numeric>
 #include <experimental/filesystem>
 #include "common.h"
-#include "mbox.h"
 #include "pnor_partition_defs.h"
+
+struct mbox_context;
 
 namespace openpower
 {

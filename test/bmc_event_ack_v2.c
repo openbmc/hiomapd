@@ -7,7 +7,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "mbox.h"
+#include "mboxd.h"
+#include "protocol.h"
 #include "transport_mbox.h"
 
 #include "test/mbox.h"
