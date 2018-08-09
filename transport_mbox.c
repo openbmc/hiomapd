@@ -635,7 +635,7 @@ int transport_mbox_init(struct mbox_context *context)
 	return __transport_mbox_init(context, MBOX_HOST_PATH);
 }
 
-void free_mbox_dev(struct mbox_context *context)
+void transport_mbox_free(struct mbox_context *context)
 {
 	close(context->fds[MBOX_FD].fd);
 }
