@@ -27,7 +27,7 @@
 #include <systemd/sd-bus.h>
 
 #include "config.h"
-#include "mbox.h"
+#include "mboxd.h"
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"

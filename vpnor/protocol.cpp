@@ -3,7 +3,7 @@
 #include "config.h"
 
 extern "C" {
-#include "mbox.h"
+#include "mboxd.h"
 #include "protocol.h"
 #include "vpnor/protocol.h"
 }

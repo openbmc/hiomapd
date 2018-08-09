@@ -5,12 +5,14 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <linux/types.h>
 
-#include "mbox.h"
+#include "common.h"
+#include "mboxd.h"
 #include "flash.h"
 
 #include "test/tmpf.h"

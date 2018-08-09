@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <mtd/mtd-abi.h>
 
-#include "mbox.h"
+#include "mboxd.h"
 #include "common.h"
 #include "flash.h"
 

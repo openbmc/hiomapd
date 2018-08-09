@@ -3,8 +3,9 @@
 
 #define _GNU_SOURCE
 
-#include "mbox.h"
 #include "lpc.h"
+
+struct mbox_context;
 
 /*
  * lpc_reset() - Reset the lpc bus mapping

@@ -3,6 +3,7 @@
 #include "pnor_partition_table.hpp"
 #include "common.h"
 #include "config.h"
+#include "mboxd.h"
 #include "xyz/openbmc_project/Common/error.hpp"
 #include <phosphor-logging/elog-errors.hpp>
 #include <syslog.h>

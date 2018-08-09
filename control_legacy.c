@@ -6,7 +6,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
-#include "mbox.h"
+#include "mboxd.h"
 
 /* Command IDs (Legacy interface) */
 #define DBUS_C_PING            0x00
