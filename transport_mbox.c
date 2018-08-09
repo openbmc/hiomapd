@@ -610,7 +610,7 @@ static const struct transport_ops transport_mbox_ops = {
 	.flush_events = transport_mbox_flush_events,
 };
 
-int __init_mbox_dev(struct mbox_context *context, const char *path)
+int __transport_mbox_init(struct mbox_context *context, const char *path)
 {
 	int fd;
 
@@ -630,9 +630,9 @@ int __init_mbox_dev(struct mbox_context *context, const char *path)
 	return 0;
 }
 
-int init_mbox_dev(struct mbox_context *context)
+int transport_mbox_init(struct mbox_context *context)
 {
-	return __init_mbox_dev(context, MBOX_HOST_PATH);
+	return __transport_mbox_init(context, MBOX_HOST_PATH);
 }
 
 void free_mbox_dev(struct mbox_context *context)
