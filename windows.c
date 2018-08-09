@@ -189,7 +189,7 @@ int window_flush_v1(struct mbox_context *context,
 		low_mem.mem = malloc(low_mem.size);
 		if (!low_mem.mem) {
 			MSG_ERR("Unable to allocate memory\n");
-			return -MBOX_R_SYSTEM_ERROR;
+			return -ENOMEM;
 		}
 		rc = flash_copy(context, low_mem.flash_offset,
 				low_mem.mem, low_mem.size);
@@ -203,7 +203,7 @@ int window_flush_v1(struct mbox_context *context,
 		high_mem.mem = malloc(high_mem.size);
 		if (!high_mem.mem) {
 			MSG_ERR("Unable to allocate memory\n");
-			rc = -MBOX_R_SYSTEM_ERROR;
+			rc = -ENOMEM;
 			goto out;
 		}
 		rc = flash_copy(context, high_mem.flash_offset,
@@ -322,7 +322,7 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 	default:
 		/* We shouldn't be able to get here */
 		MSG_ERR("Write from window with invalid type: %d\n", type);
-		return -MBOX_R_SYSTEM_ERROR;
+		return -EPERM;
 	}
 
 	return 0;
@@ -594,7 +594,7 @@ int windows_create_map(struct mbox_context *context,
 
 	if (offset > context->flash_size) {
 		MSG_ERR("Tried to open read window past flash limit\n");
-		return -MBOX_R_PARAM_ERROR;
+		return -EINVAL;
 	} else if ((offset + cur->size) > context->flash_size) {
 		/*
 		 * There is V1 skiboot implementations out there which don't
