@@ -394,7 +394,7 @@ void windows_close_current(struct mbox_context *context, bool set_bmc_event,
 	MSG_DBG("Close current window, flags: 0x%.2x\n", flags);
 
 	if (set_bmc_event) {
-		set_bmc_events(context, BMC_EVENT_WINDOW_RESET, SET_BMC_EVENT);
+		protocol_events_set(context, BMC_EVENT_WINDOW_RESET, EVENT_TRIGGER);
 	}
 
 	if (flags & FLAGS_SHORT_LIFETIME) {
