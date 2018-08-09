@@ -168,7 +168,7 @@ static int poll_loop(struct mbox_context *context)
 		}
 		if (context->fds[MBOX_FD].revents & POLLIN) { /* MBOX */
 			MSG_DBG("MBOX Event\n");
-			rc = dispatch_mbox(context);
+			rc = transport_mbox_dispatch(context);
 			if (rc < 0) {
 				MSG_ERR("Error handling MBOX event\n");
 			}

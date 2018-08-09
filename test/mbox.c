@@ -143,7 +143,7 @@ int mbox_command_dispatch(struct mbox_context *context, const uint8_t *command,
 	if (rc < 0)
 		return rc;
 
-	rc = dispatch_mbox(context);
+	rc = transport_mbox_dispatch(context);
 	if (rc < 0)
 		return -rc;
 
