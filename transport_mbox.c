@@ -586,12 +586,12 @@ static int get_message(struct mbox_context *context, union mbox_regs *msg)
 }
 
 /*
- * dispatch_mbox() - handle an mbox interrupt
+ * transport_mbox_dispatch() - handle an mbox interrupt
  * @context:	The mbox context pointer
  *
  * Return:	0 if handled successfully otherwise negative error code
  */
-int dispatch_mbox(struct mbox_context *context)
+int transport_mbox_dispatch(struct mbox_context *context)
 {
 	int rc = 0;
 	union mbox_regs req = { 0 };
