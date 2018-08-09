@@ -10,6 +10,7 @@
 #include <stdbool.h>
 
 #include "protocol.h"
+#include "transport.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 enum api_version {
@@ -134,12 +135,10 @@ union mbox_regs {
 
 struct mbox_context;
 
-typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
-				  struct mbox_msg *);
-
 struct mbox_context {
 	enum api_version version;
 	const struct protocol_ops *protocol;
+	const struct transport_ops *transport;
 
 /* System State */
 	enum mbox_state state;
@@ -148,9 +147,6 @@ struct mbox_context {
 	bool terminate;
 	uint8_t bmc_events;
 	uint8_t prev_seq;
-
-/* Command Dispatch */
-	const mboxd_mbox_handler *handlers;
 
 /* Window State */
 	/* The window list struct containing all current "windows" */

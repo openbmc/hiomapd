@@ -49,7 +49,7 @@ int main(void)
 	rc = mbox_command_dispatch(ctx, get_info, sizeof(get_info));
 	assert(rc == 1);
 
-	set_bmc_events(ctx, FLAGS, SET_BMC_EVENT);
+	protocol_events_set(ctx, FLAGS, EVENT_TRIGGER);
 
 	rc = mbox_command_dispatch(ctx, command, sizeof(command));
 	assert(rc == 1);
