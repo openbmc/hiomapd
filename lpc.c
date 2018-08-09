@@ -119,7 +119,7 @@ int lpc_map_flash(struct mbox_context *context)
 	/* Don't let the host access flash while we're suspended */
 	if (context->state & STATE_SUSPENDED) {
 		MSG_ERR("Can't point lpc mapping to flash while suspended\n");
-		return -MBOX_R_PARAM_ERROR;
+		return -EBUSY;
 	}
 
 	MSG_INFO("Pointing HOST LPC bus at the flash\n");
@@ -130,7 +130,7 @@ int lpc_map_flash(struct mbox_context *context)
 			== -1) {
 		MSG_ERR("Failed to point the LPC BUS at the actual flash: %s\n",
 			strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	context->state = ACTIVE_MAPS_FLASH;

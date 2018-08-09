@@ -126,7 +126,7 @@ int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
     if (!(context && context->vpnor && context->vpnor->table))
     {
         MSG_ERR("Trying to copy data with uninitialised context!\n");
-        return -MBOX_R_SYSTEM_ERROR;
+        return -EINVAL;
     }
 
     table = context->vpnor->table;
@@ -171,7 +171,7 @@ int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
     {
         MSG_ERR("%s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
-        rc = -MBOX_R_SYSTEM_ERROR;
+        rc = -EIO;
     }
     return rc;
 }
@@ -193,7 +193,7 @@ int flash_write(struct mbox_context* context, uint32_t offset, void* buf,
     if (!(context && context->vpnor && context->vpnor->table))
     {
         MSG_ERR("Trying to write data with uninitialised context!\n");
-        return -MBOX_R_SYSTEM_ERROR;
+        return -EINVAL;
     }
 
     vpnor::partition::Table* table = context->vpnor->table;
@@ -206,7 +206,7 @@ int flash_write(struct mbox_context* context, uint32_t offset, void* buf,
             MSG_ERR("Unreachable: Host attempted to write to read-only "
                     "partition %s\n",
                     part.data.name);
-            return -MBOX_R_WRITE_ERROR;
+            return -EPERM;
         }
 
         MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count,
@@ -219,18 +219,18 @@ int flash_write(struct mbox_context* context, uint32_t offset, void* buf,
         MSG_ERR("Unreachable: Host attempted to write %" PRIu32
                 " bytes to unmapped offset 0x%" PRIx32 "\n",
                 count, offset);
-        return -MBOX_R_WRITE_ERROR;
+        return -EACCES;
     }
     catch (const vpnor::OutOfBoundsOffset& e)
     {
         MSG_ERR("%s\n", e.what());
-        return -MBOX_R_PARAM_ERROR;
+        return -EINVAL;
     }
     catch (const std::exception& e)
     {
         MSG_ERR("%s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
-        return -MBOX_R_SYSTEM_ERROR;
+        return -EIO;
     }
     return 0;
 }
