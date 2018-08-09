@@ -172,7 +172,7 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
  * Reset the LPC mapping to point back at the flash, or memory in case we're
  * using a virtual pnor.
  */
-int mbox_handle_reset(struct mbox_context *context,
+static int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
 	return context->protocol->reset(context);
@@ -200,7 +200,7 @@ int mbox_handle_reset(struct mbox_context *context,
  * RESP[3:4]: Default write window size (number of blocks)
  * RESP[5]: Block size (as shift)
  */
-int mbox_handle_mbox_info(struct mbox_context *context,
+static int mbox_handle_mbox_info(struct mbox_context *context,
 				 union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint8_t mbox_api_version = req->msg.args[0];
@@ -237,7 +237,7 @@ int mbox_handle_mbox_info(struct mbox_context *context,
  * RESP[0:1]: Flash Size (number of blocks)
  * RESP[2:3]: Erase Size (number of blocks)
  */
-int mbox_handle_flash_info(struct mbox_context *context,
+static int mbox_handle_flash_info(struct mbox_context *context,
 				  union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_get_flash_info io;
@@ -287,7 +287,7 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 	return lpc_addr >> context->block_size_shift;
 }
 
-int mbox_handle_create_window(struct mbox_context *context, bool ro,
+static int mbox_handle_create_window(struct mbox_context *context, bool ro,
 			      union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_create_window io;
@@ -329,7 +329,7 @@ int mbox_handle_create_window(struct mbox_context *context, bool ro,
  * RESP[0:1]: LPC bus address for host to access this window (number of blocks)
  * RESP[2:3]: Actual window size that the host can access (number of blocks)
  */
-int mbox_handle_read_window(struct mbox_context *context,
+static int mbox_handle_read_window(struct mbox_context *context,
 				   union mbox_regs *req, struct mbox_msg *resp)
 {
 	return mbox_handle_create_window(context, true, req, resp);
@@ -354,7 +354,7 @@ int mbox_handle_read_window(struct mbox_context *context,
  * RESP[0:1]: LPC bus address for host to access this window (number of blocks)
  * RESP[2:3]: Actual window size that was mapped/host can access (n.o. blocks)
  */
-int mbox_handle_write_window(struct mbox_context *context,
+static int mbox_handle_write_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	return mbox_handle_create_window(context, false, req, resp);
@@ -376,7 +376,7 @@ int mbox_handle_write_window(struct mbox_context *context,
  * ARGS[0:1]: Where within window to start (number of blocks)
  * ARGS[2:3]: Number to mark dirty (number of blocks)
  */
-int mbox_handle_dirty_window(struct mbox_context *context,
+static int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_mark_dirty io;
@@ -405,7 +405,7 @@ int mbox_handle_dirty_window(struct mbox_context *context,
  * ARGS[0:1]: Where within window to start (number of blocks)
  * ARGS[2:3]: Number to erase (number of blocks)
  */
-int mbox_handle_erase_window(struct mbox_context *context,
+static int mbox_handle_erase_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_erase io;
@@ -438,7 +438,7 @@ int mbox_handle_erase_window(struct mbox_context *context,
  * V2:
  * NONE
  */
-int mbox_handle_flush_window(struct mbox_context *context,
+static int mbox_handle_flush_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_flush io = { 0 };
@@ -462,7 +462,7 @@ int mbox_handle_flush_window(struct mbox_context *context,
  * V2:
  * ARGS[0]: FLAGS
  */
-int mbox_handle_close_window(struct mbox_context *context,
+static int mbox_handle_close_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_close io = { 0 };
@@ -480,7 +480,7 @@ int mbox_handle_close_window(struct mbox_context *context,
  *
  * ARGS[0]: Bitmap of bits to ack (by clearing)
  */
-int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
+static int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
 			   struct mbox_msg *resp)
 {
 	struct protocol_ack io;
