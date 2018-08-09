@@ -8,7 +8,7 @@
 #include "mbox.h"
 
 int transport_mbox_dispatch(struct mbox_context *context);
-int init_mbox_dev(struct mbox_context *context);
+int transport_mbox_init(struct mbox_context *context);
 void free_mbox_dev(struct mbox_context *context);
 
 #endif /* MBOXD_MSG_H */
