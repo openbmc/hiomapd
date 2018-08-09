@@ -90,9 +90,14 @@ int protocol_v1_create_window(struct mbox_context *context,
 
 	/* Close the current window if there is one */
 	if (context->current) {
-		/* There is an implicit flush if it was a write window */
+		/* There is an implicit flush if it was a write window
+		 *
+		 * protocol_v2_create_window() calls
+		 * protocol_v1_create_window(), so use indirect call to
+		 * write_flush() to make sure we pick the right one.
+		 */
 		if (context->current_is_write) {
-			rc = mbox_handle_flush_window(context, NULL, NULL);
+			rc = context->protocol->flush(context, NULL);
 			if (rc < 0) {
 				MSG_ERR("Couldn't Flush Write Window\n");
 				return rc;
