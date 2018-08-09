@@ -414,7 +414,7 @@ finish:
 	dbus_free(context);
 	flash_dev_free(context);
 	lpc_dev_free(context);
-	free_mbox_dev(context);
+	transport_mbox_free(context);
 	windows_free(context);
 	protocol_free(context);
 	free(context);
