@@ -7,7 +7,7 @@
 #include "common.h"
 #include "mbox.h"
 
-int dispatch_mbox(struct mbox_context *context);
+int transport_mbox_dispatch(struct mbox_context *context);
 int init_mbox_dev(struct mbox_context *context);
 void free_mbox_dev(struct mbox_context *context);
 
