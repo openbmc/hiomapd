@@ -207,7 +207,7 @@ void cleanup(void)
 	tmpf_destroy(&test.lpc);
 }
 
-int __init_mbox_dev(struct mbox_context *context, const char *path);
+int __transport_mbox_init(struct mbox_context *context, const char *path);
 int __lpc_dev_init(struct mbox_context *context, const char *path);
 
 struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
@@ -235,12 +235,12 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	assert(rc == 0);
 
 	/*
-	 * We need to call __init_mbox_dev() to initialise the handler table.
+	 * We need to call __transport_mbox_init() to initialise the handler table.
 	 * However, afterwards we need to discard the fd of the clearly useless
 	 * /dev/null and replace it with our own fd for mbox device emulation
 	 * by the test framework.
 	 */
-	__init_mbox_dev(&test.context, "/dev/null");
+	__transport_mbox_init(&test.context, "/dev/null");
 	rc = close(test.context.fds[MBOX_FD].fd);
 	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;

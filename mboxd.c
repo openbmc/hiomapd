@@ -358,7 +358,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = init_mbox_dev(context);
+	rc = transport_mbox_init(context);
 	if (rc) {
 		goto finish;
 	}
