@@ -12,6 +12,7 @@
 #include "protocol.h"
 #include "transport.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
+#include "windows.h"
 
 enum api_version {
 	API_VERSION_INVAL	= 0,
@@ -23,29 +24,6 @@ enum api_version {
 #define API_MAX_VERSION			API_VERSION_2
 
 #define THIS_NAME			"Mailbox Daemon"
-
-/* Command Values */
-#define MBOX_C_RESET_STATE		0x01
-#define MBOX_C_GET_MBOX_INFO		0x02
-#define MBOX_C_GET_FLASH_INFO		0x03
-#define MBOX_C_READ_WINDOW		0x04
-#define MBOX_C_CLOSE_WINDOW		0x05
-#define MBOX_C_WRITE_WINDOW		0x06
-#define MBOX_C_WRITE_DIRTY		0x07
-#define MBOX_C_WRITE_FLUSH		0x08
-#define MBOX_C_ACK			0x09
-#define MBOX_C_WRITE_ERASE		0x0a
-#define NUM_MBOX_CMDS			MBOX_C_WRITE_ERASE
-
-/* Response Values */
-#define MBOX_R_SUCCESS			0x01
-#define MBOX_R_PARAM_ERROR		0x02
-#define MBOX_R_WRITE_ERROR		0x03
-#define MBOX_R_SYSTEM_ERROR		0x04
-#define MBOX_R_TIMEOUT			0x05
-#define MBOX_R_BUSY			0x06
-#define MBOX_R_WINDOW_ERROR		0x07
-#define MBOX_R_SEQ_ERROR		0x08
 
 /* Argument Flags */
 #define FLAGS_NONE			0x00
@@ -64,21 +42,6 @@ enum api_version {
 					BMC_EVENT_FLASH_CTRL_LOST | \
 					BMC_EVENT_DAEMON_READY)
 
-/* MBOX Registers */
-#define MBOX_HOST_PATH			"/dev/aspeed-mbox"
-#define MBOX_HOST_TIMEOUT_SEC		1
-#define MBOX_ARGS_BYTES			11
-#define MBOX_REG_BYTES			16
-#define MBOX_HOST_EVENT			14
-#define MBOX_BMC_EVENT			15
-
-#define BLOCK_SIZE_SHIFT_V1		12 /* 4K */
-
-/* Window Dirty/Erase bytemap masks */
-#define WINDOW_CLEAN			0x00
-#define WINDOW_DIRTY			0x01
-#define WINDOW_ERASED			0x02
-
 /* Put polled file descriptors first */
 #define DBUS_FD			0
 #define MBOX_FD			1
@@ -91,6 +54,7 @@ enum api_version {
 #define MAPS_FLASH		(1 << 0)
 #define MAPS_MEM		(1 << 1)
 #define STATE_SUSPENDED		(1 << 7)
+
 enum mbox_state {
 	/* Still Initing */
 	UNINITIALISED = 0,
@@ -103,37 +67,6 @@ enum mbox_state {
 	/* Suspended and LPC Maps Memory */
 	SUSPEND_MAPS_MEM = STATE_SUSPENDED | MAPS_MEM
 };
-
-#define FLASH_OFFSET_UNINIT	0xFFFFFFFF
-
-struct window_context {
-	void *mem;			/* Portion of Reserved Memory Region */
-	uint32_t flash_offset;		/* Flash area the window maps (bytes) */
-	uint32_t size;			/* Window Size (bytes) power-of-2 */
-	uint8_t *dirty_bmap;		/* Bytemap of the dirty/erased state */
-	uint32_t age;			/* Used for LRU eviction scheme */
-};
-
-struct window_list {
-	uint32_t num;
-	uint32_t max_age;
-	uint32_t default_size;
-	struct window_context *window;
-};
-
-struct mbox_msg {
-	uint8_t command;
-	uint8_t seq;
-	uint8_t args[MBOX_ARGS_BYTES];
-	uint8_t response;
-};
-
-union mbox_regs {
-	uint8_t raw[MBOX_REG_BYTES];
-	struct mbox_msg msg;
-};
-
-struct mbox_context;
 
 struct mbox_context {
 	enum api_version version;

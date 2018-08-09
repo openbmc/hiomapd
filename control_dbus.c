@@ -7,7 +7,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
-#include "mbox.h"
+#include "mboxd.h"
 
 typedef int (*control_action)(struct mbox_context *context);
 

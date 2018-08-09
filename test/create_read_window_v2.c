@@ -2,8 +2,9 @@
 // Copyright (C) 2018 IBM Corp.
 
 #include <assert.h>
+#include <string.h>
 
-#include "mbox.h"
+#include "mboxd.h"
 #include "transport_mbox.h"
 
 #include "test/mbox.h"

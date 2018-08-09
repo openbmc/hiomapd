@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "common.h"
-#include "mbox.h"
+#include "mboxd.h"
 extern "C" {
 #include "flash.h"
 }

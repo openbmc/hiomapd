@@ -4,6 +4,8 @@
 #ifndef LPC_H
 #define LPC_H
 
+struct mbox_context;
+
 int lpc_dev_init(struct mbox_context *context);
 void lpc_dev_free(struct mbox_context *context);
 int lpc_map_flash(struct mbox_context *context);

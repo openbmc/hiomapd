@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 
-#include "mbox.h"
+#include "mboxd.h"
 #include "common.h"
 #include "lpc.h"
 #include "flash.h"

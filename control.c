@@ -3,8 +3,9 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "common.h"
 #include "dbus.h"
-#include "mbox.h"
+#include "mboxd.h"
 #include "flash.h"
 #include "lpc.h"
 #include "transport_mbox.h"

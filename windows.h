@@ -7,7 +7,29 @@
 #define WINDOWS_NO_FLUSH	false
 #define WINDOWS_WITH_FLUSH	true
 
-#include "mbox.h"
+struct mbox_context;
+
+/* Window Dirty/Erase bytemap masks */
+#define WINDOW_CLEAN			0x00
+#define WINDOW_DIRTY			0x01
+#define WINDOW_ERASED			0x02
+
+#define FLASH_OFFSET_UNINIT	0xFFFFFFFF
+
+struct window_context {
+	void *mem;			/* Portion of Reserved Memory Region */
+	uint32_t flash_offset;		/* Flash area the window maps (bytes) */
+	uint32_t size;			/* Window Size (bytes) power-of-2 */
+	uint8_t *dirty_bmap;		/* Bytemap of the dirty/erased state */
+	uint32_t age;			/* Used for LRU eviction scheme */
+};
+
+struct window_list {
+	uint32_t num;
+	uint32_t max_age;
+	uint32_t default_size;
+	struct window_context *window;
+};
 
 /* Initialisation Functions */
 int windows_init(struct mbox_context *context);

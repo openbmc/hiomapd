@@ -4,7 +4,7 @@
 
 #include <errno.h>
 
-#include "mbox.h"
+#include "mboxd.h"
 #include "protocol.h"
 
 static const struct protocol_ops protocol_ops_v1 = {

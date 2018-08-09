@@ -8,7 +8,7 @@
 #include <experimental/filesystem>
 
 #include "config.h"
-#include "mbox.h"
+#include "mboxd.h"
 #include "vpnor/pnor_partition_table.hpp"
 
 namespace openpower
