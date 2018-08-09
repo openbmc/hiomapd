@@ -38,9 +38,12 @@ struct errno_map {
 static const struct errno_map errno_map_v1[] = {
 	{ 0, MBOX_R_SUCCESS },
 	{ EACCES, MBOX_R_PARAM_ERROR },
+	{ EBADMSG, MBOX_R_PARAM_ERROR },
 	{ EBUSY, MBOX_R_SYSTEM_ERROR },
 	{ EINVAL, MBOX_R_PARAM_ERROR },
+	{ ENOTSUP, MBOX_R_PARAM_ERROR },
 	{ EPERM, MBOX_R_PARAM_ERROR },
+	{ EPROTO, MBOX_R_PARAM_ERROR },
 	{ ETIMEDOUT, MBOX_R_TIMEOUT },
 	{ -1, MBOX_R_SYSTEM_ERROR },
 };
@@ -48,9 +51,12 @@ static const struct errno_map errno_map_v1[] = {
 static const struct errno_map errno_map_v2[] = {
 	{ 0, MBOX_R_SUCCESS },
 	{ EACCES, MBOX_R_WINDOW_ERROR },
+	{ EBADMSG, MBOX_R_SEQ_ERROR },
 	{ EBUSY, MBOX_R_BUSY },
 	{ EINVAL, MBOX_R_PARAM_ERROR },
+	{ ENOTSUP, MBOX_R_PARAM_ERROR },
 	{ EPERM, MBOX_R_WINDOW_ERROR },
+	{ EPROTO, MBOX_R_PARAM_ERROR },
 	{ ETIMEDOUT, MBOX_R_TIMEOUT },
 	{ -1, MBOX_R_SYSTEM_ERROR },
 };
@@ -67,13 +73,14 @@ static inline int mbox_xlate_errno(struct mbox_context *context,
 	const struct errno_map *entry;
 
 	rc = -rc;
+	MSG_DBG("Translating errno %d: %s\n", rc, strerror(rc));
 	for(entry = errno_maps[context->version]; entry->rc != -1; entry++) {
 		if (rc == entry->rc) {
-			return -entry->mbox_errno;
+			return entry->mbox_errno;
 		}
 	}
 
-	return -entry->mbox_errno;
+	return entry->mbox_errno;
 }
 
 /*
@@ -168,12 +175,7 @@ int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
 int mbox_handle_reset(struct mbox_context *context,
 			     union mbox_regs *req, struct mbox_msg *resp)
 {
-	int rc = context->protocol->reset(context);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return 0;
+	return context->protocol->reset(context);
 }
 
 /*
@@ -209,7 +211,7 @@ int mbox_handle_mbox_info(struct mbox_context *context,
 
 	rc = context->protocol->get_info(context, &io);
 	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
+		return rc;
 	}
 
 	resp->args[0] = io.resp.api_version;
@@ -243,7 +245,7 @@ int mbox_handle_flash_info(struct mbox_context *context,
 
 	rc = context->protocol->get_flash_info(context, &io);
 	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
+		return rc;
 	}
 
 	switch (context->version) {
@@ -330,12 +332,7 @@ int mbox_handle_create_window(struct mbox_context *context, bool ro,
 int mbox_handle_read_window(struct mbox_context *context,
 				   union mbox_regs *req, struct mbox_msg *resp)
 {
-	int rc = mbox_handle_create_window(context, true, req, resp);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return 0;
+	return mbox_handle_create_window(context, true, req, resp);
 }
 
 /*
@@ -360,12 +357,7 @@ int mbox_handle_read_window(struct mbox_context *context,
 int mbox_handle_write_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
-	int rc = mbox_handle_create_window(context, false, req, resp);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return 0;
+	return mbox_handle_create_window(context, false, req, resp);
 }
 
 /*
@@ -388,7 +380,6 @@ int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_mark_dirty io;
-	int rc;
 
 	if (context->version == API_VERSION_1) {
 		io.req.v1.offset = get_u16(&req->msg.args[0]);
@@ -398,12 +389,7 @@ int mbox_handle_dirty_window(struct mbox_context *context,
 		io.req.v2.size = get_u16(&req->msg.args[2]);
 	}
 
-	rc = context->protocol->mark_dirty(context, &io);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return rc;
+	return context->protocol->mark_dirty(context, &io);
 }
 
 /*
@@ -423,22 +409,16 @@ int mbox_handle_erase_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_erase io;
-	int rc;
 
 	io.req.offset = get_u16(&req->msg.args[0]);
 	io.req.size = get_u16(&req->msg.args[2]);
 
 	if (!context->protocol->erase) {
 		MSG_ERR("Protocol Version invalid for Erase Command\n");
-		return -MBOX_R_PARAM_ERROR;
+		return -ENOTSUP;
 	}
 
-	rc = context->protocol->erase(context, &io);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return rc;
+	return context->protocol->erase(context, &io);
 }
 
 /*
@@ -462,19 +442,13 @@ int mbox_handle_flush_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_flush io = { 0 };
-	int rc;
 
 	if (context->version == API_VERSION_1) {
 		io.req.offset = get_u16(&req->msg.args[0]);
 		io.req.size = get_u32(&req->msg.args[2]);
 	}
 
-	rc = context->protocol->flush(context, &io);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return rc;
+	return context->protocol->flush(context, &io);
 }
 
 /*
@@ -492,18 +466,12 @@ int mbox_handle_close_window(struct mbox_context *context,
 				    union mbox_regs *req, struct mbox_msg *resp)
 {
 	struct protocol_close io = { 0 };
-	int rc;
 
 	if (context->version >= API_VERSION_2) {
 		io.req.flags = req->msg.args[0];
 	}
 
-	rc = context->protocol->close(context, &io);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return rc;
+	return context->protocol->close(context, &io);
 }
 
 /*
@@ -516,16 +484,10 @@ int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
 			   struct mbox_msg *resp)
 {
 	struct protocol_ack io;
-	int rc;
 
 	io.req.flags = req->msg.args[0];
 
-	rc = context->protocol->ack(context, &io);
-	if (rc < 0) {
-		return mbox_xlate_errno(context, rc);
-	}
-
-	return 0;
+	return context->protocol->ack(context, &io);
 }
 
 /*
@@ -542,21 +504,20 @@ static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 
 	if (cmd > NUM_MBOX_CMDS) {
 		MSG_ERR("Unknown mbox command: %d\n", cmd);
-		return -MBOX_R_PARAM_ERROR;
+		return -ENOTSUP;
 	}
 
 	if (seq == context->prev_seq && cmd != MBOX_C_GET_MBOX_INFO) {
 		MSG_ERR("Invalid sequence number: %d, previous: %d\n", seq,
 			context->prev_seq);
-		return -MBOX_R_SEQ_ERROR;
+		return -EBADMSG;
 	}
 
 	if (context->state & STATE_SUSPENDED) {
 		if (cmd != MBOX_C_GET_MBOX_INFO && cmd != MBOX_C_ACK) {
 			MSG_ERR("Cannot use that cmd while suspended: %d\n",
 				cmd);
-			return context->version >= API_VERSION_2 ? -MBOX_R_BUSY
-						: -MBOX_R_PARAM_ERROR;
+			return -EBUSY;
 		}
 	}
 
@@ -564,7 +525,7 @@ static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 		if (cmd != MBOX_C_RESET_STATE && cmd != MBOX_C_GET_MBOX_INFO
 					      && cmd != MBOX_C_ACK) {
 			MSG_ERR("Must call GET_MBOX_INFO before %d\n", cmd);
-			return -MBOX_R_PARAM_ERROR;
+			return -EPROTO;
 		}
 	}
 
@@ -603,19 +564,18 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 
 	MSG_INFO("Received MBOX command: %u\n", req->msg.command);
 	rc = check_req_valid(context, req);
-	if (rc < 0) {
-		resp.response = -rc;
-	} else {
+	if (!rc) {
 		/* Commands start at 1 so we have to subtract 1 from the cmd */
 		mboxd_mbox_handler h = context->handlers[req->msg.command - 1];
 		rc = h(context, req, &resp);
 		if (rc < 0) {
 			MSG_ERR("Error handling mbox cmd: %d\n",
 				req->msg.command);
-			resp.response = -rc;
 		}
 	}
 
+	rc = mbox_xlate_errno(context, rc);
+	resp.response = rc;
 	context->prev_seq = req->msg.seq;
 
 	MSG_DBG("Writing MBOX response:\n");
