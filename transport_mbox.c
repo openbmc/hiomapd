@@ -84,12 +84,13 @@ static inline int mbox_xlate_errno(struct mbox_context *context,
 }
 
 /*
- * write_bmc_event_reg() - Write to the BMC controlled status register (reg 15)
+ * transport_mbox_flush_events() - Write to the BMC controlled status register
+ * 				   (reg 15)
  * @context:	The mbox context pointer
  *
  * Return:	0 on success otherwise negative error code
  */
-static int write_bmc_event_reg(struct mbox_context *context)
+static int transport_mbox_flush_events(struct mbox_context *context)
 {
 	int rc;
 
@@ -98,7 +99,7 @@ static int write_bmc_event_reg(struct mbox_context *context)
 	if (rc != MBOX_BMC_EVENT) {
 		MSG_ERR("Couldn't lseek mbox to byte %d: %s\n", MBOX_BMC_EVENT,
 				strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	/* Write to mbox status register */
@@ -106,7 +107,7 @@ static int write_bmc_event_reg(struct mbox_context *context)
 	if (rc != 1) {
 		MSG_ERR("Couldn't write to BMC status reg: %s\n",
 				strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	/* Reset to start */
@@ -114,55 +115,10 @@ static int write_bmc_event_reg(struct mbox_context *context)
 	if (rc) {
 		MSG_ERR("Couldn't reset MBOX offset to zero: %s\n",
 				strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	return 0;
-}
-
-/*
- * set_bmc_events() - Set BMC events
- * @context:	The mbox context pointer
- * @bmc_event:	The bits to set
- * @write_back:	Whether to write back to the register -> will interrupt host
- *
- * Return:	0 on success otherwise negative error code
- */
-int set_bmc_events(struct mbox_context *context, uint8_t bmc_event,
-		   bool write_back)
-{
-	uint8_t mask = 0x00;
-
-	switch (context->version) {
-	case API_VERSION_1:
-		mask = BMC_EVENT_V1_MASK;
-		break;
-	default:
-		mask = BMC_EVENT_V2_MASK;
-		break;
-	}
-
-	context->bmc_events |= (bmc_event & mask);
-	MSG_DBG("BMC Events set to: 0x%.2x\n", context->bmc_events);
-
-	return write_back ? write_bmc_event_reg(context) : 0;
-}
-
-/*
- * clr_bmc_events() - Clear BMC events
- * @context:	The mbox context pointer
- * @bmc_event:	The bits to clear
- * @write_back:	Whether to write back to the register -> will interrupt host
- *
- * Return:	0 on success otherwise negative error code
- */
-int clr_bmc_events(struct mbox_context *context, uint8_t bmc_event,
-		   bool write_back)
-{
-	context->bmc_events &= ~bmc_event;
-	MSG_DBG("BMC Events clear to: 0x%.2x\n", context->bmc_events);
-
-	return write_back ? write_bmc_event_reg(context) : 0;
 }
 
 /* Command Handlers */
@@ -532,7 +488,10 @@ static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 	return 0;
 }
 
-static const mboxd_mbox_handler mbox_handlers[] = {
+typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
+				  struct mbox_msg *);
+
+static const mboxd_mbox_handler transport_mbox_handlers[] = {
 	mbox_handle_reset,
 	mbox_handle_mbox_info,
 	mbox_handle_flash_info,
@@ -565,9 +524,11 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 	MSG_INFO("Received MBOX command: %u\n", req->msg.command);
 	rc = check_req_valid(context, req);
 	if (!rc) {
+		mboxd_mbox_handler handler;
+
 		/* Commands start at 1 so we have to subtract 1 from the cmd */
-		mboxd_mbox_handler h = context->handlers[req->msg.command - 1];
-		rc = h(context, req, &resp);
+		handler = transport_mbox_handlers[req->msg.command - 1];
+		rc = handler(context, req, &resp);
 		if (rc < 0) {
 			MSG_ERR("Error handling mbox cmd: %d\n",
 				req->msg.command);
@@ -645,11 +606,15 @@ int dispatch_mbox(struct mbox_context *context)
 	return handle_mbox_req(context, &req);
 }
 
+static const struct transport_ops transport_mbox_ops = {
+	.flush_events = transport_mbox_flush_events,
+};
+
 int __init_mbox_dev(struct mbox_context *context, const char *path)
 {
 	int fd;
 
-	context->handlers = mbox_handlers;
+	context->transport = &transport_mbox_ops;
 
 	/* Open MBOX Device */
 	fd = open(path, O_RDWR | O_NONBLOCK);
