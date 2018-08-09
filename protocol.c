@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <stdint.h>
 
+#include "flash.h"
 #include "mbox.h"
 #include "lpc.h"
 #include "transport_mbox.h" /* TODO: Remove dependency on transport_mbox.h */
