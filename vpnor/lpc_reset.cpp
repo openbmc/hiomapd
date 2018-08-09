@@ -18,7 +18,7 @@
  */
 
 extern "C" {
-#include "mbox.h"
+#include "mboxd.h"
 #include "lpc.h"
 }
 
