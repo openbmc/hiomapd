@@ -135,7 +135,7 @@ int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val)
 {
 	if ((offset + count) > context->flash_size) {
-		return -MBOX_R_PARAM_ERROR;
+		return -EINVAL;
 	}
 
 	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
@@ -186,7 +186,7 @@ int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
 			if (rc < 0) {
 				MSG_ERR("Couldn't erase flash at 0x%.8x\n",
 						erase_info.start);
-				return -MBOX_R_SYSTEM_ERROR;
+				return -errno;
 			}
 			/* Mark ERASED where we just erased */
 			flash_set_bytemap(context, erase_info.start,
@@ -206,7 +206,7 @@ int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash at 0x%.8x\n",
 					erase_info.start);
-			return -MBOX_R_SYSTEM_ERROR;
+			return -errno;
 		}
 		/* Mark ERASED where we just erased */
 		flash_set_bytemap(context, erase_info.start, erase_info.length,
@@ -239,7 +239,7 @@ int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
 		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
 			strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	do {
@@ -248,14 +248,14 @@ int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
 		if (size_read < 0) {
 			MSG_ERR("Couldn't copy mtd into ram: %s\n",
 				strerror(errno));
-			return -MBOX_R_SYSTEM_ERROR;
+			return -errno;
 		}
 
 		size -= size_read;
 		mem += size_read;
 	} while (size && size_read);
 
-	return size_read ? mem - start : -MBOX_R_SYSTEM_ERROR;
+	return size_read ? mem - start : -EIO;
 }
 
 /*
@@ -278,7 +278,7 @@ int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
 		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
 			strerror(errno));
-		return -MBOX_R_SYSTEM_ERROR;
+		return -errno;
 	}
 
 	while (count) {
@@ -286,7 +286,7 @@ int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
 		if (rc < 0) {
 			MSG_ERR("Couldn't write to flash, write lost: %s\n",
 				strerror(errno));
-			return -MBOX_R_WRITE_ERROR;
+			return -errno;
 		}
 		/* Mark *NOT* erased where we just wrote */
 		flash_set_bytemap(context, offset + buf_offset, rc,

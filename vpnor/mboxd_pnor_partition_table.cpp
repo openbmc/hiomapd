@@ -57,7 +57,7 @@ int init_vpnor_from_paths(struct mbox_context *context)
         {
             MSG_ERR("%s\n", e.what());
             phosphor::logging::commit<err::InternalFailure>();
-            return -MBOX_R_SYSTEM_ERROR;
+            return -EINVAL;
         }
     }
 
@@ -112,13 +112,13 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
     catch (err::InternalFailure &e)
     {
         phosphor::logging::commit<err::InternalFailure>();
-        return -MBOX_R_SYSTEM_ERROR;
+        return -EIO;
     }
     catch (vpnor::ReasonedError &e)
     {
         MSG_ERR("%s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
-        return -MBOX_R_SYSTEM_ERROR;
+        return -EIO;
     }
 
     return 0;
