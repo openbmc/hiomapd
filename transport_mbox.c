@@ -121,6 +121,10 @@ static int transport_mbox_flush_events(struct mbox_context *context)
 	return 0;
 }
 
+static const struct transport_ops transport_mbox_ops = {
+	.flush_events = transport_mbox_flush_events,
+};
+
 /* Command Handlers */
 
 /*
@@ -169,6 +173,12 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 	if (rc < 0) {
 		return rc;
 	}
+
+	/*
+	 * Switch transport to mbox, however we need to delay flushing the
+	 * event state until after the command is processed.
+	 */
+	context->transport = &transport_mbox_ops;
 
 	resp->args[0] = io.resp.api_version;
 	if (io.resp.api_version == API_VERSION_1) {
@@ -477,6 +487,14 @@ static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 		}
 	}
 
+	if (context->transport != &transport_mbox_ops) {
+		if (cmd != MBOX_C_RESET_STATE && cmd != MBOX_C_GET_MBOX_INFO) {
+			MSG_ERR("Cannot switch transport with command %d\n",
+				cmd);
+			return -EPROTO;
+		}
+	}
+
 	if (!(context->state & MAPS_MEM)) {
 		if (cmd != MBOX_C_RESET_STATE && cmd != MBOX_C_GET_MBOX_INFO
 					      && cmd != MBOX_C_ACK) {
@@ -513,6 +531,7 @@ static const mboxd_mbox_handler transport_mbox_handlers[] = {
  */
 static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 {
+	const struct transport_ops *old_transport = context->transport;
 	struct mbox_msg resp = {
 		.command = req->msg.command,
 		.seq = req->msg.seq,
@@ -522,6 +541,7 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 	int rc = 0, len, i;
 
 	MSG_INFO("Received MBOX command: %u\n", req->msg.command);
+
 	rc = check_req_valid(context, req);
 	if (!rc) {
 		mboxd_mbox_handler handler;
@@ -550,6 +570,11 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 	if (len < sizeof(resp)) {
 		MSG_ERR("Didn't write the full response\n");
 		rc = -errno;
+	}
+
+	if (context->transport != old_transport &&
+			context->transport == &transport_mbox_ops) {
+		transport_mbox_flush_events(context);
 	}
 
 	return rc;
@@ -605,10 +630,6 @@ int transport_mbox_dispatch(struct mbox_context *context)
 
 	return handle_mbox_req(context, &req);
 }
-
-static const struct transport_ops transport_mbox_ops = {
-	.flush_events = transport_mbox_flush_events,
-};
 
 int __transport_mbox_init(struct mbox_context *context, const char *path)
 {
