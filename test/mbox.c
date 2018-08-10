@@ -70,6 +70,8 @@ int mbox_cmp(struct mbox_context *context, const uint8_t *expected, size_t len)
 	fstat(fd, &details);
 
 	map = mmap(NULL, details.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	printf("%s:%d: details.st_size: %ld, RESPONSE_OFFSET + len: %ld\n",
+	       __func__, __LINE__, details.st_size, RESPONSE_OFFSET + len);
 	assert(map != MAP_FAILED);
 	assert(details.st_size >= (RESPONSE_OFFSET + len));
 
