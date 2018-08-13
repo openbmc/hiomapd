@@ -344,7 +344,7 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
 		/* There may already be one allocated */
 		free(cur->dirty_bmap);
 		/* Allocate the new one */
-		cur->dirty_bmap = calloc((cur->size >>
+		cur->dirty_bmap = calloc((context->windows.default_size >>
 					  context->block_size_shift),
 					 sizeof(*cur->dirty_bmap));
 	}
