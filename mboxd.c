@@ -38,17 +38,20 @@
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 #define USAGE \
-"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
+"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog] [-i | --init]\n" \
 "\t\t[-n | --window-num <num>]\n" \
 "\t\t[-w | --window-size <size>M]\n" \
 "\t\t-f | --flash <size>[K|M]\n\n" \
 "\t-v | --verbose\t\tBe [more] verbose\n" \
 "\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n" \
+"\t-i | --init\t\tInit the flash window and exit\n" \
 "\t-n | --window-num\tThe number of windows\n" \
 "\t\t\t\t(default: fill the reserved memory region)\n" \
 "\t-w | --window-size\tThe window size (power of 2) in MB\n" \
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+
+static bool init_only = false;
 
 static int poll_loop(struct mbox_context *context)
 {
@@ -179,6 +182,7 @@ static bool parse_cmdline(int argc, char **argv,
 		{ "window-num",		optional_argument,	0, 'n' },
 		{ "verbose",		no_argument,		0, 'v' },
 		{ "syslog",		no_argument,		0, 's' },
+		{ "init",		no_argument,		0, 'i' },
 		{ "version",		no_argument,		0, 'V' },
 		{ "help",		no_argument,		0, 'h' },
 		{ 0,			0,			0, 0   }
@@ -245,6 +249,9 @@ static bool parse_cmdline(int argc, char **argv,
 				openlog(PREFIX, LOG_ODELAY, LOG_DAEMON);
 				mbox_vlog = &vsyslog;
 			}
+			break;
+		case 'i':
+			init_only = true;
 			break;
 		case 'V':
 			printf("%s V%s\n", THIS_NAME, PACKAGE_VERSION);
@@ -337,6 +344,11 @@ int main(int argc, char **argv)
 		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}
 
+	if (init_only) {
+		MSG_INFO("Init done, exit.\n");
+		goto init_exit;
+	}
+
 	rc = set_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 	if (rc) {
 		goto finish;
@@ -351,6 +363,7 @@ finish:
 	MSG_INFO("Daemon Exiting...\n");
 	clr_bmc_events(context, BMC_EVENT_DAEMON_READY, SET_BMC_EVENT);
 
+init_exit:
 	free_mboxd_dbus(context);
 	free_flash_dev(context);
 	free_lpc_dev(context);
