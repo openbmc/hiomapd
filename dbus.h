@@ -19,6 +19,7 @@
 #define MBOX_DBUS_OBJECT		"/xyz/openbmc_project/Hiomapd"
 #define MBOX_DBUS_CONTROL_IFACE		"xyz.openbmc_project.Hiomapd.Control"
 #define MBOX_DBUS_PROTOCOL_IFACE	"xyz.openbmc_project.Hiomapd.Protocol"
+#define MBOX_DBUS_PROTOCOL_IFACE_V2	MBOX_DBUS_PROTOCOL_IFACE ".V2"
 
 /* Legacy interface */
 #define MBOX_DBUS_LEGACY_NAME		"org.openbmc.mboxd"
