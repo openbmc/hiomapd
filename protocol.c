@@ -13,6 +13,15 @@
 
 #define BLOCK_SIZE_SHIFT_V1		12 /* 4K */
 
+static inline uint8_t protocol_get_bmc_event_mask(struct mbox_context *context)
+{
+	if (context->version == API_VERSION_1) {
+		return BMC_EVENT_V1_MASK;
+	}
+
+	return BMC_EVENT_V2_MASK;
+}
+
 /*
  * protocol_events_set() - Set BMC events
  * @context:	The mbox context pointer
@@ -22,16 +31,14 @@
  */
 int protocol_events_set(struct mbox_context *context, uint8_t bmc_event)
 {
-	uint8_t mask = 0x00;
+	const uint8_t mask = protocol_get_bmc_event_mask(context);
 
-	switch (context->version) {
-	case API_VERSION_1:
-		mask = BMC_EVENT_V1_MASK;
-		break;
-	default:
-		mask = BMC_EVENT_V2_MASK;
-		break;
-	}
+	/*
+	 * Store the raw value, as we may up- or down- grade the protocol
+	 * version and subsequently need to flush the appropriate set. Instead
+	 * we pass the masked value through to the transport
+	 */
+	context->bmc_events |= bmc_event;
 
 	return context->transport->set_events(context, (bmc_event & mask));
 }
@@ -45,7 +52,11 @@ int protocol_events_set(struct mbox_context *context, uint8_t bmc_event)
  */
 int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event)
 {
-	return context->transport->clear_events(context, bmc_event);
+	const uint8_t mask = protocol_get_bmc_event_mask(context);
+
+	context->bmc_events &= ~bmc_event;
+
+	return context->transport->clear_events(context, (bmc_event & mask));
 }
 
 int protocol_v1_reset(struct mbox_context *context)
