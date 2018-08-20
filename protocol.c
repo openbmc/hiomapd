@@ -17,12 +17,10 @@
  * protocol_events_set() - Set BMC events
  * @context:	The mbox context pointer
  * @bmc_event:	The bits to set
- * @write_back:	Whether to write back to the register -> will interrupt host
  *
  * Return:	0 on success otherwise negative error code
  */
-int protocol_events_set(struct mbox_context *context, uint8_t bmc_event,
-		   bool write_back)
+int protocol_events_set(struct mbox_context *context, uint8_t bmc_event)
 {
 	uint8_t mask = 0x00;
 
@@ -38,30 +36,28 @@ int protocol_events_set(struct mbox_context *context, uint8_t bmc_event,
 	context->bmc_events |= (bmc_event & mask);
 	MSG_DBG("BMC Events set to: 0x%.2x\n", context->bmc_events);
 
-	return write_back ? context->transport->flush_events(context) : 0;
+	return context->transport->flush_events(context);
 }
 
 /*
  * protocol_events_clear() - Clear BMC events
  * @context:	The mbox context pointer
  * @bmc_event:	The bits to clear
- * @write_back:	Whether to write back to the register -> will interrupt host
  *
  * Return:	0 on success otherwise negative error code
  */
-int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event,
-		   bool write_back)
+int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event)
 {
 	context->bmc_events &= ~bmc_event;
 	MSG_DBG("BMC Events clear to: 0x%.2x\n", context->bmc_events);
 
-	return write_back ? context->transport->flush_events(context) : 0;
+	return context->transport->flush_events(context);
 }
 
 int protocol_v1_reset(struct mbox_context *context)
 {
 	/* Host requested it -> No BMC Event */
-	windows_reset_all(context, EVENT_SUPPRESS);
+	windows_reset_all(context);
 	return lpc_reset(context);
 }
 
@@ -78,7 +74,8 @@ int protocol_v1_get_info(struct mbox_context *context,
 
 	/* Do the {up,down}grade if necessary*/
 	if (rc != old_version) {
-		windows_reset_all(context, EVENT_TRIGGER);
+		/* Doing version negotiation, don't alert host to reset */
+		windows_reset_all(context);
 		return context->protocol->get_info(context, io);
 	}
 
@@ -151,7 +148,7 @@ int protocol_v1_create_window(struct mbox_context *context,
 				return rc;
 			}
 		}
-		windows_close_current(context, EVENT_SUPPRESS, FLAGS_NONE);
+		windows_close_current(context, FLAGS_NONE);
 	}
 
 	/* Offset the host has requested */
@@ -331,15 +328,15 @@ int protocol_v1_close(struct mbox_context *context, struct protocol_close *io)
 	}
 
 	/* Host asked for it -> Don't set the BMC Event */
-	windows_close_current(context, EVENT_SUPPRESS, io->req.flags);
+	windows_close_current(context, io->req.flags);
 
 	return 0;
 }
 
 int protocol_v1_ack(struct mbox_context *context, struct protocol_ack *io)
 {
-	return protocol_events_clear(context, (io->req.flags & BMC_EVENT_ACK_MASK),
-			      EVENT_TRIGGER);
+	return protocol_events_clear(context,
+				     (io->req.flags & BMC_EVENT_ACK_MASK));
 }
 
 /*
@@ -374,7 +371,8 @@ int protocol_v2_get_info(struct mbox_context *context,
 
 	/* Do the {up,down}grade if necessary*/
 	if (rc != old_version) {
-		windows_reset_all(context, EVENT_TRIGGER);
+		/* Doing version negotiation, don't alert host to reset */
+		windows_reset_all(context);
 		return context->protocol->get_info(context, io);
 	}
 
@@ -496,7 +494,7 @@ int protocol_v2_close(struct mbox_context *context, struct protocol_close *io)
 	}
 
 	/* Host asked for it -> Don't set the BMC Event */
-	windows_close_current(context, EVENT_SUPPRESS, io->req.flags);
+	windows_close_current(context, io->req.flags);
 
 	return 0;
 }
