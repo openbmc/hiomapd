@@ -13,12 +13,12 @@
 #include "protocol.h"
 #include "transport.h"
 
-static int transport_dbus_flush_events(struct mbox_context *context,
-				       uint8_t events)
+static int transport_dbus_property_update(struct mbox_context *context,
+					  uint8_t events)
 {
+	/* Two properties plus a terminating NULL */
 	char *props[3] = { 0 };
 	int i = 0;
-	int rc;
 
 	if (events & BMC_EVENT_FLASH_CTRL_LOST) {
 		props[i++] = "FlashControlLost";
@@ -28,15 +28,27 @@ static int transport_dbus_flush_events(struct mbox_context *context,
 		props[i++] = "DaemonReady";
 	}
 
-	rc = sd_bus_emit_properties_changed_strv(context->bus,
+	return sd_bus_emit_properties_changed_strv(context->bus,
 						 MBOX_DBUS_OBJECT,
 						 /* FIXME: Hard-coding v2 */
 						 MBOX_DBUS_PROTOCOL_IFACE_V2,
 						 props);
+}
+
+static int transport_dbus_set_events(struct mbox_context *context,
+				     uint8_t events)
+{
+	int rc;
+
+	rc = transport_dbus_property_update(context, events);
 	if (rc < 0) {
 		return rc;
 	}
 
+	/*
+	 * Handle signals - edge triggered, only necessary when they're
+	 * asserted
+	 */
 	if (events & BMC_EVENT_WINDOW_RESET) {
 		sd_bus_message *m = NULL;
 
@@ -76,20 +88,11 @@ static int transport_dbus_flush_events(struct mbox_context *context,
 	return 0;
 }
 
-static int transport_dbus_set_events(struct mbox_context *context,
-				     uint8_t events)
-{
-	context->bmc_events |= events;
-
-	return transport_dbus_flush_events(context, events);
-}
-
 static int transport_dbus_clear_events(struct mbox_context *context,
 				       uint8_t events)
 {
-	context->bmc_events &= ~events;
-
-	return transport_dbus_flush_events(context, events);
+	/* No need to emit signals for ackable events on clear */
+	return transport_dbus_property_update(context, events);
 }
 
 static const struct transport_ops transport_dbus_ops = {
@@ -123,7 +126,8 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 
 	/* Switch transport to DBus. This is fine as DBus signals are async */
 	context->transport = &transport_dbus_ops;
-	transport_dbus_flush_events(context, context->bmc_events);
+	/* A bit messy, but we need the correct event mask */
+	protocol_events_set(context, context->bmc_events);
 
 	rc = sd_bus_message_new_method_return(m, &n);
 	if (rc < 0) {
