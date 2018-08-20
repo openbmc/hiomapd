@@ -121,8 +121,25 @@ static int transport_mbox_flush_events(struct mbox_context *context)
 	return 0;
 }
 
+static int transport_mbox_set_events(struct mbox_context *context,
+				     uint8_t events)
+{
+	context->bmc_events |= events;
+
+	return transport_mbox_flush_events(context);
+}
+
+static int transport_mbox_clear_events(struct mbox_context *context,
+				       uint8_t events)
+{
+	context->bmc_events &= ~events;
+
+	return transport_mbox_flush_events(context);
+}
+
 static const struct transport_ops transport_mbox_ops = {
-	.flush_events = transport_mbox_flush_events,
+	.set_events = transport_mbox_set_events,
+	.clear_events = transport_mbox_clear_events,
 };
 
 /* Command Handlers */
