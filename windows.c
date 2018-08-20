@@ -379,7 +379,6 @@ int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 /*
  * windows_close_current() - Close the current (active) window
  * @context:   		The mbox context pointer
- * @set_bmc_event:	Whether to set the bmc event bit
  * @flags:		Flags as defined for a close command in the protocol
  *
  * This closes the current window. If the host has requested the current window
@@ -388,14 +387,9 @@ int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
  * without the host requesting it the bmc event bit must be set to indicate this
  * to the host (set_bmc_event == true).
  */
-void windows_close_current(struct mbox_context *context, bool set_bmc_event,
-			  uint8_t flags)
+void windows_close_current(struct mbox_context *context, uint8_t flags)
 {
 	MSG_DBG("Close current window, flags: 0x%.2x\n", flags);
-
-	if (set_bmc_event) {
-		protocol_events_set(context, BMC_EVENT_WINDOW_RESET, EVENT_TRIGGER);
-	}
 
 	if (flags & FLAGS_SHORT_LIFETIME) {
 		context->current->age = 0;
@@ -425,22 +419,29 @@ void window_reset(struct mbox_context *context, struct window_context *window)
 /*
  * windows_reset_all() - Reset all windows to a well defined default state
  * @context:		The mbox context pointer
- * @set_bmc_event:	If any state change should be indicated to the host
+ *
+ * @return True if there was a window open that was closed, false otherwise
  */
-void windows_reset_all(struct mbox_context *context, bool set_bmc_event)
+bool windows_reset_all(struct mbox_context *context)
 {
+	bool closed = context->current;
 	int i;
 
 	MSG_DBG("Resetting all windows\n");
+
+	context->windows.max_age = 0;
+
 	/* We might have an open window which needs closing */
+
 	if (context->current) {
-		windows_close_current(context, set_bmc_event, FLAGS_NONE);
+		windows_close_current(context, FLAGS_NONE);
 	}
+
 	for (i = 0; i < context->windows.num; i++) {
 		window_reset(context, &context->windows.window[i]);
 	}
 
-	context->windows.max_age = 0;
+	return closed;
 }
 
 /*

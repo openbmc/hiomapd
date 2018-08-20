@@ -50,7 +50,7 @@ int main(void)
 	rc = mbox_command_dispatch(ctx, get_info, sizeof(get_info));
 	assert(rc == 1);
 
-	protocol_events_set(ctx, FLAGS, EVENT_TRIGGER);
+	protocol_events_set(ctx, FLAGS);
 
 	rc = mbox_command_dispatch(ctx, command, sizeof(command));
 	assert(rc == 1);
