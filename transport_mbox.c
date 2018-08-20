@@ -591,7 +591,8 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 
 	if (context->transport != old_transport &&
 			context->transport == &transport_mbox_ops) {
-		transport_mbox_flush_events(context);
+		/* A bit messy, but we need the correct event mask */
+		protocol_events_set(context, context->bmc_events);
 	}
 
 	return rc;
