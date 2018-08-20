@@ -2,7 +2,9 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
+#include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include <systemd/sd-bus.h>
 
 #include "common.h"
@@ -11,20 +13,83 @@
 #include "protocol.h"
 #include "transport.h"
 
+static int transport_dbus_flush_events(struct mbox_context *context,
+				       uint8_t events)
+{
+	char *props[3] = { 0 };
+	int i = 0;
+	int rc;
+
+	if (events & BMC_EVENT_FLASH_CTRL_LOST) {
+		props[i++] = "FlashControlLost";
+	}
+
+	if (events & BMC_EVENT_DAEMON_READY) {
+		props[i++] = "DaemonReady";
+	}
+
+	rc = sd_bus_emit_properties_changed_strv(context->bus,
+						 MBOX_DBUS_OBJECT,
+						 /* FIXME: Hard-coding v2 */
+						 MBOX_DBUS_PROTOCOL_IFACE_V2,
+						 props);
+	if (rc < 0) {
+		return rc;
+	}
+
+	if (events & BMC_EVENT_WINDOW_RESET) {
+		sd_bus_message *m = NULL;
+
+		rc = sd_bus_message_new_signal(context->bus, &m,
+					       MBOX_DBUS_OBJECT,
+					       /* FIXME: Hard-coding v2 */
+					       MBOX_DBUS_PROTOCOL_IFACE_V2,
+					       "WindowReset");
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = sd_bus_send(context->bus, m, NULL);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	if (events & BMC_EVENT_REBOOT) {
+		sd_bus_message *m = NULL;
+
+		rc = sd_bus_message_new_signal(context->bus, &m,
+					       MBOX_DBUS_OBJECT,
+					       /* FIXME: Hard-coding v2 */
+					       MBOX_DBUS_PROTOCOL_IFACE_V2,
+					       "BmcReboot");
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = sd_bus_send(context->bus, m, NULL);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
 static int transport_dbus_set_events(struct mbox_context *context,
 				     uint8_t events)
 {
-	/* FIXME ! */
-	MSG_ERR("%s is unimplemented!\n", __func__);
-	return 0;
+	context->bmc_events |= events;
+
+	return transport_dbus_flush_events(context, events);
 }
 
 static int transport_dbus_clear_events(struct mbox_context *context,
 				       uint8_t events)
 {
-	/* FIXME ! */
-	MSG_ERR("%s is unimplemented!\n", __func__);
-	return 0;
+	context->bmc_events &= ~events;
+
+	return transport_dbus_flush_events(context, events);
 }
 
 static const struct transport_ops transport_dbus_ops = {
@@ -58,7 +123,7 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 
 	/* Switch transport to DBus. This is fine as DBus signals are async */
 	context->transport = &transport_dbus_ops;
-	context->transport->set_events(context, context->bmc_events);
+	transport_dbus_flush_events(context, context->bmc_events);
 
 	rc = sd_bus_message_new_method_return(m, &n);
 	if (rc < 0) {
@@ -84,6 +149,32 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 	return sd_bus_send(NULL, n, NULL);
 }
 
+static int transport_dbus_get_property(sd_bus *bus,
+				       const char *path,
+				       const char *interface,
+				       const char *property,
+				       sd_bus_message *reply,
+				       void *userdata,
+				       sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+	bool value;
+
+	assert(!strcmp(MBOX_DBUS_OBJECT, path));
+	assert(!strcmp(MBOX_DBUS_PROTOCOL_IFACE_V2, interface));
+
+	if (!strcmp("FlashControlLost", property)) {
+		value = context->bmc_events & BMC_EVENT_FLASH_CTRL_LOST;
+	} else if (!strcmp("DaemonReady", property)) {
+		value = context->bmc_events & BMC_EVENT_DAEMON_READY;
+	} else {
+		MSG_ERR("Unknown DBus property: %s\n", property);
+		return -EINVAL;
+	}
+
+	return sd_bus_message_append(reply, "b", value);
+}
+
 static const sd_bus_vtable protocol_unversioned_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_METHOD("GetInfo", "y", "yyq", &transport_dbus_get_info,
@@ -95,6 +186,14 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 	SD_BUS_VTABLE_START(0),
 	SD_BUS_METHOD("GetInfo", "y", "yyq", &transport_dbus_get_info,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_PROPERTY("FlashControlLost", "b", transport_dbus_get_property,
+			0, /* Just a pointer to struct mbox_context */
+			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("DaemonReady", "b", transport_dbus_get_property,
+			0, /* Just a pointer to struct mbox_context */
+			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_SIGNAL("ProtocolReset", NULL, 0),
+	SD_BUS_SIGNAL("WindowReset", NULL, 0),
 	SD_BUS_VTABLE_END
 };
 
@@ -113,7 +212,7 @@ int transport_dbus_init(struct mbox_context *context)
 
 	rc = sd_bus_add_object_vtable(context->bus, NULL,
 					MBOX_DBUS_OBJECT,
-	/* TODO: Make this clearer? */	MBOX_DBUS_PROTOCOL_IFACE ".v2",
+					MBOX_DBUS_PROTOCOL_IFACE_V2,
 					protocol_v2_vtable, context);
 
 	return rc;
