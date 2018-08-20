@@ -48,7 +48,12 @@ int control_reset(struct mbox_context *context)
 	 * mapping back to flash, or memory in case we're using a virtual pnor.
 	 * Better set the bmc event to notify the host of this.
 	 */
-	windows_reset_all(context, EVENT_TRIGGER);
+	if (windows_reset_all(context)) {
+		rc = protocol_events_set(context, BMC_EVENT_WINDOW_RESET);
+		if (rc < 0) {
+			return rc;
+		}
+	}
 	rc = lpc_reset(context);
 	if (rc < 0) {
 		return rc;
@@ -72,7 +77,9 @@ int control_modified(struct mbox_context *context)
 	flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 
 	/* Force daemon to reload all windows -> Set BMC event to notify host */
-	windows_reset_all(context, EVENT_TRIGGER);
+	if (windows_reset_all(context)) {
+		protocol_events_set(context, BMC_EVENT_WINDOW_RESET);
+	}
 
 	return 0;
 }
@@ -87,7 +94,7 @@ int control_suspend(struct mbox_context *context)
 	}
 
 	/* Nothing to check - Just set the bit to notify the host */
-	rc = protocol_events_set(context, BMC_EVENT_FLASH_CTRL_LOST, EVENT_TRIGGER);
+	rc = protocol_events_set(context, BMC_EVENT_FLASH_CTRL_LOST);
 	if (rc < 0) {
 		return rc;
 	}
@@ -112,7 +119,7 @@ int control_resume(struct mbox_context *context, bool modified)
 	}
 
 	/* Clear the bit and send the BMC Event to the host */
-	rc = protocol_events_clear(context, BMC_EVENT_FLASH_CTRL_LOST, EVENT_TRIGGER);
+	rc = protocol_events_clear(context, BMC_EVENT_FLASH_CTRL_LOST);
 	if (rc < 0) {
 		return rc;
 	}

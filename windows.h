@@ -43,10 +43,9 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 void windows_alloc_dirty_bytemap(struct mbox_context *context);
 int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 		       uint32_t offset, uint32_t size, uint8_t val);
-void windows_close_current(struct mbox_context *context, bool set_bmc_event,
-			  uint8_t flags);
+void windows_close_current(struct mbox_context *context, uint8_t flags);
 void window_reset(struct mbox_context *context, struct window_context *window);
-void windows_reset_all(struct mbox_context *context, bool set_bmc_event);
+bool windows_reset_all(struct mbox_context *context);
 struct window_context *windows_find_oldest(struct mbox_context *context);
 struct window_context *windows_find_largest(struct mbox_context *context);
 struct window_context *windows_search(struct mbox_context *context,
