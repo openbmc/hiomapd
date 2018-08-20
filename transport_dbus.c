@@ -11,7 +11,16 @@
 #include "protocol.h"
 #include "transport.h"
 
-int transport_dbus_flush_events(struct mbox_context *context)
+static int transport_dbus_set_events(struct mbox_context *context,
+				     uint8_t events)
+{
+	/* FIXME ! */
+	MSG_ERR("%s is unimplemented!\n", __func__);
+	return 0;
+}
+
+static int transport_dbus_clear_events(struct mbox_context *context,
+				       uint8_t events)
 {
 	/* FIXME ! */
 	MSG_ERR("%s is unimplemented!\n", __func__);
@@ -19,7 +28,8 @@ int transport_dbus_flush_events(struct mbox_context *context)
 }
 
 static const struct transport_ops transport_dbus_ops = {
-	.flush_events = transport_dbus_flush_events,
+	.set_events = transport_dbus_set_events,
+	.clear_events = transport_dbus_clear_events,
 };
 
 static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
@@ -48,7 +58,7 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 
 	/* Switch transport to DBus. This is fine as DBus signals are async */
 	context->transport = &transport_dbus_ops;
-	context->transport->flush_events(context);
+	context->transport->set_events(context, context->bmc_events);
 
 	rc = sd_bus_message_new_method_return(m, &n);
 	if (rc < 0) {
