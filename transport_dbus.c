@@ -214,6 +214,49 @@ static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
 	return sd_bus_send(NULL, n, NULL);
 }
 
+static int transport_dbus_create_read_window(sd_bus_message *m, void *userdata,
+					     sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+	struct protocol_create_window io;
+	sd_bus_message *n;
+	int rc;
+
+	if (!context) {
+		MSG_ERR("DBUS Internal Error\n");
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_read(m, "qq", &io.req.offset, &io.req.size);
+	if (rc < 0) {
+		MSG_ERR("DBUS error reading message: %s\n", strerror(-rc));
+		return rc;
+	}
+
+	io.req.ro = true;
+	rc = context->protocol->create_window(context, &io);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = sd_bus_message_new_method_return(m, &n);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		return rc;
+	}
+
+	rc = sd_bus_message_append(n, "qqq",
+				   io.resp.lpc_address,
+				   io.resp.size,
+				   io.resp.offset);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_append failed!\n");
+		return rc;
+	}
+
+	return sd_bus_send(NULL, n, NULL);
+}
+
 static int transport_dbus_ack(sd_bus_message *m, void *userdata,
 			      sd_bus_error *ret_error)
 {
@@ -292,6 +335,9 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetFlashInfo", NULL, "qq",
 		      &transport_dbus_get_flash_info,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("CreateReadWindow", "qq", "qqq",
+		      &transport_dbus_create_read_window,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Ack", "y", NULL, &transport_dbus_ack,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
