@@ -308,6 +308,39 @@ static int transport_dbus_close_window(sd_bus_message *m, void *userdata,
 
 }
 
+static int transport_dbus_mark_dirty(sd_bus_message *m, void *userdata,
+				     sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+	struct protocol_mark_dirty io;
+	sd_bus_message *n;
+	int rc;
+
+	if (!context) {
+		MSG_ERR("DBUS Internal Error\n");
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_read(m, "qq", &io.req.v2.offset, &io.req.v2.size);
+	if (rc < 0) {
+		MSG_ERR("DBUS error reading message: %s\n", strerror(-rc));
+		return rc;
+	}
+
+	rc = context->protocol->mark_dirty(context, &io);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = sd_bus_message_new_method_return(m, &n);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		return rc;
+	}
+
+	return sd_bus_send(NULL, n, NULL);
+}
+
 static int transport_dbus_ack(sd_bus_message *m, void *userdata,
 			      sd_bus_error *ret_error)
 {
@@ -394,6 +427,8 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 		      &transport_dbus_create_write_window,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("CloseWindow", "y", NULL, &transport_dbus_close_window,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("MarkDirty", "qq", NULL, &transport_dbus_mark_dirty,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Ack", "y", NULL, &transport_dbus_ack,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
