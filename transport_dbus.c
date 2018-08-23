@@ -179,6 +179,41 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 	return sd_bus_send(NULL, n, NULL);
 }
 
+static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
+					 sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+	struct protocol_get_flash_info io;
+	sd_bus_message *n;
+	int rc;
+
+	if (!context) {
+		MSG_ERR("DBUS Internal Error\n");
+		return -EINVAL;
+	}
+
+	rc = context->protocol->get_flash_info(context, &io);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = sd_bus_message_new_method_return(m, &n);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		return rc;
+	}
+
+	rc = sd_bus_message_append(n, "qq",
+				   io.resp.v2.flash_size,
+				   io.resp.v2.erase_size);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_append failed!\n");
+		return rc;
+	}
+
+	return sd_bus_send(NULL, n, NULL);
+}
+
 static int transport_dbus_ack(sd_bus_message *m, void *userdata,
 			      sd_bus_error *ret_error)
 {
@@ -252,6 +287,9 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 	SD_BUS_METHOD("Reset", NULL, NULL, &transport_dbus_reset,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetInfo", "y", "yyq", &transport_dbus_get_info,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("GetFlashInfo", NULL, "qq",
+		      &transport_dbus_get_flash_info,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Ack", "y", NULL, &transport_dbus_ack,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
