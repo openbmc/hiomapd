@@ -214,10 +214,11 @@ static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
 	return sd_bus_send(NULL, n, NULL);
 }
 
-static int transport_dbus_create_read_window(sd_bus_message *m, void *userdata,
-					     sd_bus_error *ret_error)
+static int transport_dbus_create_window(struct mbox_context *context,
+					bool ro,
+					sd_bus_message *m,
+					sd_bus_error *ret_error)
 {
-	struct mbox_context *context = userdata;
 	struct protocol_create_window io;
 	sd_bus_message *n;
 	int rc;
@@ -233,7 +234,7 @@ static int transport_dbus_create_read_window(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	io.req.ro = true;
+	io.req.ro = ro;
 	rc = context->protocol->create_window(context, &io);
 	if (rc < 0) {
 		return rc;
@@ -255,6 +256,22 @@ static int transport_dbus_create_read_window(sd_bus_message *m, void *userdata,
 	}
 
 	return sd_bus_send(NULL, n, NULL);
+}
+
+static int transport_dbus_create_read_window(sd_bus_message *m, void *userdata,
+					     sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+
+	return transport_dbus_create_window(context, true, m, ret_error);
+}
+
+static int transport_dbus_create_write_window(sd_bus_message *m, void *userdata,
+					      sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+
+	return transport_dbus_create_window(context, false, m, ret_error);
 }
 
 static int transport_dbus_ack(sd_bus_message *m, void *userdata,
@@ -338,6 +355,9 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("CreateReadWindow", "qq", "qqq",
 		      &transport_dbus_create_read_window,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("CreateWriteWindow", "qq", "qqq",
+		      &transport_dbus_create_write_window,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Ack", "y", NULL, &transport_dbus_ack,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
