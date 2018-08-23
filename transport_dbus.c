@@ -100,6 +100,32 @@ static const struct transport_ops transport_dbus_ops = {
 	.clear_events = transport_dbus_clear_events,
 };
 
+static int transport_dbus_reset(sd_bus_message *m, void *userdata,
+				     sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+	sd_bus_message *n;
+	int rc;
+
+	if (!context) {
+		MSG_ERR("DBUS Internal Error\n");
+		return -EINVAL;
+	}
+
+	rc = context->protocol->reset(context);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = sd_bus_message_new_method_return(m, &n);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		return rc;
+	}
+
+	return sd_bus_send(NULL, n, NULL);
+}
+
 static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 					sd_bus_error *ret_error)
 {
@@ -181,6 +207,8 @@ static int transport_dbus_get_property(sd_bus *bus,
 
 static const sd_bus_vtable protocol_unversioned_vtable[] = {
 	SD_BUS_VTABLE_START(0),
+	SD_BUS_METHOD("Reset", NULL, NULL, &transport_dbus_reset,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetInfo", "y", "yyq", &transport_dbus_get_info,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_VTABLE_END
@@ -188,6 +216,8 @@ static const sd_bus_vtable protocol_unversioned_vtable[] = {
 
 static const sd_bus_vtable protocol_v2_vtable[] = {
 	SD_BUS_VTABLE_START(0),
+	SD_BUS_METHOD("Reset", NULL, NULL, &transport_dbus_reset,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("GetInfo", "y", "yyq", &transport_dbus_get_info,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_PROPERTY("FlashControlLost", "b", transport_dbus_get_property,
