@@ -400,6 +400,39 @@ static int transport_dbus_ack(sd_bus_message *m, void *userdata,
 	return sd_bus_send(NULL, n, NULL);
 }
 
+static int transport_dbus_erase(sd_bus_message *m, void *userdata,
+				sd_bus_error *ret_error)
+{
+	struct mbox_context *context = userdata;
+	struct protocol_erase io;
+	sd_bus_message *n;
+	int rc;
+
+	if (!context) {
+		MSG_ERR("DBUS Internal Error\n");
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_read(m, "qq", &io.req.offset, &io.req.size);
+	if (rc < 0) {
+		MSG_ERR("DBUS error reading message: %s\n", strerror(-rc));
+		return rc;
+	}
+
+	rc = context->protocol->erase(context, &io);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = sd_bus_message_new_method_return(m, &n);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		return rc;
+	}
+
+	return sd_bus_send(NULL, n, NULL);
+}
+
 static int transport_dbus_get_property(sd_bus *bus,
 				       const char *path,
 				       const char *interface,
@@ -459,6 +492,8 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 	SD_BUS_METHOD("Flush", NULL, NULL, &transport_dbus_write_flush,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Ack", "y", NULL, &transport_dbus_ack,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("Erase", "qq", NULL, &transport_dbus_erase,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_PROPERTY("FlashControlLost", "b", transport_dbus_get_property,
 			0, /* Just a pointer to struct mbox_context */
