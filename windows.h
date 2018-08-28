@@ -4,6 +4,8 @@
 #ifndef WINDOWS_H
 #define WINDOWS_H
 
+#include <stdbool.h>
+
 #define WINDOWS_NO_FLUSH	false
 #define WINDOWS_WITH_FLUSH	true
 
