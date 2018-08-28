@@ -99,6 +99,9 @@ test_sequence_numbers_SOURCES = %reldir%/sequence_numbers.c \
 test_get_mbox_info_v2_timeout_SOURCES = %reldir%/get_mbox_info_v2_timeout.c \
 					$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
 
+test_windows_equally_evictable_SOURCES = %reldir%/windows_equally_evictable.c \
+					 $(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)
+
 check_PROGRAMS += \
 		%reldir%/sanity \
 		%reldir%/flash_copy \
@@ -126,4 +129,5 @@ check_PROGRAMS += \
 		%reldir%/invalid_command \
 		%reldir%/read_window_cycle \
 		%reldir%/sequence_numbers \
-		%reldir%/get_mbox_info_v2_timeout
+		%reldir%/get_mbox_info_v2_timeout \
+		%reldir%/windows_equally_evictable
