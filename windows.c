@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/random.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
@@ -463,6 +464,24 @@ struct window_context *windows_find_oldest(struct mbox_context *context)
 			min_age = cur->age;
 			oldest = cur;
 		}
+	}
+
+	if (!oldest) {
+		uint32_t r;
+		int rc;
+
+		/* Randomly evict a window */
+		rc = getrandom(&r, sizeof(r), 0);
+		if (!rc) {
+			r = 0;
+			MSG_ERR("Failed to fetch random data, evicting window %d\n", r);
+			return &context->windows.window[r];
+		}
+
+		r = r % context->windows.num;
+		oldest = &context->windows.window[r];
+
+		MSG_DBG("Age criteria unmet, randomly evicting window %u\n", r);
 	}
 
 	return oldest;
