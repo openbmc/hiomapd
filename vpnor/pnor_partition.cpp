@@ -134,6 +134,19 @@ size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
         throw std::system_error(errno, std::system_category());
     }
 
+    if (flags == O_RDONLY)
+    {
+        MSG_INFO("Fulfilling read request against %s at offset 0x%zx into %p "
+                 "for %zu\n",
+                 path.c_str(), offset, buf, len);
+    }
+    else
+    {
+        MSG_INFO("Fulfilling write request against %s at offset 0x%zx from %p "
+                 "for %zu\n",
+                 path.c_str(), offset, buf, len);
+    }
+
     size_t fileSize = fs::file_size(path);
     int mprot = PROT_READ | ((flags == O_RDWR) ? PROT_WRITE : 0);
     auto map = mmap(NULL, fileSize, mprot, MAP_SHARED, fd, 0);
