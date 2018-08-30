@@ -43,6 +43,7 @@ int control_reset(struct mbox_context *context)
 		return -EBUSY;
 	}
 
+	/* FIXME: Comment below is wrong: windows_reset_all() does not flush! */
 	/*
 	 * This will close (and flush) the current window and reset the lpc bus
 	 * mapping back to flash, or memory in case we're using a virtual pnor.
