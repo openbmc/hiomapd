@@ -97,6 +97,6 @@ class VpnorRoot
     const std::string attributes[4] = {"ro", "rw", "prsv", "patch"};
 };
 
-} // test
-} // virtual_pnor
-} // openpower
+} // namespace test
+} // namespace virtual_pnor
+} // namespace openpower

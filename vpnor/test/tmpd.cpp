@@ -37,6 +37,6 @@ size_t VpnorRoot::patch(const std::string &name, const void *data, size_t len)
     return len;
 }
 
-} // test
-} // virtual_pnor
-} // openpower
+} // namespace test
+} // namespace virtual_pnor
+} // namespace openpower
