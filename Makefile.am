@@ -9,6 +9,7 @@ mboxd_SOURCES = \
 	control_dbus.c \
 	lpc.c \
 	protocol.c \
+	transport_dbus.c \
 	transport_mbox.c \
 	windows.c \
 	mtd.c
