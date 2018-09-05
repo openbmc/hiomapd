@@ -34,6 +34,7 @@
 #include "flash.h"
 #include "lpc.h"
 #include "transport_mbox.h"
+#include "transport_dbus.h"
 #include "windows.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
@@ -75,12 +76,18 @@ static int dbus_init(struct mbox_context *context)
 		return rc;
 	}
 
-	rc = sd_bus_request_name(context->bus, MBOX_DBUS_NAME,
-				 SD_BUS_NAME_ALLOW_REPLACEMENT |
-				 SD_BUS_NAME_REPLACE_EXISTING);
+	rc = transport_dbus_init(context);
 	if (rc < 0) {
-		MSG_ERR("Failed to request name on the bus: %s\n",
+		MSG_ERR("Failed to initialise DBus protocol interface: %s\n",
 			strerror(-rc));
+		return rc;
+	}
+
+       rc = sd_bus_request_name(context->bus, MBOX_DBUS_NAME,
+                                SD_BUS_NAME_ALLOW_REPLACEMENT |
+                                SD_BUS_NAME_REPLACE_EXISTING);
+	if (rc < 0) {
+		MSG_ERR("Failed to request DBus name: %s\n", strerror(-rc));
 		return rc;
 	}
 
@@ -97,6 +104,7 @@ static int dbus_init(struct mbox_context *context)
 
 static void dbus_free(struct mbox_context *context)
 {
+	transport_dbus_free(context);
 	control_dbus_free(context);
 	control_legacy_free(context);
 	sd_bus_unref(context->bus);
