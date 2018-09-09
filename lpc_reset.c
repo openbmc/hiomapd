@@ -15,5 +15,20 @@ struct mbox_context;
  */
 int lpc_reset(struct mbox_context *context)
 {
-	return lpc_map_flash(context);
+	if(context->filename)
+	{
+		/*
+		 * We are running from a file instead of /dev/mtd/pnor
+		 * During init, we preloaded the file contents to the
+		 *   memory mapped window, so it's safe to point to mem.
+		*/
+		return lpc_map_memory(context);
+	}
+	else
+	{
+		/*
+		 * We are pointing directly to the flash device,
+		 */
+		return lpc_map_flash(context);
+        }
 }

@@ -90,6 +90,8 @@ struct mbox_context {
 	bool current_is_write;
 
 /* Memory & Flash State */
+	/* Backing file */
+	const char* filename;
 	/* Reserved Memory Region */
 	void *mem;
 	/* Reserved Mem Size (bytes) */
