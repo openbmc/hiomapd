@@ -25,15 +25,6 @@ AX_CXX_COMPILE_STDCXX(17, [noext], [mandatory])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CFLAGS])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CXXFLAGS])
 
-PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus],,\
-AC_MSG_ERROR(["Requires sdbusplus package."]))
-
-PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging],,\
-AC_MSG_ERROR(["Requires phosphor-logging package."]))
-
-AX_PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [],[phosphor-dbus-interfaces],\
-[], [AC_MSG_ERROR(["phosphor-dbus-interfaces required and not found."])])
-
 # Checks for library functions.
 LT_INIT # Removes 'unrecognized options: --with-libtool-sysroot'
 
@@ -60,6 +51,15 @@ AC_ARG_ENABLE([virtual-pnor],
 )
 AS_IF([test "x$enable_virtual_pnor" == "xyes"],
     [
+        PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus],,\
+                          AC_MSG_ERROR(["Requires sdbusplus package."]))
+
+        PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging],,\
+                          AC_MSG_ERROR(["Requires phosphor-logging package."]))
+
+        AX_PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [],[phosphor-dbus-interfaces],\
+                             [], [AC_MSG_ERROR(["phosphor-dbus-interfaces required and not found."])])
+
         AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, true)
         AX_APPEND_COMPILE_FLAGS([-DVIRTUAL_PNOR_ENABLED], [CXXFLAGS])
         AX_APPEND_COMPILE_FLAGS([-DVIRTUAL_PNOR_ENABLED], [CFLAGS])
