@@ -1,20 +1,30 @@
 ACLOCAL_AMFLAGS = -I m4
-sbin_PROGRAMS = mboxd mboxctl
+sbin_PROGRAMS = mboxd
 
 mboxd_SOURCES = \
 	mboxd.c \
 	common.c \
 	control.c \
-	control_legacy.c \
-	control_dbus.c \
 	lpc.c \
 	protocol.c \
-	transport_dbus.c \
 	transport_mbox.c \
 	windows.c \
 	mtd.c
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
+
+if DBUS_INTERFACE_ENABLED
+mboxd_SOURCES += \
+	transport_dbus.c \
+	control_legacy.c \
+	control_dbus.c
+
+sbin_PROGRAMS += mboxctl
+
+mboxctl_SOURCES = mboxctl.c
+mboxctl_LDFLAGS = $(LIBSYSTEMD_LIBS)
+mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
+endif
 
 if VIRTUAL_PNOR_ENABLED
 include vpnor/Makefile.am.include
@@ -23,10 +33,6 @@ mboxd_SOURCES += flash.c \
 	lpc_reset.c \
 	protocol_negotiate_version.c
 endif
-
-mboxctl_SOURCES = mboxctl.c
-mboxctl_LDFLAGS = $(LIBSYSTEMD_LIBS)
-mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 @CODE_COVERAGE_RULES@
 

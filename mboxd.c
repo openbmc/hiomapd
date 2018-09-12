@@ -24,7 +24,10 @@
 #include <time.h>
 #include <unistd.h>
 #include <inttypes.h>
+
+#ifdef DBUS_INTERFACE_ENABLED
 #include <systemd/sd-bus.h>
+#endif
 
 #include "config.h"
 #include "mboxd.h"
@@ -51,6 +54,7 @@
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
 
+#ifdef DBUS_INTERFACE_ENABLED
 static int dbus_init(struct mbox_context *context,
 		     const struct transport_ops **ops)
 {
@@ -110,6 +114,15 @@ static void dbus_free(struct mbox_context *context)
 	control_legacy_free(context);
 	sd_bus_unref(context->bus);
 }
+#else
+static int dbus_init(struct mbox_context *context)
+{
+	return 0;
+}
+static void dbus_free(struct mbox_context *context)
+{
+}
+#endif
 
 static int poll_loop(struct mbox_context *context)
 {
@@ -170,6 +183,7 @@ static int poll_loop(struct mbox_context *context)
 				break;
 			}
 		}
+#ifdef DBUS_INTERFACE_ENABLED
 		if (context->fds[DBUS_FD].revents & POLLIN) { /* DBUS */
 			while ((rc = sd_bus_process(context->bus, NULL)) > 0) {
 				MSG_DBG("DBUS Event\n");
@@ -179,6 +193,7 @@ static int poll_loop(struct mbox_context *context)
 						strerror(-rc));
 			}
 		}
+#endif
 		if (context->terminate) {
 			break; /* This should mean we clean up nicely */
 		}

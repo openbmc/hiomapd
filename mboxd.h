@@ -5,9 +5,13 @@
 #define MBOX_H
 
 #include <mtd/mtd-abi.h>
+#ifdef DBUS_INTERFACE_ENABLED
 #include <systemd/sd-bus.h>
+#endif
 #include <poll.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stddef.h>
 
 #include "protocol.h"
 #include "transport.h"
@@ -76,7 +80,9 @@ struct mbox_context {
 /* System State */
 	enum mbox_state state;
 	struct pollfd fds[TOTAL_FDS];
+#ifdef DBUS_INTERFACE_ENABLED
 	sd_bus *bus;
+#endif
 	bool terminate;
 	uint8_t bmc_events;
 	uint8_t prev_seq;
