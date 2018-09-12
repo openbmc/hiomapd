@@ -28,6 +28,20 @@ AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CXXFLAGS])
 # Checks for library functions.
 LT_INIT # Removes 'unrecognized options: --with-libtool-sysroot'
 
+AC_ARG_ENABLE([dbus],
+    AS_HELP_STRING([--enable-dbus], [Enable D-Bus interface and tool for controlling the daemon [default=yes]])
+)
+AS_IF([test "x$enable_dbus" == "xno"],
+    [
+        AM_CONDITIONAL(DBUS_INTERFACE_ENABLED, false)
+    ],
+    [
+        AM_CONDITIONAL(DBUS_INTERFACE_ENABLED, true)
+        AX_APPEND_COMPILE_FLAGS([-DDBUS_INTERFACE_ENABLED], [CFLAGS])
+        PKG_CHECK_MODULES(LIBSYSTEMD, libsystemd, , AC_MSG_ERROR([libsytemd not found]))
+    ]
+)
+
 AC_ARG_ENABLE([oe-sdk],
     AS_HELP_STRING([--enable-oe-sdk], [Link testcases absolutely against OE SDK so they can be ran within it.])
 )
@@ -71,7 +85,6 @@ AS_IF([test "x$enable_virtual_pnor" == "xyes"],
 
 AX_CODE_COVERAGE
 
-PKG_CHECK_MODULES(LIBSYSTEMD, libsystemd, , AC_MSG_ERROR([libsytemd not found]))
 AC_SUBST([LIBSYSTEMD_CFLAGS])
 AC_SUBST([LIBSYSTEMD_LIBS])
 
