@@ -5,9 +5,14 @@
 #define MBOX_H
 
 #include <mtd/mtd-abi.h>
-#include <systemd/sd-bus.h>
 #include <poll.h>
 #include <stdbool.h>
+#include <stdint.h>
+
+#ifdef DBUS_INTERFACE_ENABLED
+#include <systemd/sd-bus.h>
+#endif
+
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 enum api_version {
@@ -140,10 +145,12 @@ struct mbox_context {
 	enum mbox_state state;
 	enum api_version version;
 	struct pollfd fds[TOTAL_FDS];
-	sd_bus *bus;
 	bool terminate;
 	uint8_t bmc_events;
 	uint8_t prev_seq;
+#ifdef DBUS_INTERFACE_ENABLED
+	sd_bus *bus;
+#endif
 
 /* Command Dispatch */
 	const mboxd_mbox_handler *handlers;
