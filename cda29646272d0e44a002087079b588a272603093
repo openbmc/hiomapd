@@ -1,0 +1,9 @@
+Code-Review+1: Adriana Kobylak <anoo@linux.ibm.com>
+Ok-To-Test+1: Jenkins <openbmc-ci-admin@ozlabs.org>
+Verified+1: Jenkins <openbmc-ci-admin@ozlabs.org>
+Code-Review+2: Andrew Jeffery <andrew@aj.id.au>
+Submitted-by: Andrew Jeffery <andrew@aj.id.au>
+Submitted-at: Fri, 14 Sep 2018 22:57:05 +0000
+Reviewed-on: https://gerrit.openbmc-project.xyz/12468
+Project: openbmc/mboxbridge
+Branch: refs/heads/master
