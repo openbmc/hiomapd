@@ -42,14 +42,16 @@
 "\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
 "\t\t[-n | --window-num <num>]\n" \
 "\t\t[-w | --window-size <size>M]\n" \
-"\t\t-f | --flash <size>[K|M]\n\n" \
+"\t\t-f | --flash <size>[K|M]\n" \
+"\t\t-i | --file <path>\n\n" \
 "\t-v | --verbose\t\tBe [more] verbose\n" \
 "\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n" \
 "\t-n | --window-num\tThe number of windows\n" \
 "\t\t\t\t(default: fill the reserved memory region)\n" \
 "\t-w | --window-size\tThe window size (power of 2) in MB\n" \
 "\t\t\t\t(default: 1MB)\n" \
-"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+"\t-f | --flash\t\tSize of flash in [K|M] bytes\n" \
+"\t-i | --file\t\tEmulate the flash device with the specified file\n\n"
 
 static int dbus_init(struct mbox_context *context)
 {
@@ -248,6 +250,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	static const struct option long_options[] = {
 		{ "flash",		required_argument,	0, 'f' },
+		{ "file",		required_argument,	0, 'i' },
 		{ "window-size",	optional_argument,	0, 'w' },
 		{ "window-num",		optional_argument,	0, 'n' },
 		{ "verbose",		no_argument,		0, 'v' },
@@ -262,7 +265,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	context->current = NULL; /* No current window */
 
-	while ((opt = getopt_long(argc, argv, "f:w::n::vsVh", long_options, NULL))
+	while ((opt = getopt_long(argc, argv, "f:i:w::n::vsVh", long_options, NULL))
 			!= -1) {
 		switch (opt) {
 		case 0:
@@ -286,6 +289,9 @@ static bool parse_cmdline(int argc, char **argv,
 					*endptr);
 				return false;
 			}
+			break;
+		case 'i':
+			context->filename = strdup(optarg);
 			break;
 		case 'n':
 			context->windows.num = strtol(argv[optind], &endptr,
@@ -335,6 +341,9 @@ static bool parse_cmdline(int argc, char **argv,
 	}
 
 	MSG_INFO("Flash size: 0x%.8x\n", context->flash_size);
+	if (context->filename) {
+		MSG_INFO("Backing file: %s\n", context->filename);
+	}
 
 	if (verbosity) {
 		MSG_INFO("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
@@ -438,6 +447,9 @@ finish:
 	transport_mbox_free(context);
 	windows_free(context);
 	protocol_free(context);
+	if(context->filename) {
+		free((void*)context->filename);
+	}
 	free(context);
 
 	return rc;

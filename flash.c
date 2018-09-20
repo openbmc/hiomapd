@@ -32,8 +32,15 @@
 
 int flash_dev_init(struct mbox_context *context)
 {
-	char *filename = get_dev_mtd();
+	const char *filename = context->filename;
 	int fd, rc = 0;
+	int mtd = 0;
+
+	if(!filename)
+	{
+		filename = get_dev_mtd();
+		mtd = 1;
+	}
 
 	if (!filename) {
 		MSG_ERR("Couldn't find the PNOR /dev/mtd partition\n");
@@ -53,11 +60,20 @@ int flash_dev_init(struct mbox_context *context)
 	context->fds[MTD_FD].fd = fd;
 
 	/* Read the Flash Info */
-	if (ioctl(fd, MEMGETINFO, &context->mtd_info) == -1) {
-		MSG_ERR("Couldn't get information about MTD: %s\n",
-			strerror(errno));
-		rc = -1;
-		goto out;
+	if (mtd)
+	{
+		if (ioctl(fd, MEMGETINFO, &context->mtd_info) == -1) {
+			MSG_ERR("Couldn't get information about MTD: %s\n",
+				strerror(errno));
+			rc = -1;
+			goto out;
+		}
+	}
+	else
+	{
+		context->mtd_info.size = context->flash_size;
+		/* Assume a 4K sector size. */
+		context->mtd_info.erasesize = 4 * 1024;
 	}
 
 	if (context->flash_size == 0) {
@@ -93,7 +109,14 @@ int flash_dev_init(struct mbox_context *context)
 	MSG_DBG("Flash erase size: 0x%.8x\n", context->mtd_info.erasesize);
 
 out:
-	free(filename);
+	if (mtd) {
+		free((void*)filename);
+	}
+	else
+	{
+		/* We are booting from a file - preload it to the lpc memeory window */
+		pread(context->fds[MTD_FD].fd, context->mem, MIN(context->flash_size, context->mem_size), 0);
+	}
 	return rc;
 }
 
@@ -181,8 +204,27 @@ int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
 			/* Erase the previous run which just ended */
 			MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
 				erase_info.start, erase_info.length);
-			rc = ioctl(context->fds[MTD_FD].fd, MEMERASE,
-				   &erase_info);
+
+
+			if(!context->filename)
+			{
+				/* MTD Device */
+				rc = ioctl(context->fds[MTD_FD].fd, MEMERASE,
+					   &erase_info);
+			}
+			else
+			{
+				uint8_t* erase_buf = (uint8_t*)malloc(erase_size);
+				if (!erase_buf) {
+					MSG_ERR("Couldn't malloc erase buffer. %s\n", strerror(errno));
+					return -MBOX_R_SYSTEM_ERROR;
+				}
+
+				memset(erase_buf, 0xFF, erase_size);
+				rc = pwrite(context->fds[MTD_FD].fd, erase_buf, erase_info.length, erase_info.start);
+				free(erase_buf);
+			}
+
 			if (rc < 0) {
 				MSG_ERR("Couldn't erase flash at 0x%.8x\n",
 						erase_info.start);
@@ -202,7 +244,28 @@ int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
 	if (erase_info.length) {
 		MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
 			erase_info.start, erase_info.length);
-		rc = ioctl(context->fds[MTD_FD].fd, MEMERASE, &erase_info);
+
+
+		if(!context->filename)
+		{
+			/* MTD Device */
+			rc = ioctl(context->fds[MTD_FD].fd, MEMERASE,
+				   &erase_info);
+		}
+		else
+		{
+			uint8_t* erase_buf = (uint8_t*)malloc(erase_size);
+			if (!erase_buf) {
+				MSG_ERR("Couldn't malloc erase buffer. %s\n", strerror(errno));
+				return -MBOX_R_SYSTEM_ERROR;
+			}
+
+			memset(erase_buf, 0xFF, erase_size);
+			rc = pwrite(context->fds[MTD_FD].fd, erase_buf, erase_info.length, erase_info.start);
+			free(erase_buf);
+		}
+
+
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash at 0x%.8x\n",
 					erase_info.start);
