@@ -66,6 +66,10 @@ int main(void)
 
 	mbox_vlog = &mbox_log_console;
 
+	context->flash.filename = get_dev_mtd();
+	rc = probe_mtd_backed_flash(context);
+	assert(rc == 0);
+
 	rc = flash_dev_init(context);
 	assert(rc == 0);
 

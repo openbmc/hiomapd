@@ -18,11 +18,9 @@ mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
 if VIRTUAL_PNOR_ENABLED
 include vpnor/Makefile.am.include
-else
-mboxd_SOURCES += flash.c \
-	lpc_reset.c \
-	protocol_negotiate_version.c
 endif
+mboxd_SOURCES += flash.c \
+	protocol_negotiate_version.c
 
 mboxctl_SOURCES = mboxctl.c
 mboxctl_LDFLAGS = $(LIBSYSTEMD_LIBS)

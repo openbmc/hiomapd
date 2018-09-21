@@ -13,4 +13,6 @@ int protocol_v1_vpnor_create_window(struct mbox_context *context,
 int protocol_v2_vpnor_create_window(struct mbox_context *context,
 			            struct protocol_create_window *io);
 
+int protocol_negotiate_version_vpnor(struct mbox_context *context, uint8_t requested);
+
 #endif /* VPNOR_PROTOCOL_H */

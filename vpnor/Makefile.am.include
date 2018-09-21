@@ -2,7 +2,6 @@ mboxd_SOURCES += %reldir%/pnor_partition_table.cpp \
 	%reldir%/mboxd_pnor_partition_table.cpp \
 	%reldir%/flash.cpp \
 	%reldir%/pnor_partition.cpp \
-	%reldir%/lpc_reset.cpp \
 	%reldir%/protocol.cpp \
 	%reldir%/protocol_negotiate_version.cpp
 

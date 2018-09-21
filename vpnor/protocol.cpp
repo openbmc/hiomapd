@@ -30,10 +30,10 @@ static int generic_vpnor_create_window(struct mbox_context *context,
 
     /* Only allow write windows on regions mapped by the ToC as writeable */
     size_t offset = io->req.offset;
-    offset <<= context->block_size_shift;
+    offset <<= context->flash.block_size_shift;
     try
     {
-        const pnor_partition &part = context->vpnor->table->partition(offset);
+        const pnor_partition &part = context->flash.vpnor->table->partition(offset);
         if (vpnor_partition_is_readonly(part))
         {
             return -EPERM;

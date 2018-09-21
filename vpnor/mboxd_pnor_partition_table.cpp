@@ -16,18 +16,18 @@ extern "C" {
 
 int init_vpnor(struct mbox_context *context)
 {
-    if (context && !context->vpnor)
+    if (context && !context->flash.vpnor)
     {
         int rc;
 
-        strncpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
-        context->paths.ro_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
-        context->paths.rw_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
-        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
-        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->flash.paths.ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
+        context->flash.paths.ro_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->flash.paths.rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
+        context->flash.paths.rw_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->flash.paths.prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
+        context->flash.paths.prsv_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->flash.paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
+        context->flash.paths.prsv_loc[PATH_MAX - 1] = '\0';
 
         rc = init_vpnor_from_paths(context);
         if (rc < 0)
@@ -45,12 +45,12 @@ int init_vpnor_from_paths(struct mbox_context *context)
     namespace fs = std::experimental::filesystem;
     namespace vpnor = openpower::virtual_pnor;
 
-    if (context && !context->vpnor)
+    if (context && !context->flash.vpnor)
     {
         try
         {
-            context->vpnor = new vpnor_partition_table;
-            context->vpnor->table =
+            context->flash.vpnor = new vpnor_partition_table;
+            context->flash.vpnor->table =
                 new openpower::virtual_pnor::partition::Table(context);
         }
         catch (vpnor::TocEntryError &e)
@@ -89,8 +89,8 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
     {
         vpnor_partition_table vtbl{};
         struct mbox_context local = *context;
-        local.vpnor = &vtbl;
-        local.block_size_shift = log_2(eraseSize);
+        local.flash.vpnor = &vtbl;
+        local.flash.block_size_shift = log_2(eraseSize);
 
         openpower::virtual_pnor::partition::Table blTable(&local);
 
@@ -99,14 +99,14 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
         size_t tocOffset = 0;
 
         // Copy TOC
-        flash_copy(&local, tocOffset,
+        local.flash.copy(&local, tocOffset,
                    static_cast<uint8_t *>(context->mem) + tocStart,
                    blTable.capacity());
         const pnor_partition &partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
         // Copy HBB
-        flash_copy(&local, hbbOffset,
+        local.flash.copy(&local, hbbOffset,
                    static_cast<uint8_t *>(context->mem) + hbbOffset, hbbSize);
     }
     catch (err::InternalFailure &e)
@@ -126,10 +126,10 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
 
 void destroy_vpnor(struct mbox_context *context)
 {
-    if (context && context->vpnor)
+    if (context && context->flash.vpnor)
     {
-        delete context->vpnor->table;
-        delete context->vpnor;
-        context->vpnor = nullptr;
+        delete context->flash.vpnor->table;
+        delete context->flash.vpnor;
+        context->flash.vpnor = nullptr;
     }
 }

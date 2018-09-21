@@ -13,6 +13,7 @@
 #include "transport.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 #include "windows.h"
+#include "flash.h"
 
 enum api_version {
 	API_VERSION_INVAL	= 0,
@@ -89,28 +90,14 @@ struct mbox_context {
 	/* Is the current window a write one */
 	bool current_is_write;
 
-/* Memory & Flash State */
+	/* Memory & Flash State */
+	struct flash_hal flash;
 	/* Reserved Memory Region */
 	void *mem;
 	/* Reserved Mem Size (bytes) */
 	uint32_t mem_size;
 	/* LPC Bus Base Address (bytes) */
 	uint32_t lpc_base;
-	/* Flash size from command line (bytes) */
-	uint32_t flash_size;
-	/* Bytemap of the erased state of the entire flash */
-	uint8_t *flash_bmap;
-	/* Erase size (as a shift) */
-	uint32_t erase_size_shift;
-	/* Block size (as a shift) */
-	uint32_t block_size_shift;
-	/* Actual Flash Info */
-	struct mtd_info_user mtd_info;
-#ifdef VIRTUAL_PNOR_ENABLED
-	/* Virtual PNOR partition table */
-	struct vpnor_partition_table *vpnor;
-	struct vpnor_partition_paths paths;
-#endif
 };
 
 #endif /* MBOX_H */

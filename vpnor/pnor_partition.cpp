@@ -39,7 +39,7 @@ namespace fs = std::experimental::filesystem;
 fs::path Request::getPartitionFilePath(int flags)
 {
     // Check if partition exists in patch location
-    auto dst = fs::path(ctx->paths.patch_loc) / partition.data.name;
+    auto dst = fs::path(ctx->flash.paths.patch_loc) / partition.data.name;
     if (fs::is_regular_file(dst))
     {
         return dst;
@@ -49,15 +49,15 @@ fs::path Request::getPartitionFilePath(int flags)
             (PARTITION_PRESERVED | PARTITION_READONLY))
     {
         case PARTITION_PRESERVED:
-            dst = ctx->paths.prsv_loc;
+            dst = ctx->flash.paths.prsv_loc;
             break;
 
         case PARTITION_READONLY:
-            dst = ctx->paths.ro_loc;
+            dst = ctx->flash.paths.ro_loc;
             break;
 
         default:
-            dst = ctx->paths.rw_loc;
+            dst = ctx->flash.paths.rw_loc;
     }
     dst /= partition.data.name;
 
@@ -68,22 +68,22 @@ fs::path Request::getPartitionFilePath(int flags)
 
     if (flags == O_RDONLY)
     {
-        dst = fs::path(ctx->paths.ro_loc) / partition.data.name;
+        dst = fs::path(ctx->flash.paths.ro_loc) / partition.data.name;
         assert(fs::exists(dst));
         return dst;
     }
 
     assert(flags == O_RDWR);
-    auto src = fs::path(ctx->paths.ro_loc) / partition.data.name;
+    auto src = fs::path(ctx->flash.paths.ro_loc) / partition.data.name;
     assert(fs::exists(src));
 
     MSG_DBG("RWRequest: Didn't find '%s' under '%s', copying from '%s'\n",
             partition.data.name, dst.c_str(), src.c_str());
 
-    dst = ctx->paths.rw_loc;
+    dst = ctx->flash.paths.rw_loc;
     if (partition.data.user.data[1] & PARTITION_PRESERVED)
     {
-        dst = ctx->paths.prsv_loc;
+        dst = ctx->flash.paths.prsv_loc;
     }
 
     dst /= partition.data.name;
@@ -95,7 +95,7 @@ fs::path Request::getPartitionFilePath(int flags)
 size_t Request::clamp(size_t len)
 {
     size_t maxAccess = offset + len;
-    size_t partSize = partition.data.size << ctx->block_size_shift;
+    size_t partSize = partition.data.size << ctx->flash.block_size_shift;
     return std::min(maxAccess, partSize) - offset;
 }
 
@@ -167,7 +167,7 @@ size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
     else
     {
         memcpy((char *)map + offset, buf, len);
-        flash_set_bytemap(ctx, base + offset, len, FLASH_DIRTY);
+        ctx->flash.set_bytemap(ctx, base + offset, len, FLASH_DIRTY);
     }
     munmap(map, fileSize);
     close(fd);

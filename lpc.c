@@ -108,9 +108,9 @@ int lpc_map_flash(struct mbox_context *context)
 		 * The mask is because the top nibble is the host LPC FW space,
 		 * we want space 0.
 		 */
-		.addr = 0x0FFFFFFF & -context->flash_size,
+		.addr = 0x0FFFFFFF & -context->flash.flash_size,
 		.offset = 0,
-		.size = context->flash_size
+		.size = context->flash.flash_size
 	};
 
 	if (context->state & MAPS_FLASH) {
@@ -124,7 +124,7 @@ int lpc_map_flash(struct mbox_context *context)
 
 	MSG_INFO("Pointing HOST LPC bus at the flash\n");
 	MSG_INFO("Assuming %dMB of flash: HOST LPC 0x%08x\n",
-		context->flash_size >> 20, map.addr);
+		context->flash.flash_size >> 20, map.addr);
 
 	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map)
 			== -1) {
@@ -138,7 +138,7 @@ int lpc_map_flash(struct mbox_context *context)
 	 * Since the host now has access to the flash it can change it out from
 	 * under us
 	 */
-	return flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
+	return context->flash.set_bytemap(context, 0, context->flash.flash_size, FLASH_DIRTY);
 }
 
 /*
