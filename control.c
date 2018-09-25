@@ -55,7 +55,7 @@ int control_reset(struct mbox_context *context)
 			return rc;
 		}
 	}
-	rc = context->flash.lpc_reset(context);
+	rc = context->backend->lpc_reset(context);
 	if (rc < 0) {
 		return rc;
 	}
@@ -75,7 +75,7 @@ int control_kill(struct mbox_context *context)
 int control_modified(struct mbox_context *context)
 {
 	/* Flash has been modified - can no longer trust our erased bytemap */
-	context->flash.set_bytemap(context, 0, context->flash.flash_size, FLASH_DIRTY);
+	context->backend->set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 
 	/* Force daemon to reload all windows -> Set BMC event to notify host */
 	if (windows_reset_all(context)) {

@@ -25,7 +25,7 @@ int	probe_mtd_backed_flash(struct mbox_context *context);
 int	probe_vpnor_backed_flash(struct mbox_context *context);
 #endif
 
-struct flash_hal {
+struct backend {
 	/**
 	 * @fn init
 	 *
@@ -101,10 +101,6 @@ struct flash_hal {
 	int 	(*protocol_negotiate_version)(struct mbox_context *context,
                                    uint8_t requested);
 
-	/* Backing file */
-	char*	filename;
-	/* Flash size from command line (bytes) */
-	uint32_t flash_size;
 	/* Bytemap of the erased state of the entire flash */
 	uint8_t *flash_bmap;
 	/* Erase size (as a shift) */

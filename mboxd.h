@@ -91,7 +91,12 @@ struct mbox_context {
 	bool current_is_write;
 
 	/* Memory & Flash State */
-	struct flash_hal flash;
+    /* Backing file */
+	char*	filename;
+	/* Flash size from command line (bytes) */
+	uint32_t flash_size;
+    /* Backend structure */
+	struct backend *backend;
 	/* Reserved Memory Region */
 	void *mem;
 	/* Reserved Mem Size (bytes) */

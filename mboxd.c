@@ -160,7 +160,7 @@ static int poll_loop(struct mbox_context *context)
 					      break;
 				       }
 				}
-				rc = context->flash.lpc_reset(context);
+				rc = context->backend->lpc_reset(context);
 				if (rc < 0) {
 					MSG_ERR("WARNING: Failed to point the "
 						"LPC bus back to flash on "
@@ -204,7 +204,7 @@ static int poll_loop(struct mbox_context *context)
 		      return rc;
 	       }
 	}
-	rc = context->flash.lpc_reset(context);
+	rc = context->backend->lpc_reset(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {
 		MSG_ERR("WARNING: Failed to point the LPC bus back to flash\n"
@@ -274,7 +274,7 @@ static bool parse_cmdline(int argc, char **argv,
 		case 0:
 			break;
 		case 'f':
-			context->flash.flash_size = strtol(optarg, &endptr, 10);
+			context->flash_size = strtol(optarg, &endptr, 10);
 			if (optarg == endptr) {
 				fprintf(stderr, "Unparseable flash size\n");
 				return false;
@@ -283,9 +283,9 @@ static bool parse_cmdline(int argc, char **argv,
 			case '\0':
 				break;
 			case 'M':
-				context->flash.flash_size <<= 10;
+				context->flash_size <<= 10;
 			case 'K':
-				context->flash.flash_size <<= 10;
+				context->flash_size <<= 10;
 				break;
 			default:
 				fprintf(stderr, "Unknown units '%c'\n",
@@ -294,7 +294,7 @@ static bool parse_cmdline(int argc, char **argv,
 			}
 			break;
 		case 'b':
-			context->flash.filename = strdup(optarg);
+			context->filename = strdup(optarg);
 			break;
 		case 'n':
 			context->windows.num = strtol(argv[optind], &endptr,
@@ -338,20 +338,20 @@ static bool parse_cmdline(int argc, char **argv,
 		}
 	}
 
-	if (!context->flash.filename) {
+	if (!context->filename) {
 #ifdef VIRTUAL_PNOR_ENABLED
 		// VPNOR is compiled in, default to vpnor it not otherwise selected
-		context->flash.filename = strdup("vpnor");
+		context->filename = strdup("vpnor");
 #else
-		context->flash.filename = get_dev_mtd();
+		context->filename = get_dev_mtd();
 #endif
 	}
-	if (!context->flash.flash_size) {
+	if (!context->flash_size) {
 		fprintf(stderr, "Must specify a non-zero flash size\n");
 		return false;
 	}
 
-	MSG_INFO("Flash size: 0x%.8x\n", context->flash.flash_size);
+	MSG_INFO("Flash size: 0x%.8x\n", context->flash_size);
 
 	if (verbosity) {
 		MSG_INFO("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
@@ -361,7 +361,7 @@ static bool parse_cmdline(int argc, char **argv,
 	return true;
 }
 
-int flash_init(struct mbox_context *context)
+int backend_init(struct mbox_context *context)
 {
 	int rc;
 
@@ -376,8 +376,8 @@ int flash_init(struct mbox_context *context)
 #endif
 
 	if (rc) {
-		if(context->flash.filename) {
-			fprintf(stderr, "Unable to determine backing store for file: %s\n", context->flash.filename);
+		if(context->filename) {
+			fprintf(stderr, "Unable to determine backing store for file: %s\n", context->filename);
 		}
 		else
 		{
@@ -385,9 +385,18 @@ int flash_init(struct mbox_context *context)
 		}
 	}
 	else {
-		rc = context->flash.init(context);
-	}
+		assert(context->backend);
+		assert(context->backend->init);
+		assert(context->backend->free);
+		assert(context->backend->write);
+		assert(context->backend->erase);
+		assert(context->backend->copy);
+		assert(context->backend->set_bytemap);
+		assert(context->backend->lpc_reset);
 
+		rc = context->backend->init(context);
+	}  
+	
 	return rc;
 }
 
@@ -421,7 +430,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = flash_init(context);
+	rc = backend_init(context);
 	if (rc) {
 		goto finish;
 	}
@@ -453,7 +462,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Set the LPC bus mapping */
-	rc = context->flash.lpc_reset(context);
+	rc = context->backend->lpc_reset(context);
 	if (rc) {
 		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}
@@ -476,15 +485,15 @@ finish:
 	destroy_vpnor(context);
 #endif
 	dbus_free(context);
-	if(context->flash.free) {
-		context->flash.free(context);
+	if(context->backend->free) {
+		context->backend->free(context);
 	}
 	lpc_dev_free(context);
 	transport_mbox_free(context);
 	windows_free(context);
 	protocol_free(context);
-	if(context->flash.filename) {
-		free(context->flash.filename);
+	if(context->filename) {
+		free(context->filename);
 	}
 	free(context);
 

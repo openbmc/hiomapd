@@ -35,8 +35,8 @@ class Request
      *  instance.
      */
     Request(struct mbox_context* ctx, size_t offset) :
-        ctx(ctx), partition(ctx->flash.vpnor->table->partition(offset)),
-        base(partition.data.base << ctx->flash.block_size_shift),
+        ctx(ctx), partition(ctx->backend->vpnor->table->partition(offset)),
+        base(partition.data.base << ctx->backend->block_size_shift),
         offset(offset - base)
     {
     }
@@ -61,7 +61,7 @@ class Request
             std::stringstream err;
             err << "Request size 0x" << std::hex << len << " from offset 0x"
                 << std::hex << offset << " exceeds the partition size 0x"
-                << std::hex << (partition.data.size << ctx->flash.block_size_shift);
+                << std::hex << (partition.data.size << ctx->backend->block_size_shift);
             throw OutOfBoundsOffset(err.str());
         }
         constexpr auto flags = O_RDWR;

@@ -46,10 +46,26 @@ static int flash_write(struct mbox_context *context,
 							uint32_t offset, void *buf, uint32_t count);
 static int lpc_reset(struct mbox_context *context);
 
+static struct backend flash_mtd_backed = {
+	.init = flash_dev_init,
+	.free = flash_dev_free,
+	.copy = flash_copy,
+	.set_bytemap = flash_set_bytemap,
+	.erase = flash_erase,
+	.write = flash_write,
+	.lpc_reset = lpc_reset,
+	.protocol_negotiate_version = protocol_negotiate_version_default,
+	.flash_bmap = NULL,
+	.erase_size_shift = 0,
+	.block_size_shift = 0,
+	.mtd_info = {0},
+};
+
+
 int probe_mtd_backed_flash(struct mbox_context *context)
 {
 	int fd;
-	char* filename = context->flash.filename;
+	char* filename = context->filename;
 	if(!filename)
 	{
 		return -1;
@@ -60,28 +76,21 @@ int probe_mtd_backed_flash(struct mbox_context *context)
 		/* Unable to open file, not an mtd device */
 		return -errno;
 	}
-	else if (ioctl(fd, MEMGETINFO, &context->flash.mtd_info) == -1) {
+	else if (ioctl(fd, MEMGETINFO, &context->backend->mtd_info) == -1) {
 		/* File does not support memgetinfo, not an mtd device */
 		close(fd);
 		return -1;
 	}
 
 	/* setup data structure */
-	context->flash.init  = flash_dev_init;
-	context->flash.free  = flash_dev_free;
-	context->flash.write = flash_write;
-	context->flash.copy  = flash_copy;
-	context->flash.erase = flash_erase;
-	context->flash.set_bytemap = flash_set_bytemap;
-	context->flash.lpc_reset = lpc_reset;
-	context->flash.protocol_negotiate_version = protocol_negotiate_version_default;
+	context->backend = &flash_mtd_backed;
 	close(fd);
 	return 0;
 }
 
 static int flash_dev_init(struct mbox_context *context)
 {
-	char *filename = context->flash.filename;
+	char *filename = context->filename;
 	int fd, rc = 0;
 
 	if (!filename) {
@@ -102,27 +111,27 @@ static int flash_dev_init(struct mbox_context *context)
 	context->fds[MTD_FD].fd = fd;
 
 	/* Read the Flash Info */
-	if (ioctl(fd, MEMGETINFO, &context->flash.mtd_info) == -1) {
+	if (ioctl(fd, MEMGETINFO, &context->backend->mtd_info) == -1) {
 		MSG_ERR("Couldn't get information about MTD: %s\n",
 			strerror(errno));
 		rc = -1;
 		goto out;
 	}
 
-	if (context->flash.flash_size == 0) {
+	if (context->flash_size == 0) {
 		/*
 		 * PNOR images for current OpenPOWER systems are at most 64MB
 		 * despite the PNOR itself sometimes being as big as 128MB. To
 		 * ensure the image read from the PNOR is exposed in the LPC
 		 * address space at the location expected by the host firmware,
 		 * it is required that the image size be used for
-		 * context->flash.flash_size, and not the size of the flash device.
+		 * context->flash_size, and not the size of the flash device.
 		 *
 		 * However, the test cases specify the flash size via special
 		 * test APIs (controlling flash behaviour) which don't have
 		 * access to the mbox context. Rather than requiring
 		 * error-prone assignments in every test case, we instead rely
-		 * on context->flash.flash_size being set to the size reported by the
+		 * on context->flash_size being set to the size reported by the
 		 * MEMINFO ioctl().
 		 *
 		 * As this case should never be hit in production (i.e. outside
@@ -130,16 +139,16 @@ static int flash_dev_init(struct mbox_context *context)
 		 * error is expected in the test case output.
 		 */
 		MSG_ERR("Flash size MUST be supplied on the commandline. However, continuing by assuming flash is %u bytes\n",
-				context->flash.mtd_info.size);
-		context->flash.flash_size = context->flash.mtd_info.size;
+				context->backend->mtd_info.size);
+		context->flash_size = context->backend->mtd_info.size;
 	}
 
 	/* We know the erase size so we can allocate the flash_erased bytemap */
-	context->flash.erase_size_shift = log_2(context->flash.mtd_info.erasesize);
-	context->flash.flash_bmap = calloc(context->flash.flash_size >>
-				     context->flash.erase_size_shift,
-				     sizeof(*context->flash.flash_bmap));
-	MSG_DBG("Flash erase size: 0x%.8x\n", context->flash.mtd_info.erasesize);
+	context->backend->erase_size_shift = log_2(context->backend->mtd_info.erasesize);
+	context->backend->flash_bmap = calloc(context->flash_size >>
+				     context->backend->erase_size_shift,
+				     sizeof(*context->backend->flash_bmap));
+	MSG_DBG("Flash erase size: 0x%.8x\n", context->backend->mtd_info.erasesize);
 
 out:
 	return rc;
@@ -147,7 +156,7 @@ out:
 
 static void flash_dev_free(struct mbox_context *context)
 {
-	free(context->flash.flash_bmap);
+	free(context->backend->flash_bmap);
 	close(context->fds[MTD_FD].fd);
 }
 
@@ -163,7 +172,7 @@ static void flash_dev_free(struct mbox_context *context)
 static inline bool flash_is_erased(struct mbox_context *context,
 				   uint32_t offset)
 {
-	return context->flash.flash_bmap[offset >> context->flash.erase_size_shift]
+	return context->backend->flash_bmap[offset >> context->backend->erase_size_shift]
 			== FLASH_ERASED;
 }
 
@@ -182,16 +191,16 @@ static inline bool flash_is_erased(struct mbox_context *context,
 static int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t val)
 {
-	if ((offset + count) > context->flash.flash_size) {
+	if ((offset + count) > context->flash_size) {
 		return -EINVAL;
 	}
 
 	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
 		offset, count, val ? "ERASED" : "DIRTY");
-	memset(context->flash.flash_bmap + (offset >> context->flash.erase_size_shift),
+	memset(context->backend->flash_bmap + (offset >> context->backend->erase_size_shift),
 	       val,
-	       align_up(count, 1 << context->flash.erase_size_shift) >>
-	       context->flash.erase_size_shift);
+	       align_up(count, 1 << context->backend->erase_size_shift) >>
+	       context->backend->erase_size_shift);
 
 	return 0;
 }
@@ -206,7 +215,7 @@ static int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
  */
 static int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
 {
-	const uint32_t erase_size = 1 << context->flash.erase_size_shift;
+	const uint32_t erase_size = 1 << context->backend->erase_size_shift;
 	struct erase_info_user erase_info = { 0 };
 	int rc;
 

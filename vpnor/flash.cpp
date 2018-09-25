@@ -59,9 +59,24 @@ static int flash_write(struct mbox_context *context,
                             uint32_t offset, void *buf, uint32_t count);
 static int lpc_reset(struct mbox_context *context);
 
+static struct backend flash_vpnor_backed = {
+    .init = flash_dev_init,
+    .free = flash_dev_free,
+    .copy = flash_copy,
+    .set_bytemap = flash_set_bytemap,
+    .erase = flash_erase,
+    .write = flash_write,
+    .lpc_reset = lpc_reset,
+    .protocol_negotiate_version = protocol_negotiate_version_vpnor,
+    .flash_bmap = NULL,
+    .erase_size_shift = 0,
+    .block_size_shift = 0,
+    .mtd_info = {0},
+};
+
 int probe_vpnor_backed_flash(struct mbox_context *context)
 {
-    if(0 != strncmp(context->flash.filename, "vpnor", strlen("vpnor")))
+    if(0 != strncmp(context->filename, "vpnor", strlen("vpnor")))
     {
         // Magic vpnor keyword not sent, don't use vpnor.
         return -1;
@@ -71,14 +86,7 @@ int probe_vpnor_backed_flash(struct mbox_context *context)
     if(!rc)
     {
         /* setup data structure */
-        context->flash.init  = flash_dev_init;
-        context->flash.free  = flash_dev_free;
-        context->flash.write = flash_write;
-        context->flash.copy  = flash_copy;
-        context->flash.erase = flash_erase;
-        context->flash.set_bytemap = flash_set_bytemap;
-        context->flash.lpc_reset = lpc_reset;
-        context->flash.protocol_negotiate_version = protocol_negotiate_version_vpnor;
+        context->backend = &flash_vpnor_backed;
     }
     return rc;
 }
@@ -106,24 +114,24 @@ int flash_dev_init(struct mbox_context* context)
     }
 
     // Read the Flash Info
-    if (ioctl(fd, MEMGETINFO, &context->flash.mtd_info) == -1)
+    if (ioctl(fd, MEMGETINFO, &context->backend->mtd_info) == -1)
     {
         MSG_ERR("Couldn't get information about MTD: %s\n", strerror(errno));
         close(fd);
         return -errno;
     }
 
-    if (context->flash.flash_size == 0)
+    if (context->flash_size == 0)
     {
         // See comment in flash.c on why
         // this is needed.
-        context->flash.flash_size = context->flash.mtd_info.size;
+        context->flash_size = context->backend->mtd_info.size;
     }
 
     // Hostboot requires a 4K block-size to be used in the FFS flash structure
-    context->flash.mtd_info.erasesize = 4096;
-    context->flash.erase_size_shift = log_2(context->flash.mtd_info.erasesize);
-    context->flash.flash_bmap = NULL;
+    context->backend->mtd_info.erasesize = 4096;
+    context->backend->erase_size_shift = log_2(context->backend->mtd_info.erasesize);
+    context->backend->flash_bmap = NULL;
     context->fds[MTD_FD].fd = -1;
 
     close(fd);
@@ -164,13 +172,13 @@ int64_t flash_copy(struct mbox_context* context, uint32_t offset, void* mem,
     vpnor::partition::Table* table;
     int rc = size;
 
-    if (!(context && context->flash.vpnor && context->flash.vpnor->table))
+    if (!(context && context->backend->vpnor && context->backend->vpnor->table))
     {
         MSG_ERR("Trying to copy data with uninitialised context!\n");
         return -EINVAL;
     }
 
-    table = context->flash.vpnor->table;
+    table = context->backend->vpnor->table;
 
     MSG_DBG("Copy virtual pnor to %p for size 0x%.8x from offset 0x%.8x\n", mem,
             size, offset);
@@ -231,13 +239,13 @@ int flash_write(struct mbox_context* context, uint32_t offset, void* buf,
                 uint32_t count)
 {
 
-    if (!(context && context->flash.vpnor && context->flash.vpnor->table))
+    if (!(context && context->backend->vpnor && context->backend->vpnor->table))
     {
         MSG_ERR("Trying to write data with uninitialised context!\n");
         return -EINVAL;
     }
 
-    vpnor::partition::Table* table = context->flash.vpnor->table;
+    vpnor::partition::Table* table = context->backend->vpnor->table;
 
     try
     {
