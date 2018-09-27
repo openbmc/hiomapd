@@ -19,6 +19,7 @@
 #define FLASH_ACCESS_MS_PER_MB		8000
 
 struct mbox_context;
+struct protocol_create_window;
 
 int	probe_mtd_backed_flash(struct mbox_context *context);
 #ifdef VIRTUAL_PNOR_ENABLED
@@ -89,6 +90,8 @@ struct backend {
 	int 	(*write)(struct mbox_context *context,
 				uint32_t offset, void *buf, uint32_t count);
 
+	int 	(*validate)(struct mbox_context *context,
+				struct protocol_create_window *io);
 
 	/*
 	 * lpc_reset() - Reset the lpc bus mapping
@@ -97,9 +100,6 @@ struct backend {
 	 * Return:      0 on success otherwise negative error code
 	 */
 	int	(*lpc_reset)(struct mbox_context *context);
-
-	int 	(*protocol_negotiate_version)(struct mbox_context *context,
-                                   uint8_t requested);
 
 	/* Bytemap of the erased state of the entire flash */
 	uint8_t *flash_bmap;

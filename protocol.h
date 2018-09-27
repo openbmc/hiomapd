@@ -118,7 +118,7 @@ struct protocol_ops {
 int protocol_init(struct mbox_context *context);
 void protocol_free(struct mbox_context *context);
 
-int protocol_negotiate_version_default(struct mbox_context *context, uint8_t requested);
+int protocol_negotiate_version(struct mbox_context *context, uint8_t requested);
 
 int protocol_events_set(struct mbox_context *context, uint8_t bmc_event);
 int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event);

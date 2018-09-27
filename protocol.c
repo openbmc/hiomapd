@@ -73,7 +73,7 @@ int protocol_v1_get_info(struct mbox_context *context,
 	int rc;
 
 	/* Bootstrap protocol version. This may involve {up,down}grading */
-	rc = context->backend->protocol_negotiate_version(context, io->req.api_version);
+	rc = protocol_negotiate_version(context, io->req.api_version);
 	if (rc < 0)
 		return rc;
 
@@ -137,6 +137,14 @@ int protocol_v1_create_window(struct mbox_context *context,
 {
 	int rc;
 	uint32_t offset = io->req.offset << context->backend->block_size_shift;
+
+	if (context->backend->validate) {
+		rc = context->backend->validate(context, io);
+		if (rc < 0) {
+			// Backend does not allow window to be created.
+			return rc;
+        }
+    }
 
 	/* Close the current window if there is one */
 	if (context->current) {
@@ -370,7 +378,7 @@ int protocol_v2_get_info(struct mbox_context *context,
 	int rc;
 
 	/* Bootstrap protocol version. This may involve {up,down}grading */
-	rc = context->backend->protocol_negotiate_version(context, io->req.api_version);
+	rc = protocol_negotiate_version(context, io->req.api_version);
 	if (rc < 0)
 		return rc;
 
@@ -506,7 +514,7 @@ int protocol_v2_close(struct mbox_context *context, struct protocol_close *io)
 
 int protocol_init(struct mbox_context *context)
 {
-	context->backend->protocol_negotiate_version(context, API_MAX_VERSION);
+	protocol_negotiate_version(context, API_MAX_VERSION);
 
 	return 0;
 }

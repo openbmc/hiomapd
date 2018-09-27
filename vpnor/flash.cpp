@@ -59,6 +59,9 @@ static int flash_write(struct mbox_context *context,
                             uint32_t offset, void *buf, uint32_t count);
 static int lpc_reset(struct mbox_context *context);
 
+static int vpnor_validate(struct mbox_context *context,
+                                       struct protocol_create_window *io);
+
 static struct backend flash_vpnor_backed = {
     .init = flash_dev_init,
     .free = flash_dev_free,
@@ -66,8 +69,8 @@ static struct backend flash_vpnor_backed = {
     .set_bytemap = flash_set_bytemap,
     .erase = flash_erase,
     .write = flash_write,
+    .validate = vpnor_validate,
     .lpc_reset = lpc_reset,
-    .protocol_negotiate_version = protocol_negotiate_version_vpnor,
     .flash_bmap = NULL,
     .erase_size_shift = 0,
     .block_size_shift = 0,
@@ -281,6 +284,46 @@ int flash_write(struct mbox_context* context, uint32_t offset, void* buf,
         phosphor::logging::commit<err::InternalFailure>();
         return -EIO;
     }
+    return 0;
+}
+
+/* XXX: Maybe this should be a method on a class? */
+static bool vpnor_partition_is_readonly(const pnor_partition &part)
+{
+    return part.data.user.data[1] & PARTITION_READONLY;
+}
+
+static int vpnor_validate(struct mbox_context *context,
+                                       struct protocol_create_window *io)
+{
+    if (io->req.ro)
+    {
+        // RO, allowed
+        return 0;
+    }
+
+    /* Only allow write windows on regions mapped by the ToC as writeable */
+    size_t offset = io->req.offset;
+    offset <<= context->backend->block_size_shift;
+    try
+    {
+        const pnor_partition &part = context->backend->vpnor->table->partition(offset);
+        if (vpnor_partition_is_readonly(part))
+        {
+            return -EPERM;
+        }
+    }
+    catch (const openpower::virtual_pnor::UnmappedOffset &e)
+    {
+        /*
+         * Writes to unmapped areas are not meaningful, so deny the request.
+         * This removes the ability for a compromised host to abuse unused
+         * space if any data was to be persisted (which it isn't).
+         */
+        return -EACCES;
+    }
+
+    // Allowed.
     return 0;
 }
 

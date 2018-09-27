@@ -385,7 +385,7 @@ int backend_init(struct mbox_context *context)
 		}
 	}
 	else {
-		assert(context->backend);
+		assert(context->backend && "Backend pointer not set by probe routine");
 		assert(context->backend->init);
 		assert(context->backend->free);
 		assert(context->backend->write);
