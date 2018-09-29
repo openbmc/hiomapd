@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "common.h"
 #include "backend.h"
@@ -56,7 +57,11 @@ int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event)
 
 	context->bmc_events &= ~bmc_event;
 
-	return context->transport->clear_events(context, (bmc_event & mask));
+	if(context->transport) {
+		return context->transport->clear_events(context, (bmc_event & mask));
+	} else {
+		return 0;
+	}
 }
 
 int protocol_v1_reset(struct mbox_context *context)

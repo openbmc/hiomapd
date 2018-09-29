@@ -45,7 +45,7 @@ static int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
 		       uint32_t count);
 static int lpc_reset(struct mbox_context *context);
 
-static struct backend flash_mtd_backed = {
+static struct backend flash_mtd_backend = {
 	.init = flash_dev_init,
 	.free = flash_dev_free,
 	.copy = flash_copy,
@@ -72,14 +72,14 @@ int probe_mtd_backed_flash(struct mbox_context *context)
 	if (fd < 0) {
 		/* Unable to open file, not an mtd device */
 		return -errno;
-	} else if (ioctl(fd, MEMGETINFO, &context->backend->mtd_info) == -1) {
+	} else if (ioctl(fd, MEMGETINFO, &flash_mtd_backend.mtd_info) == -1) {
 		/* File does not support memgetinfo, not an mtd device */
 		close(fd);
 		return -1;
 	}
 
 	/* setup data structure */
-	context->backend = &flash_mtd_backed;
+	context->backend = &flash_mtd_backend;
 	close(fd);
 	return 0;
 }

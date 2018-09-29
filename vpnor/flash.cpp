@@ -75,6 +75,8 @@ static struct backend flash_vpnor_backed = {
     .erase_size_shift = 0,
     .block_size_shift = 0,
     .mtd_info = {0},
+    .vpnor = NULL,
+    .paths = {0},
 };
 
 int probe_vpnor_backed_flash(struct mbox_context *context)
@@ -85,12 +87,18 @@ int probe_vpnor_backed_flash(struct mbox_context *context)
         return -1;
     }
 
+    /* setup data structure */
+    struct backend *old = context->backend;
+    context->backend = &flash_vpnor_backed;
+    context->backend->mtd_info.erasesize = 4096;
+    context->backend->erase_size_shift = log_2(context->backend->mtd_info.erasesize);
+
     int rc = init_vpnor(context);
-    if(!rc)
+    if(0 != rc)
     {
-        /* setup data structure */
-        context->backend = &flash_vpnor_backed;
+        context->backend = old;
     }
+
     return rc;
 }
 
@@ -133,8 +141,6 @@ int flash_dev_init(struct mbox_context* context)
 
     // Hostboot requires a 4K block-size to be used in the FFS flash structure
     context->backend->mtd_info.erasesize = 4096;
-    context->backend->erase_size_shift = log_2(context->backend->mtd_info.erasesize);
-    context->backend->flash_bmap = NULL;
     context->fds[MTD_FD].fd = -1;
 
     close(fd);

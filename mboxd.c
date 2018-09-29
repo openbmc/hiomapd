@@ -377,7 +377,8 @@ int backend_init(struct mbox_context *context)
 
 	if (rc) {
 		if(context->filename) {
-			fprintf(stderr, "Unable to determine backing store for file: %s\n", context->filename);
+			fprintf(stderr, "Unable to determine backing store for file: %s\n",
+				context->filename);
 		}
 		else
 		{
@@ -485,7 +486,7 @@ finish:
 	destroy_vpnor(context);
 #endif
 	dbus_free(context);
-	if(context->backend->free) {
+	if(context->backend && context->backend->free) {
 		context->backend->free(context);
 	}
 	lpc_dev_free(context);

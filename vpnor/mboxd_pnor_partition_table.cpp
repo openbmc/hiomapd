@@ -126,7 +126,9 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
 
 void destroy_vpnor(struct mbox_context *context)
 {
-    if (context && context->backend->vpnor)
+    if (context &&
+        context->backend &&
+        context->backend->vpnor)
     {
         delete context->backend->vpnor->table;
         delete context->backend->vpnor;
