@@ -27,14 +27,14 @@ int	probe_vpnor_backed_flash(struct mbox_context *context);
 #endif
 
 struct backend {
-	/**
+	/*
 	 * init() - Main initialization function for backing device
 	 * @context:	The mbox context pointer
 	 * Return:	Zero on success, otherwise negative error
 	 */
 	int 	(*init)(struct mbox_context *context);
 
-	/**
+	/*
 	 * free() - Main teardown function for backing device
 	 * @context:	The mbox context pointer
 	 */
