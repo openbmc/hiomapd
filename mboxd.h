@@ -13,7 +13,7 @@
 #include "transport.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 #include "windows.h"
-#include "flash.h"
+#include "backend.h"
 
 enum api_version {
 	API_VERSION_INVAL	= 0,

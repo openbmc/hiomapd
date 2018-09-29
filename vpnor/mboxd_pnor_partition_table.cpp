@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 extern "C" {
-#include "flash.h"
+#include "backend.h"
 }
 
 #include "mboxd_pnor_partition_table.h"

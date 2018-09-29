@@ -12,7 +12,7 @@
 
 extern "C" {
 #include "common.h"
-#include "flash.h"
+#include "backend.h"
 #include "protocol.h"
 #include "lpc.h"
 }

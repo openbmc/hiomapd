@@ -27,7 +27,7 @@
 #include "mboxd.h"
 #include "common.h"
 #include "lpc.h"
-#include "flash.h"
+#include "backend.h"
 #include <linux/aspeed-lpc-ctrl.h>
 
 #define LPC_CTRL_PATH		"/dev/aspeed-lpc-ctrl"

@@ -6,44 +6,43 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <limits.h>
+#include <mtd/mtd-abi.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
-#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
-#include <inttypes.h>
-#include <errno.h>
-#include <mtd/mtd-abi.h>
 
-#include "mboxd.h"
 #include "common.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
+#include "mboxd.h"
 
 /* Internal routines */
 static int flash_dev_init(struct mbox_context *context);
 static void flash_dev_free(struct mbox_context *context);
-static int flash_set_bytemap(struct mbox_context *context,
-							uint32_t offset, uint32_t count, uint8_t val);
-static int flash_set_bytemap(struct mbox_context *context,
-							uint32_t offset, uint32_t count, uint8_t val);
-static int flash_erase(struct mbox_context *context,
-							uint32_t offset, uint32_t count);
-static int64_t flash_copy(struct mbox_context *context,
-							uint32_t offset, void *mem, uint32_t size);
-static int flash_write(struct mbox_context *context,
-							uint32_t offset, void *buf, uint32_t count);
+static int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
+			     uint32_t count, uint8_t val);
+static int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
+			     uint32_t count, uint8_t val);
+static int flash_erase(struct mbox_context *context, uint32_t offset,
+		       uint32_t count);
+static int64_t flash_copy(struct mbox_context *context, uint32_t offset,
+			  void *mem, uint32_t size);
+static int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
+		       uint32_t count);
 static int lpc_reset(struct mbox_context *context);
 
 static struct backend flash_mtd_backed = {
@@ -61,13 +60,11 @@ static struct backend flash_mtd_backed = {
 	.mtd_info = {0},
 };
 
-
 int probe_mtd_backed_flash(struct mbox_context *context)
 {
 	int fd;
-	char* filename = context->filename;
-	if(!filename)
-	{
+	char *filename = context->filename;
+	if (!filename) {
 		return -1;
 	}
 
@@ -75,8 +72,7 @@ int probe_mtd_backed_flash(struct mbox_context *context)
 	if (fd < 0) {
 		/* Unable to open file, not an mtd device */
 		return -errno;
-	}
-	else if (ioctl(fd, MEMGETINFO, &context->backend->mtd_info) == -1) {
+	} else if (ioctl(fd, MEMGETINFO, &context->backend->mtd_info) == -1) {
 		/* File does not support memgetinfo, not an mtd device */
 		close(fd);
 		return -1;
@@ -103,8 +99,8 @@ static int flash_dev_init(struct mbox_context *context)
 	/* Open Flash Device */
 	fd = open(filename, O_RDWR);
 	if (fd < 0) {
-		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-			filename, strerror(errno));
+		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n", filename,
+			strerror(errno));
 		rc = -errno;
 		goto out;
 	}
@@ -138,17 +134,21 @@ static int flash_dev_init(struct mbox_context *context)
 		 * the test environment), log an error. As a consequence, this
 		 * error is expected in the test case output.
 		 */
-		MSG_ERR("Flash size MUST be supplied on the commandline. However, continuing by assuming flash is %u bytes\n",
-				context->backend->mtd_info.size);
+		MSG_ERR(
+		    "Flash size MUST be supplied on the commandline. However, "
+		    "continuing by assuming flash is %u bytes\n",
+		    context->backend->mtd_info.size);
 		context->flash_size = context->backend->mtd_info.size;
 	}
 
 	/* We know the erase size so we can allocate the flash_erased bytemap */
-	context->backend->erase_size_shift = log_2(context->backend->mtd_info.erasesize);
-	context->backend->flash_bmap = calloc(context->flash_size >>
-				     context->backend->erase_size_shift,
-				     sizeof(*context->backend->flash_bmap));
-	MSG_DBG("Flash erase size: 0x%.8x\n", context->backend->mtd_info.erasesize);
+	context->backend->erase_size_shift =
+	    log_2(context->backend->mtd_info.erasesize);
+	context->backend->flash_bmap =
+	    calloc(context->flash_size >> context->backend->erase_size_shift,
+		   sizeof(*context->backend->flash_bmap));
+	MSG_DBG("Flash erase size: 0x%.8x\n",
+		context->backend->mtd_info.erasesize);
 
 out:
 	return rc;
@@ -172,8 +172,9 @@ static void flash_dev_free(struct mbox_context *context)
 static inline bool flash_is_erased(struct mbox_context *context,
 				   uint32_t offset)
 {
-	return context->backend->flash_bmap[offset >> context->backend->erase_size_shift]
-			== FLASH_ERASED;
+	return context->backend
+		   ->flash_bmap[offset >> context->backend->erase_size_shift] ==
+	       FLASH_ERASED;
 }
 
 /*
@@ -189,18 +190,19 @@ static inline bool flash_is_erased(struct mbox_context *context,
  * Return:	0 if success otherwise negative error code
  */
 static int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
-		      uint32_t count, uint8_t val)
+			     uint32_t count, uint8_t val)
 {
 	if ((offset + count) > context->flash_size) {
 		return -EINVAL;
 	}
 
-	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n",
-		offset, count, val ? "ERASED" : "DIRTY");
-	memset(context->backend->flash_bmap + (offset >> context->backend->erase_size_shift),
+	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n", offset, count,
+		val ? "ERASED" : "DIRTY");
+	memset(context->backend->flash_bmap +
+		   (offset >> context->backend->erase_size_shift),
 	       val,
 	       align_up(count, 1 << context->backend->erase_size_shift) >>
-	       context->backend->erase_size_shift);
+		   context->backend->erase_size_shift);
 
 	return 0;
 }
@@ -213,10 +215,11 @@ static int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
  *
  * Return:	0 on success otherwise negative error code
  */
-static int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t count)
+static int flash_erase(struct mbox_context *context, uint32_t offset,
+		       uint32_t count)
 {
 	const uint32_t erase_size = 1 << context->backend->erase_size_shift;
-	struct erase_info_user erase_info = { 0 };
+	struct erase_info_user erase_info = {0};
 	int rc;
 
 	MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n", offset, count);
@@ -242,7 +245,7 @@ static int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t c
 				   &erase_info);
 			if (rc < 0) {
 				MSG_ERR("Couldn't erase flash at 0x%.8x\n",
-						erase_info.start);
+					erase_info.start);
 				return -errno;
 			}
 			/* Mark ERASED where we just erased */
@@ -257,12 +260,12 @@ static int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t c
 	}
 
 	if (erase_info.length) {
-		MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n",
-			erase_info.start, erase_info.length);
+		MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n", erase_info.start,
+			erase_info.length);
 		rc = ioctl(context->fds[MTD_FD].fd, MEMERASE, &erase_info);
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash at 0x%.8x\n",
-					erase_info.start);
+				erase_info.start);
 			return -errno;
 		}
 		/* Mark ERASED where we just erased */
@@ -285,14 +288,14 @@ static int flash_erase(struct mbox_context *context, uint32_t offset, uint32_t c
  *		code. flash_copy will copy at most 'size' bytes, but it may
  *		copy less.
  */
-static int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
-		   uint32_t size)
+static int64_t flash_copy(struct mbox_context *context, uint32_t offset,
+			  void *mem, uint32_t size)
 {
 	int32_t size_read;
 	void *start = mem;
 
-	MSG_DBG("Copy flash to %p for size 0x%.8x from offset 0x%.8x\n",
-		mem, size, offset);
+	MSG_DBG("Copy flash to %p for size 0x%.8x from offset 0x%.8x\n", mem,
+		size, offset);
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
 		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
 			strerror(errno));
@@ -301,7 +304,7 @@ static int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *m
 
 	do {
 		size_read = read(context->fds[MTD_FD].fd, mem,
-					  min_u32(CHUNKSIZE, size));
+				 min_u32(CHUNKSIZE, size));
 		if (size_read < 0) {
 			MSG_ERR("Couldn't copy mtd into ram: %s\n",
 				strerror(errno));
@@ -325,12 +328,13 @@ static int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *m
  * Return:	0 on success otherwise negative error code
  */
 static int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
-		uint32_t count)
+		       uint32_t count)
 {
 	uint32_t buf_offset = 0;
 	int rc;
 
-	MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count, buf);
+	MSG_DBG("Write flash @ 0x%.8x for 0x%.8x from %p\n", offset, count,
+		buf);
 
 	if (lseek(context->fds[MTD_FD].fd, offset, SEEK_SET) != offset) {
 		MSG_ERR("Couldn't seek flash at pos: %u %s\n", offset,
@@ -363,5 +367,5 @@ static int flash_write(struct mbox_context *context, uint32_t offset, void *buf,
  */
 static int lpc_reset(struct mbox_context *context)
 {
-        return lpc_map_flash(context);
+	return lpc_map_flash(context);
 }

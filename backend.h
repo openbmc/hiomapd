@@ -2,8 +2,8 @@
 /* Copyright (C) 2018 IBM Corp. */
 /* Copyright (C) 2018 Evan Lojewski. */
 
-#ifndef FLASH_H
-#define FLASH_H
+#ifndef BACKEND_H
+#define BACKEND_H
 
 #include <stdint.h>
 #include <mtd/mtd-abi.h>
@@ -28,15 +28,15 @@ int	probe_vpnor_backed_flash(struct mbox_context *context);
 
 struct backend {
 	/**
-	 * @fn init
-	 *
-	 * Main initialization function the backing flash device.
+	 * init() - Main initialization function for backing device
+	 * @context:	The mbox context pointer
+	 * Return:	Zero on success, otherwise negative error
 	 */
 	int 	(*init)(struct mbox_context *context);
+
 	/**
-	 * @fn free
-	 *
-	 * Main teardown function the backing flash device.
+	 * free() - Main teardown function for backing device
+	 * @context:	The mbox context pointer
 	 */
 	void 	(*free)(struct mbox_context *context);
 
@@ -90,6 +90,13 @@ struct backend {
 	int 	(*write)(struct mbox_context *context,
 				uint32_t offset, void *buf, uint32_t count);
 
+	/*
+	 * validate - Validates a requested window
+	 * @context:	The mbox context pointer
+	 * io:		The window information
+	 *
+	 * Return:	0 on valid otherwise negative error code
+	 */
 	int 	(*validate)(struct mbox_context *context,
 				struct protocol_create_window *io);
 
@@ -116,4 +123,4 @@ struct backend {
 #endif
 };
 
-#endif /* FLASH_H */
+#endif /* BACKEND_H */

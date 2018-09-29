@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 #include "common.h"
-#include "flash.h"
+#include "backend.h"
 #include "mboxd.h"
 #include "lpc.h"
 #include "windows.h"

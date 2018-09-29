@@ -31,7 +31,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "transport_dbus.h"

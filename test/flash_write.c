@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/tmpf.h"
 
