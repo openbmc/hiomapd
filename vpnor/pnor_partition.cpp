@@ -4,30 +4,31 @@ extern "C" {
 #include "flash.h"
 }
 
+#include "config.h"
+
 #include "pnor_partition.hpp"
 #include "pnor_partition_table.hpp"
-#include "config.h"
-#include "mboxd_pnor_partition_table.h"
 #include "xyz/openbmc_project/Common/error.hpp"
-#include <phosphor-logging/log.hpp>
-#include <phosphor-logging/elog-errors.hpp>
 
 #include <assert.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <syslog.h>
-#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <syslog.h>
 #include <unistd.h>
 
-#include "common.h"
-
-#include <string>
 #include <exception>
-#include <stdexcept>
 #include <iostream>
+#include <phosphor-logging/elog-errors.hpp>
+#include <phosphor-logging/log.hpp>
+#include <stdexcept>
+#include <string>
+
+#include "common.h"
+#include "mboxd_pnor_partition_table.h"
 
 namespace openpower
 {
@@ -99,7 +100,7 @@ size_t Request::clamp(size_t len)
     return std::min(maxAccess, partSize) - offset;
 }
 
-void Request::resize(const fs::path &path, size_t len)
+void Request::resize(const fs::path& path, size_t len)
 {
     size_t maxAccess = offset + len;
     size_t fileSize = fs::file_size(path);
@@ -116,7 +117,7 @@ void Request::resize(const fs::path &path, size_t len)
     }
 }
 
-size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
+size_t Request::fulfil(const fs::path& path, int flags, void* buf, size_t len)
 {
     if (!(flags == O_RDONLY || flags == O_RDWR))
     {
@@ -162,11 +163,11 @@ size_t Request::fulfil(const fs::path &path, int flags, void *buf, size_t len)
     if (flags == O_RDONLY)
     {
         memset(buf, 0xff, len);
-        memcpy(buf, (char *)map + offset, std::min(len, fileSize));
+        memcpy(buf, (char*)map + offset, std::min(len, fileSize));
     }
     else
     {
-        memcpy((char *)map + offset, buf, len);
+        memcpy((char*)map + offset, buf, len);
         flash_set_bytemap(ctx, base + offset, len, FLASH_DIRTY);
     }
     munmap(map, fileSize);

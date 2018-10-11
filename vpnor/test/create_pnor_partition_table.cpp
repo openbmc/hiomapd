@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
+#include "config.h"
+
+#include "vpnor/pnor_partition_table.hpp"
+
 #include <assert.h>
 #include <string.h>
-
-#include "config.h"
-#include "vpnor/pnor_partition_table.hpp"
 
 extern "C" {
 #include "test/mbox.h"

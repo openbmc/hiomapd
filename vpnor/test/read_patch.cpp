@@ -2,10 +2,11 @@
 // Copyright (C) 2018 IBM Corp.
 
 #include "config.h"
-#include "common.h"
-#include "vpnor/mboxd_pnor_partition_table.h"
 
 #include <assert.h>
+
+#include "common.h"
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 extern "C" {
 #include "test/mbox.h"
@@ -42,7 +43,7 @@ int main()
 {
     namespace test = openpower::virtual_pnor::test;
 
-    struct mbox_context *ctx;
+    struct mbox_context* ctx;
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(PNOR_SIZE, ERASE_SIZE);

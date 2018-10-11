@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
+#include "config.h"
+
 #include <assert.h>
+#include <string.h>
+
 #include <experimental/filesystem>
 #include <fstream>
-#include <string.h>
 #include <vector>
 
-#include "config.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 extern "C" {
@@ -41,7 +43,7 @@ int main()
     uint8_t response[] = {0x04, 0x01, 0xe0, 0xff, 0x10, 0x00, 0x01,
                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};
 
-    struct mbox_context *ctx;
+    struct mbox_context* ctx;
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(MEM_SIZE, ERASE_SIZE);

@@ -47,7 +47,7 @@ int main()
     namespace test = openpower::virtual_pnor::test;
     namespace fs = std::experimental::filesystem;
 
-    struct mbox_context *ctx;
+    struct mbox_context* ctx;
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(PNOR_SIZE, ERASE_SIZE);

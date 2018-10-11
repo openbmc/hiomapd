@@ -1,15 +1,18 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Copyright (C) 2018 IBM Corp. */
 
+#include "config.h"
+
+#include "vpnor/pnor_partition_table.hpp"
+
 #include <assert.h>
 #include <string.h>
-#include <vector>
-#include <fstream>
-#include <experimental/filesystem>
 
-#include "config.h"
+#include <experimental/filesystem>
+#include <fstream>
+#include <vector>
+
 #include "mboxd.h"
-#include "vpnor/pnor_partition_table.hpp"
 
 namespace openpower
 {

@@ -36,13 +36,13 @@ static const struct protocol_ops protocol_ops_v2 = {
     .ack = protocol_v1_ack,
 };
 
-static const struct protocol_ops *protocol_ops_map[] = {
+static const struct protocol_ops* protocol_ops_map[] = {
     [0] = NULL,
     [1] = &protocol_ops_v1,
     [2] = &protocol_ops_v2,
 };
 
-int protocol_negotiate_version(struct mbox_context *context, uint8_t requested)
+int protocol_negotiate_version(struct mbox_context* context, uint8_t requested)
 {
     /* Check we support the version requested */
     if (requested < API_MIN_VERSION)

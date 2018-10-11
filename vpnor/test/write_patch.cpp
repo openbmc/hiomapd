@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
+#include "config.h"
+
 #include <assert.h>
-#include <experimental/filesystem>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/syslog.h>
 #include <unistd.h>
 
-#include "config.h"
+#include <experimental/filesystem>
+
 #include "common.h"
 #include "mboxd.h"
 extern "C" {
@@ -35,7 +37,7 @@ int main(void)
 
     struct mbox_context _ctx, *ctx = &_ctx;
     char src[DATA_SIZE]{0};
-    void *map;
+    void* map;
     int rc;
     int fd;
 

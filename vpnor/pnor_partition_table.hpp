@@ -2,10 +2,11 @@
 /* Copyright (C) 2018 IBM Corp. */
 #pragma once
 
-#include <vector>
+#include <experimental/filesystem>
 #include <memory>
 #include <numeric>
-#include <experimental/filesystem>
+#include <vector>
+
 #include "common.h"
 #include "pnor_partition_defs.h"
 
@@ -52,7 +53,8 @@ namespace details
  *
  *  @returns computed checksum
  */
-template <class T> checksum_t checksum(const T& data)
+template <class T>
+checksum_t checksum(const T& data)
 {
     static_assert(sizeof(decltype(data)) % sizeof(checksum_t) == 0,
                   "sizeof(data) is not aligned to sizeof(checksum_t) boundary");

@@ -12,7 +12,7 @@ namespace test
 
 namespace fs = std::experimental::filesystem;
 
-size_t VpnorRoot::write(const std::string &name, const void *data, size_t len)
+size_t VpnorRoot::write(const std::string& name, const void* data, size_t len)
 {
     // write() is for test environment setup - always write to ro section
     fs::path path = root / "ro" / name;
@@ -21,18 +21,18 @@ size_t VpnorRoot::write(const std::string &name, const void *data, size_t len)
         /* It's not in the ToC */
         throw std::invalid_argument(name);
 
-    std::ofstream(path).write((const char *)data, len);
+    std::ofstream(path).write((const char*)data, len);
 
     return len;
 }
 
-size_t VpnorRoot::patch(const std::string &name, const void *data, size_t len)
+size_t VpnorRoot::patch(const std::string& name, const void* data, size_t len)
 {
     if (!fs::exists(root / "ro" / name))
         /* It's not in the ToC */
         throw std::invalid_argument(name);
 
-    std::ofstream(root / "patch" / name).write((const char *)data, len);
+    std::ofstream(root / "patch" / name).write((const char*)data, len);
 
     return len;
 }

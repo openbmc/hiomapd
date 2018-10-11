@@ -30,7 +30,7 @@ int main(void)
 
     struct mbox_context _ctx, *ctx = &_ctx;
     uint8_t src[8];
-    void *map;
+    void* map;
     int fd;
     int rc;
 
