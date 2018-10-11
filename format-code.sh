@@ -6,14 +6,9 @@ set -x
 
 [ -f .clang-format ] && rm .clang-format
 
-for cf in clang-format-6.0 clang-format-5.0
-do
-    CLANG_FORMAT="$(which ${cf})"
-    if [ -n "${CLANG_FORMAT}" ]
-    then
-        break;
-    fi
-done
+# Use the provided clang-format, only define a version
+# if we don't have one provided already
+export CLANG_FORMAT="${CLANG_FORMAT-clang-format-6.0}"
 
 # phosphor-mboxd is a fork of mboxbridge, the reference mbox daemon
 # implementation. mboxbridge is C written with the style of the Linux kernel.
