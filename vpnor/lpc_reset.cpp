@@ -18,8 +18,8 @@
  */
 
 extern "C" {
-#include "mboxd.h"
 #include "lpc.h"
+#include "mboxd.h"
 }
 
 #include "mboxd_pnor_partition_table.h"
@@ -30,7 +30,7 @@ extern "C" {
  *
  * Return        0 on success otherwise negative error code
  */
-int lpc_reset(struct mbox_context *context)
+int lpc_reset(struct mbox_context* context)
 {
     int rc;
 

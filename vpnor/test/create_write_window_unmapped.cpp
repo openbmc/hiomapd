@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
+#include "config.h"
+
 #include <assert.h>
 
-#include "config.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
 extern "C" {
@@ -40,7 +41,7 @@ namespace test = openpower::virtual_pnor::test;
 
 int main()
 {
-    struct mbox_context *ctx;
+    struct mbox_context* ctx;
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(PNOR_SIZE, ERASE_SIZE);

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
+#include "config.h"
+
 #include <assert.h>
-#include <experimental/filesystem>
 #include <fcntl.h>
 #include <stdint.h>
 #include <sys/ioctl.h>
@@ -10,7 +11,8 @@
 #include <sys/syslog.h>
 #include <unistd.h>
 
-#include "config.h"
+#include <experimental/filesystem>
+
 #include "common.h"
 #include "mboxd.h"
 
@@ -35,7 +37,7 @@ int main(void)
     namespace test = openpower::virtual_pnor::test;
 
     struct mbox_context _ctx, *ctx = &_ctx;
-    void *map;
+    void* map;
     int rc;
     int fd;
 

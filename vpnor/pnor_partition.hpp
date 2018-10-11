@@ -6,12 +6,15 @@ extern "C" {
 #include "mboxd.h"
 };
 
-#include "mboxd_pnor_partition_table.h"
 #include "pnor_partition_table.hpp"
+
 #include <fcntl.h>
-#include <string>
 #include <unistd.h>
+
 #include <experimental/filesystem>
+#include <string>
+
+#include "mboxd_pnor_partition_table.h"
 
 namespace openpower
 {

@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
-#include "pnor_partition_table.hpp"
-#include "common.h"
 #include "config.h"
-#include "mboxd.h"
+
+#include "pnor_partition_table.hpp"
+
 #include "xyz/openbmc_project/Common/error.hpp"
-#include <phosphor-logging/elog-errors.hpp>
-#include <syslog.h>
+
 #include <endian.h>
-#include <regex>
-#include <fstream>
+#include <syslog.h>
+
 #include <algorithm>
+#include <fstream>
+#include <phosphor-logging/elog-errors.hpp>
+#include <regex>
+
+#include "common.h"
+#include "mboxd.h"
 
 namespace openpower
 {

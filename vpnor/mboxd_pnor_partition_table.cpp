@@ -4,17 +4,19 @@ extern "C" {
 #include "flash.h"
 }
 
-#include "mboxd_pnor_partition_table.h"
+#include "config.h"
+
 #include "pnor_partition_table.hpp"
+#include "xyz/openbmc_project/Common/error.hpp"
+
+#include <experimental/filesystem>
+#include <phosphor-logging/elog-errors.hpp>
+
 #include "common.h"
 #include "mboxd.h"
-#include "pnor_partition_table.hpp"
-#include "config.h"
-#include "xyz/openbmc_project/Common/error.hpp"
-#include <phosphor-logging/elog-errors.hpp>
-#include <experimental/filesystem>
+#include "mboxd_pnor_partition_table.h"
 
-int init_vpnor(struct mbox_context *context)
+int init_vpnor(struct mbox_context* context)
 {
     if (context && !context->vpnor)
     {
@@ -39,7 +41,7 @@ int init_vpnor(struct mbox_context *context)
     return 0;
 }
 
-int init_vpnor_from_paths(struct mbox_context *context)
+int init_vpnor_from_paths(struct mbox_context* context)
 {
     namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
     namespace fs = std::experimental::filesystem;
@@ -53,7 +55,7 @@ int init_vpnor_from_paths(struct mbox_context *context)
             context->vpnor->table =
                 new openpower::virtual_pnor::partition::Table(context);
         }
-        catch (vpnor::TocEntryError &e)
+        catch (vpnor::TocEntryError& e)
         {
             MSG_ERR("%s\n", e.what());
             phosphor::logging::commit<err::InternalFailure>();
@@ -64,7 +66,7 @@ int init_vpnor_from_paths(struct mbox_context *context)
     return 0;
 }
 
-int vpnor_copy_bootloader_partition(const struct mbox_context *context)
+int vpnor_copy_bootloader_partition(const struct mbox_context* context)
 {
     // The hostboot bootloader has certain size/offset assumptions, so
     // we need a special partition table here.
@@ -100,21 +102,21 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
 
         // Copy TOC
         flash_copy(&local, tocOffset,
-                   static_cast<uint8_t *>(context->mem) + tocStart,
+                   static_cast<uint8_t*>(context->mem) + tocStart,
                    blTable.capacity());
-        const pnor_partition &partition = blTable.partition(blPartitionName);
+        const pnor_partition& partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
         // Copy HBB
         flash_copy(&local, hbbOffset,
-                   static_cast<uint8_t *>(context->mem) + hbbOffset, hbbSize);
+                   static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
     }
-    catch (err::InternalFailure &e)
+    catch (err::InternalFailure& e)
     {
         phosphor::logging::commit<err::InternalFailure>();
         return -EIO;
     }
-    catch (vpnor::ReasonedError &e)
+    catch (vpnor::ReasonedError& e)
     {
         MSG_ERR("%s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
@@ -124,7 +126,7 @@ int vpnor_copy_bootloader_partition(const struct mbox_context *context)
     return 0;
 }
 
-void destroy_vpnor(struct mbox_context *context)
+void destroy_vpnor(struct mbox_context* context)
 {
     if (context && context->vpnor)
     {

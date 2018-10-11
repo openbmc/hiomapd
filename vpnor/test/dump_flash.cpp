@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
+#include "config.h"
+
 #include <assert.h>
 #include <string.h>
 
-#include "config.h"
 #include "transport_mbox.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
@@ -18,7 +19,7 @@ extern "C" {
 struct test_context
 {
     uint8_t seq;
-    struct mbox_context *ctx;
+    struct mbox_context* ctx;
 };
 
 // Configure the system and the paritions such that we eventually request a
@@ -41,7 +42,7 @@ static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
 
 static constexpr auto MBOX_CREATE_READ_WINDOW = 4;
 
-static int mbox_create_read_window(struct test_context *tctx, size_t offset,
+static int mbox_create_read_window(struct test_context* tctx, size_t offset,
                                    size_t len)
 {
     union mbox_regs regs;

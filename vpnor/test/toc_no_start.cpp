@@ -2,9 +2,10 @@
 // Copyright (C) 2018 IBM Corp.
 
 #include "config.h"
-#include <assert.h>
 
 #include "vpnor/pnor_partition_table.hpp"
+
+#include <assert.h>
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 
