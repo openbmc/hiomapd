@@ -31,25 +31,30 @@
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "transport_dbus.h"
 #include "windows.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
-#define USAGE \
-"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
-"\t\t[-n | --window-num <num>]\n" \
-"\t\t[-w | --window-size <size>M]\n" \
-"\t\t-f | --flash <size>[K|M]\n\n" \
-"\t-v | --verbose\t\tBe [more] verbose\n" \
-"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n" \
-"\t-n | --window-num\tThe number of windows\n" \
-"\t\t\t\t(default: fill the reserved memory region)\n" \
-"\t-w | --window-size\tThe window size (power of 2) in MB\n" \
-"\t\t\t\t(default: 1MB)\n" \
-"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+const char* USAGE =
+	"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n"
+	"\t\t[-n | --window-num <num>]\n"
+	"\t\t[-w | --window-size <size>M]\n"
+	"\t\t-f | --flash <size>[K|M]\n"
+#ifdef VIRTUAL_PNOR_ENABLED
+	"\t\t-s | --source <vpnor|path>\n\n"
+#else
+	"\t\t-s | --source <path>\n\n"
+#endif
+	"\t-v | --verbose\t\tBe [more] verbose\n"
+	"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n"
+	"\t-n | --window-num\tThe number of windows\n"
+	"\t\t\t\t(default: fill the reserved memory region)\n"
+	"\t-w | --window-size\tThe window size (power of 2) in MB\n"
+	"\t\t\t\t(default: 1MB)\n"
+	"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n";
 
 static int dbus_init(struct mbox_context *context)
 {
@@ -155,7 +160,7 @@ static int poll_loop(struct mbox_context *context)
 					      break;
 				       }
 				}
-				rc = lpc_reset(context);
+				rc = context->backend->lpc_reset(context);
 				if (rc < 0) {
 					MSG_ERR("WARNING: Failed to point the "
 						"LPC bus back to flash on "
@@ -199,7 +204,7 @@ static int poll_loop(struct mbox_context *context)
 		      return rc;
 	       }
 	}
-	rc = lpc_reset(context);
+	rc = context->backend->lpc_reset(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {
 		MSG_ERR("WARNING: Failed to point the LPC bus back to flash\n"
@@ -248,6 +253,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	static const struct option long_options[] = {
 		{ "flash",		required_argument,	0, 'f' },
+		{ "backend",		required_argument,	0, 'b' },
 		{ "window-size",	optional_argument,	0, 'w' },
 		{ "window-num",		optional_argument,	0, 'n' },
 		{ "verbose",		no_argument,		0, 'v' },
@@ -262,7 +268,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	context->current = NULL; /* No current window */
 
-	while ((opt = getopt_long(argc, argv, "f:w::n::vsVh", long_options, NULL))
+	while ((opt = getopt_long(argc, argv, "f:b:w::n::vsVh", long_options, NULL))
 			!= -1) {
 		switch (opt) {
 		case 0:
@@ -286,6 +292,9 @@ static bool parse_cmdline(int argc, char **argv,
 					*endptr);
 				return false;
 			}
+			break;
+		case 'b':
+			context->filename = strdup(optarg);
 			break;
 		case 'n':
 			context->windows.num = strtol(argv[optind], &endptr,
@@ -329,6 +338,14 @@ static bool parse_cmdline(int argc, char **argv,
 		}
 	}
 
+	if (!context->filename) {
+#ifdef VIRTUAL_PNOR_ENABLED
+		// VPNOR is compiled in, default to vpnor it not otherwise selected
+		context->filename = strdup("vpnor");
+#else
+		context->filename = get_dev_mtd();
+#endif
+	}
 	if (!context->flash_size) {
 		fprintf(stderr, "Must specify a non-zero flash size\n");
 		return false;
@@ -342,6 +359,46 @@ static bool parse_cmdline(int argc, char **argv,
 	}
 
 	return true;
+}
+
+int backend_init(struct mbox_context *context)
+{
+	int rc;
+
+#ifdef VIRTUAL_PNOR_ENABLED
+	rc = probe_vpnor_backed_flash(context);
+	if(rc)
+	{
+		rc = probe_mtd_backed_flash(context);
+	}
+#else
+	rc = probe_mtd_backed_flash(context);
+#endif
+
+	if (rc) {
+		if(context->filename) {
+			fprintf(stderr, "Unable to determine backing store for file: %s\n",
+				context->filename);
+		}
+		else
+		{
+			fprintf(stderr, "No backing store found\n");
+		}
+	}
+	else {
+		assert(context->backend && "Backend pointer not set by probe routine");
+		assert(context->backend->init);
+		assert(context->backend->free);
+		assert(context->backend->write);
+		assert(context->backend->erase);
+		assert(context->backend->copy);
+		assert(context->backend->set_bytemap);
+		assert(context->backend->lpc_reset);
+
+		rc = context->backend->init(context);
+	}
+
+	return rc;
 }
 
 int main(int argc, char **argv)
@@ -374,6 +431,11 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
+	rc = backend_init(context);
+	if (rc) {
+		goto finish;
+	}
+
 	rc = protocol_init(context);
 	if (rc) {
 		goto finish;
@@ -395,22 +457,13 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = flash_dev_init(context);
-	if (rc) {
-		goto finish;
-	}
-
 	rc = dbus_init(context);
 	if (rc) {
 		goto finish;
 	}
 
-#ifdef VIRTUAL_PNOR_ENABLED
-	init_vpnor(context);
-#endif
-
 	/* Set the LPC bus mapping */
-	rc = lpc_reset(context);
+	rc = context->backend->lpc_reset(context);
 	if (rc) {
 		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}
@@ -433,11 +486,16 @@ finish:
 	destroy_vpnor(context);
 #endif
 	dbus_free(context);
-	flash_dev_free(context);
+	if(context->backend && context->backend->free) {
+		context->backend->free(context);
+	}
 	lpc_dev_free(context);
 	transport_mbox_free(context);
 	windows_free(context);
 	protocol_free(context);
+	if(context->filename) {
+		free(context->filename);
+	}
 	free(context);
 
 	return rc;

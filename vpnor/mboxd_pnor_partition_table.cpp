@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 extern "C" {
-#include "flash.h"
+#include "backend.h"
 }
 
 #include "config.h"
@@ -18,18 +18,18 @@ extern "C" {
 
 int init_vpnor(struct mbox_context* context)
 {
-    if (context && !context->vpnor)
+    if (context && !context->backend->vpnor)
     {
         int rc;
 
-        strncpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
-        context->paths.ro_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
-        context->paths.rw_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
-        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
-        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->backend->paths.ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
+        context->backend->paths.ro_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->backend->paths.rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
+        context->backend->paths.rw_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->backend->paths.prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
+        context->backend->paths.prsv_loc[PATH_MAX - 1] = '\0';
+        strncpy(context->backend->paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
+        context->backend->paths.prsv_loc[PATH_MAX - 1] = '\0';
 
         rc = init_vpnor_from_paths(context);
         if (rc < 0)
@@ -47,12 +47,12 @@ int init_vpnor_from_paths(struct mbox_context* context)
     namespace fs = std::experimental::filesystem;
     namespace vpnor = openpower::virtual_pnor;
 
-    if (context && !context->vpnor)
+    if (context && !context->backend->vpnor)
     {
         try
         {
-            context->vpnor = new vpnor_partition_table;
-            context->vpnor->table =
+            context->backend->vpnor = new vpnor_partition_table;
+            context->backend->vpnor->table =
                 new openpower::virtual_pnor::partition::Table(context);
         }
         catch (vpnor::TocEntryError& e)
@@ -91,8 +91,8 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
     {
         vpnor_partition_table vtbl{};
         struct mbox_context local = *context;
-        local.vpnor = &vtbl;
-        local.block_size_shift = log_2(eraseSize);
+        local.backend->vpnor = &vtbl;
+        local.backend->block_size_shift = log_2(eraseSize);
 
         openpower::virtual_pnor::partition::Table blTable(&local);
 
@@ -101,14 +101,14 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
         size_t tocOffset = 0;
 
         // Copy TOC
-        flash_copy(&local, tocOffset,
+        local.backend->copy(&local, tocOffset,
                    static_cast<uint8_t*>(context->mem) + tocStart,
                    blTable.capacity());
         const pnor_partition& partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
         // Copy HBB
-        flash_copy(&local, hbbOffset,
+        local.backend->copy(&local, hbbOffset,
                    static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
     }
     catch (err::InternalFailure& e)
@@ -128,10 +128,12 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
 
 void destroy_vpnor(struct mbox_context* context)
 {
-    if (context && context->vpnor)
+    if (context &&
+        context->backend &&
+        context->backend->vpnor)
     {
-        delete context->vpnor->table;
-        delete context->vpnor;
-        context->vpnor = nullptr;
+        delete context->backend->vpnor->table;
+        delete context->backend->vpnor;
+        context->backend->vpnor = nullptr;
     }
 }
