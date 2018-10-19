@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -66,43 +66,51 @@ int main(void)
 
 	mbox_vlog = &mbox_log_console;
 
-	rc = flash_dev_init(context);
+	context->filename = get_dev_mtd();
+        context->force_backend = 1;
+	rc = probe_mtd_backed_flash(context);
+	assert(rc == 0);
+
+	rc = context->backend->init(context);
 	assert(rc == 0);
 
 	map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, tmp->fd, 0);
 	assert(map != MAP_FAILED);
 
 	memset(src, 0xaa, sizeof(src));
-	rc = flash_write(context, 0, src, sizeof(src));
+	rc = context->backend->write(context, 0, src, sizeof(src));
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	memset(src, 0x55, sizeof(src));
-	rc = flash_write(context, 0, src, sizeof(src));
+	rc = context->backend->write(context, 0, src, sizeof(src));
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	src[0] = 0xff;
-	rc = flash_write(context, 0, src, 1);
+	rc = context->backend->write(context, 0, src, 1);
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	src[1] = 0xff;
-	rc = flash_write(context, 1, &src[1], 1);
+	rc = context->backend->write(context, 1, &src[1], 1);
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	src[2] = 0xff;
-	rc = flash_write(context, 2, &src[2], 1);
+	rc = context->backend->write(context, 2, &src[2], 1);
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
-	flash_dev_free(context);
+	free(context->filename);
+	if(context->backend->free) {
+		context->backend->free(context);
+	}
 
 	return rc;
 }

@@ -4,9 +4,10 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "common.h"
-#include "flash.h"
+#include "backend.h"
 #include "mboxd.h"
 #include "lpc.h"
 #include "windows.h"
@@ -73,14 +74,18 @@ int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event)
 
 	context->bmc_events &= ~bmc_event;
 
-	return context->transport->clear_events(context, bmc_event, mask);
+	if(context->transport) {
+		return context->transport->clear_events(context, bmc_event, mask);
+	} else {
+		return 0;
+	}
 }
 
 int protocol_v1_reset(struct mbox_context *context)
 {
 	/* Host requested it -> No BMC Event */
 	windows_reset_all(context);
-	return lpc_reset(context);
+	return context->backend->lpc_reset(context);
 }
 
 int protocol_v1_get_info(struct mbox_context *context,
@@ -105,17 +110,17 @@ int protocol_v1_get_info(struct mbox_context *context,
 	io->resp.api_version = rc;
 
 	/* Now do all required intialisation for v1 */
-	context->block_size_shift = BLOCK_SIZE_SHIFT_V1;
+	context->backend->block_size_shift = BLOCK_SIZE_SHIFT_V1;
 	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
-		 1 << context->block_size_shift, context->block_size_shift);
+		 1 << context->backend->block_size_shift, context->backend->block_size_shift);
 
 	/* Knowing blocksize we can allocate the window dirty_bytemap */
 	windows_alloc_dirty_bytemap(context);
 
 	io->resp.v1.read_window_size =
-		context->windows.default_size >> context->block_size_shift;
+		context->windows.default_size >> context->backend->block_size_shift;
 	io->resp.v1.write_window_size =
-		context->windows.default_size >> context->block_size_shift;
+		context->windows.default_size >> context->backend->block_size_shift;
 
 	return lpc_map_memory(context);
 }
@@ -124,7 +129,7 @@ int protocol_v1_get_flash_info(struct mbox_context *context,
 			       struct protocol_get_flash_info *io)
 {
 	io->resp.v1.flash_size = context->flash_size;
-	io->resp.v1.erase_size = context->mtd_info.erasesize;
+	io->resp.v1.erase_size = context->backend->mtd_info.erasesize;
 
 	return 0;
 }
@@ -146,14 +151,22 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 
 	MSG_DBG("LPC address of current window: 0x%.8x\n", lpc_addr);
 
-	return lpc_addr >> context->block_size_shift;
+	return lpc_addr >> context->backend->block_size_shift;
 }
 
 int protocol_v1_create_window(struct mbox_context *context,
 			      struct protocol_create_window *io)
 {
 	int rc;
-	uint32_t offset = io->req.offset << context->block_size_shift;
+	uint32_t offset = io->req.offset << context->backend->block_size_shift;
+
+	if (context->backend->validate) {
+		rc = context->backend->validate(context, io);
+		if (rc < 0) {
+			// Backend does not allow window to be created.
+			return rc;
+		}
+	}
 
 	/* Close the current window if there is one */
 	if (context->current) {
@@ -216,11 +229,11 @@ int protocol_v1_mark_dirty(struct mbox_context *context,
 
 	/* For V1 offset given relative to flash - we want the window */
 	off = offset - ((context->current->flash_offset) >>
-			context->block_size_shift);
+			context->backend->block_size_shift);
 	if (off > offset) { /* Underflow - before current window */
 		MSG_ERR("Tried to mark dirty before start of window\n");
 		MSG_ERR("requested offset: 0x%x window start: 0x%x\n",
-				offset << context->block_size_shift,
+				offset << context->backend->block_size_shift,
 				context->current->flash_offset);
 		return -EINVAL;
 	}
@@ -230,12 +243,12 @@ int protocol_v1_mark_dirty(struct mbox_context *context,
 	 * For protocol V1 we can get away with just marking the whole
 	 * block dirty.
 	 */
-	size = align_up(size, 1 << context->block_size_shift);
-	size >>= context->block_size_shift;
+	size = align_up(size, 1 << context->backend->block_size_shift);
+	size >>= context->backend->block_size_shift;
 
 	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
-		 offset << context->block_size_shift,
-		 size << context->block_size_shift);
+		 offset << context->backend->block_size_shift,
+		 size << context->backend->block_size_shift);
 
 	return window_set_bytemap(context, context->current, offset, size,
 				  WINDOW_DIRTY);
@@ -259,7 +272,7 @@ static int generic_flush(struct mbox_context *context)
 	 * (dirty/erased) changes we perform the required action on the backing
 	 * store and update the current streak-type
 	 */
-	for (i = 0; i < (context->current->size >> context->block_size_shift);
+	for (i = 0; i < (context->current->size >> context->backend->block_size_shift);
 			i++) {
 		uint8_t cur = context->current->dirty_bmap[i];
 		if (cur != WINDOW_CLEAN) {
@@ -301,7 +314,7 @@ static int generic_flush(struct mbox_context *context)
 	/* Clear the dirty bytemap since we have written back all changes */
 	return window_set_bytemap(context, context->current, 0,
 				  context->current->size >>
-				  context->block_size_shift,
+				  context->backend->block_size_shift,
 				  WINDOW_CLEAN);
 }
 
@@ -402,14 +415,14 @@ int protocol_v2_get_info(struct mbox_context *context,
 	io->resp.api_version = rc;
 
 	/* Now do all required intialisation for v2 */
-	context->block_size_shift = log_2(context->mtd_info.erasesize);
+	context->backend->block_size_shift = log_2(context->backend->mtd_info.erasesize);
 	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
-		 1 << context->block_size_shift, context->block_size_shift);
+		 1 << context->backend->block_size_shift, context->backend->block_size_shift);
 
 	/* Knowing blocksize we can allocate the window dirty_bytemap */
 	windows_alloc_dirty_bytemap(context);
 
-	io->resp.v2.block_size_shift = context->block_size_shift;
+	io->resp.v2.block_size_shift = context->backend->block_size_shift;
 	io->resp.v2.timeout = get_suggested_timeout(context);
 
 	return lpc_map_memory(context);
@@ -419,9 +432,9 @@ int protocol_v2_get_flash_info(struct mbox_context *context,
 			       struct protocol_get_flash_info *io)
 {
 	io->resp.v2.flash_size =
-		context->flash_size >> context->block_size_shift;
+		context->flash_size >> context->backend->block_size_shift;
 	io->resp.v2.erase_size =
-		context->mtd_info.erasesize >> context->block_size_shift;
+		context->backend->mtd_info.erasesize >> context->backend->block_size_shift;
 
 	return 0;
 }
@@ -435,9 +448,9 @@ int protocol_v2_create_window(struct mbox_context *context,
 	if (rc < 0)
 		return rc;
 
-	io->resp.size = context->current->size >> context->block_size_shift;
+	io->resp.size = context->current->size >> context->backend->block_size_shift;
 	io->resp.offset = context->current->flash_offset >>
-					context->block_size_shift;
+					context->backend->block_size_shift;
 
 	return 0;
 }
@@ -451,8 +464,8 @@ int protocol_v2_mark_dirty(struct mbox_context *context,
 	}
 
 	MSG_INFO("Dirty window @ 0x%.8x for 0x%.8x\n",
-		 io->req.v2.offset << context->block_size_shift,
-		 io->req.v2.size << context->block_size_shift);
+		 io->req.v2.offset << context->backend->block_size_shift,
+		 io->req.v2.size << context->backend->block_size_shift);
 
 	return window_set_bytemap(context, context->current, io->req.v2.offset,
 				  io->req.v2.size, WINDOW_DIRTY);
@@ -470,8 +483,8 @@ int protocol_v2_erase(struct mbox_context *context,
 	}
 
 	MSG_INFO("Erase window @ 0x%.8x for 0x%.8x\n",
-		 io->req.offset << context->block_size_shift,
-		 io->req.size << context->block_size_shift);
+		 io->req.offset << context->backend->block_size_shift,
+		 io->req.size << context->backend->block_size_shift);
 
 	rc = window_set_bytemap(context, context->current, io->req.offset,
 				io->req.size, WINDOW_ERASED);
@@ -480,8 +493,8 @@ int protocol_v2_erase(struct mbox_context *context,
 	}
 
 	/* Write 0xFF to mem -> This ensures consistency between flash & ram */
-	start = io->req.offset << context->block_size_shift;
-	len = io->req.size << context->block_size_shift;
+	start = io->req.offset << context->backend->block_size_shift;
+	len = io->req.size << context->backend->block_size_shift;
 	memset(context->current->mem + start, 0xFF, len);
 
 	return 0;
