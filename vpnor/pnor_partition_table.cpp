@@ -30,7 +30,7 @@ namespace partition
 
 Table::Table(const struct mbox_context* ctx) :
     szBytes(sizeof(pnor_partition_table)), numParts(0),
-    blockSize(1 << ctx->erase_size_shift), pnorSize(ctx->flash_size)
+    blockSize(1 << ctx->backend->erase_size_shift), pnorSize(ctx->flash_size)
 {
     preparePartitions(ctx);
     prepareHeader();
@@ -76,8 +76,8 @@ inline void Table::allocateMemory(const fs::path& tocFile)
 
 void Table::preparePartitions(const struct mbox_context* ctx)
 {
-    const fs::path roDir = ctx->paths.ro_loc;
-    const fs::path patchDir = ctx->paths.patch_loc;
+    const fs::path roDir = ctx->backend->paths.ro_loc;
+    const fs::path patchDir = ctx->backend->paths.patch_loc;
     fs::path tocFile = roDir / PARTITION_TOC_FILE;
     allocateMemory(tocFile);
 

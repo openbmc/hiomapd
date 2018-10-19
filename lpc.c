@@ -27,7 +27,7 @@
 #include "mboxd.h"
 #include "common.h"
 #include "lpc.h"
-#include "flash.h"
+#include "backend.h"
 #include <linux/aspeed-lpc-ctrl.h>
 
 #define LPC_CTRL_PATH		"/dev/aspeed-lpc-ctrl"
@@ -138,7 +138,7 @@ int lpc_map_flash(struct mbox_context *context)
 	 * Since the host now has access to the flash it can change it out from
 	 * under us
 	 */
-	return flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
+	return context->backend->set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
 }
 
 /*
