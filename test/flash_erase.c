@@ -13,7 +13,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -111,6 +111,8 @@ int main(void)
 	n_ioctls = 0;
 	recorded = NULL;
 
+	context.flash.filename = get_dev_mtd();
+	probe_mtd_backed_flash(&context);
 	flash_dev_init(&context);
 
 	/* Erase from an unknown state */
