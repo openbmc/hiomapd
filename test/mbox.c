@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "windows.h"
@@ -247,10 +247,15 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;
 
-	rc = flash_dev_init(&test.context);
+	test.context.filename = get_dev_mtd();
+        test.context.force_backend = 1;
+	rc = probe_mtd_backed_flash(&test.context);
 	assert(rc == 0);
 
-	rc = fallocate(test.flash.fd, 0, 0, test.context.mtd_info.size);
+	rc = test.context.backend->init(&test.context);
+	assert(rc == 0);
+
+	rc = fallocate(test.flash.fd, 0, 0, test.context.backend->mtd_info.size);
 	assert(rc == 0);
 
 	rc = __lpc_dev_init(&test.context, test.lpc.path);
@@ -295,14 +300,14 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 	if (&test != arg)
 		return -1;
 
-	if (len > test.context.mtd_info.size)
+	if (len > test.context.backend->mtd_info.size)
 		return -2;
 
-	map = mmap(NULL, test.context.mtd_info.size, PROT_WRITE, MAP_SHARED,
+	map = mmap(NULL, test.context.backend->mtd_info.size, PROT_WRITE, MAP_SHARED,
 			test.flash.fd, 0);
 	assert(map != MAP_FAILED);
 	memcpy(map, data, len);
-	munmap(map, test.context.mtd_info.size);
+	munmap(map, test.context.backend->mtd_info.size);
 
 	return 0;
 }

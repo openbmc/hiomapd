@@ -2,19 +2,22 @@ test_sanity_SOURCES = %reldir%/sanity.c
 
 test_flash_copy_SOURCES = \
 	%reldir%/flash_copy.c \
-	flash.c \
+	mtd/flash.c \
+	lpc.c \
 	common.c mtd.c \
 	%reldir%/tmpf.c
 
 test_flash_erase_SOURCES = \
 	%reldir%/flash_erase.c \
-	flash.c \
+	mtd/flash.c \
+	lpc.c \
 	common.c \
 	%reldir%/tmpf.c
 
 test_flash_write_SOURCES = \
 	%reldir%/flash_write.c \
-	flash.c \
+	mtd/flash.c \
+	lpc.c \
 	common.c \
 	%reldir%/tmpf.c
 
@@ -22,9 +25,8 @@ TEST_MBOX_SRCS = \
 	transport_mbox.c \
 	windows.c \
 	lpc.c \
-	lpc_reset.c \
 	common.c \
-	flash.c \
+	mtd/flash.c \
 	protocol.c \
 	protocol_negotiate_version.c
 
