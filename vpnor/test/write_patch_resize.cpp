@@ -15,7 +15,7 @@
 #include "mboxd.h"
 
 extern "C" {
-#include "flash.h"
+#include "backend.h"
 }
 
 #include "vpnor/test/tmpd.hpp"
