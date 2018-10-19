@@ -9,6 +9,7 @@ mboxd_SOURCES = \
 	control_dbus.c \
 	lpc.c \
 	protocol.c \
+	protocol_negotiate_version.c \
 	transport_dbus.c \
 	transport_mbox.c \
 	windows.c \
@@ -16,12 +17,12 @@ mboxd_SOURCES = \
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
+# MTD Backing storage
+include mtd/Makefile.am.include
+
 if VIRTUAL_PNOR_ENABLED
+# VPNOR Backing storage
 include vpnor/Makefile.am.include
-else
-mboxd_SOURCES += flash.c \
-	lpc_reset.c \
-	protocol_negotiate_version.c
 endif
 
 mboxctl_SOURCES = mboxctl.c
