@@ -10,6 +10,5 @@ int lpc_dev_init(struct mbox_context *context);
 void lpc_dev_free(struct mbox_context *context);
 int lpc_map_flash(struct mbox_context *context);
 int lpc_map_memory(struct mbox_context *context);
-int lpc_reset(struct mbox_context *context);
 
 #endif /* LPC_H */
