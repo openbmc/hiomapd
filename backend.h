@@ -22,6 +22,7 @@ struct mbox_context;
 struct protocol_create_window;
 
 int	probe_mtd_backed_flash(struct mbox_context *context);
+int	probe_file_backed_flash(struct mbox_context *context);
 #ifdef VIRTUAL_PNOR_ENABLED
 int	probe_vpnor_backed_flash(struct mbox_context *context);
 #endif
