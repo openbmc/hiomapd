@@ -14,7 +14,7 @@
 #include <unistd.h>
 
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "windows.h"
@@ -246,6 +246,10 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	rc = close(test.context.fds[MBOX_FD].fd);
 	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;
+
+	text.context.flash.filename = get_dev_mtd();
+	rc = probe_mtd_backed_flash(&test.context);
+	assert(rc == 0);
 
 	rc = flash_dev_init(&test.context);
 	assert(rc == 0);

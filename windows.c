@@ -29,7 +29,7 @@
 #include "common.h"
 #include "transport_mbox.h"
 #include "windows.h"
-#include "flash.h"
+#include "backend.h"
 
 /* Initialisation Functions */
 
@@ -173,11 +173,11 @@ int window_flush_v1(struct mbox_context *context,
 	 * 		   boundary
 	 */
 	low_mem.flash_offset = align_down(flash_offset,
-					  context->mtd_info.erasesize);
+					  context->backend->mtd_info.erasesize);
 	low_mem.size = flash_offset - low_mem.flash_offset;
 	high_mem.flash_offset = flash_offset + count_bytes;
 	high_mem.size = align_up(high_mem.flash_offset,
-				 context->mtd_info.erasesize) -
+				 context->backend->mtd_info.erasesize) -
 			high_mem.flash_offset;
 
 	/*
@@ -191,7 +191,7 @@ int window_flush_v1(struct mbox_context *context,
 			MSG_ERR("Unable to allocate memory\n");
 			return -ENOMEM;
 		}
-		rc = flash_copy(context, low_mem.flash_offset,
+		rc = context->backend->copy(context, low_mem.flash_offset,
 				low_mem.mem, low_mem.size);
 		if (rc < 0) {
 			goto out;
@@ -206,7 +206,7 @@ int window_flush_v1(struct mbox_context *context,
 			rc = -ENOMEM;
 			goto out;
 		}
-		rc = flash_copy(context, high_mem.flash_offset,
+		rc = context->backend->copy(context, high_mem.flash_offset,
 				high_mem.mem, high_mem.size);
 		if (rc < 0) {
 			goto out;
@@ -217,7 +217,7 @@ int window_flush_v1(struct mbox_context *context,
 	 * We need to erase the flash from low_mem.flash_offset->
 	 * high_mem.flash_offset + high_mem.size
 	 */
-	rc = flash_erase(context, low_mem.flash_offset,
+	rc = context->backend->erase(context, low_mem.flash_offset,
 			 (high_mem.flash_offset - low_mem.flash_offset) +
 			 high_mem.size);
 	if (rc < 0) {
@@ -228,13 +228,13 @@ int window_flush_v1(struct mbox_context *context,
 	/* Write back over the erased area */
 	if (low_mem.mem) {
 		/* Exceed window at the start */
-		rc = flash_write(context, low_mem.flash_offset, low_mem.mem,
+		rc = context->backend->write(context, low_mem.flash_offset, low_mem.mem,
 				 low_mem.size);
 		if (rc < 0) {
 			goto out;
 		}
 	}
-	rc = flash_write(context, flash_offset,
+	rc = context->backend->write(context, flash_offset,
 			 context->current->mem + offset_bytes, count_bytes);
 	if (rc < 0) {
 		goto out;
@@ -245,14 +245,14 @@ int window_flush_v1(struct mbox_context *context,
 	 */
 	if (high_mem.mem) {
 		/* Exceed window at the end */
-		rc = flash_write(context, high_mem.flash_offset, high_mem.mem,
+		rc = context->backend->write(context, high_mem.flash_offset, high_mem.mem,
 				 high_mem.size);
 		if (rc < 0) {
 			goto out;
 		}
 	} else {
 		/* Write from the current window - it's atleast that big */
-		rc = flash_write(context, high_mem.flash_offset,
+		rc = context->backend->write(context, high_mem.flash_offset,
 				 context->current->mem + offset_bytes +
 				 count_bytes, high_mem.size);
 		if (rc < 0) {
@@ -279,13 +279,13 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t type)
 {
 	int rc;
-	uint32_t flash_offset, count_bytes = count << context->block_size_shift;
-	uint32_t offset_bytes = offset << context->block_size_shift;
+	uint32_t flash_offset, count_bytes = count << context->backend->block_size_shift;
+	uint32_t offset_bytes = offset << context->backend->block_size_shift;
 
 	switch (type) {
 	case WINDOW_ERASED: /* >= V2 ONLY -> block_size == erasesize */
 		flash_offset = context->current->flash_offset + offset_bytes;
-		rc = flash_erase(context, flash_offset, count_bytes);
+		rc = context->backend->erase(context, flash_offset, count_bytes);
 		if (rc < 0) {
 			MSG_ERR("Couldn't erase flash\n");
 			return rc;
@@ -297,21 +297,21 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 		 * so we have a special function to make sure that we do this
 		 * correctly without losing data.
 		 */
-		if (log_2(context->mtd_info.erasesize) !=
-						context->block_size_shift) {
+		if (log_2(context->backend->mtd_info.erasesize) !=
+						context->backend->block_size_shift) {
 			return window_flush_v1(context, offset_bytes,
 						    count_bytes);
 		}
 		flash_offset = context->current->flash_offset + offset_bytes;
 
 		/* Erase the flash */
-		rc = flash_erase(context, flash_offset, count_bytes);
+		rc = context->backend->erase(context, flash_offset, count_bytes);
 		if (rc < 0) {
 			return rc;
 		}
 
 		/* Write to the erased flash */
-		rc = flash_write(context, flash_offset,
+		rc = context->backend->write(context, flash_offset,
 				 context->current->mem + offset_bytes,
 				 count_bytes);
 		if (rc < 0) {
@@ -345,7 +345,7 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
 		free(cur->dirty_bmap);
 		/* Allocate the new one */
 		cur->dirty_bmap = calloc((context->windows.default_size >>
-					  context->block_size_shift),
+					  context->backend->block_size_shift),
 					 sizeof(*cur->dirty_bmap));
 	}
 }
@@ -363,12 +363,12 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
 int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 		       uint32_t offset, uint32_t size, uint8_t val)
 {
-	if (offset + size > (cur->size >> context->block_size_shift)) {
+	if (offset + size > (cur->size >> context->backend->block_size_shift)) {
 		MSG_ERR("Tried to set window bytemap past end of window\n");
 		MSG_ERR("Requested offset: 0x%x size: 0x%x window size: 0x%x\n",
-			offset << context->block_size_shift,
-			size << context->block_size_shift,
-			cur->size << context->block_size_shift);
+			offset << context->backend->block_size_shift,
+			size << context->backend->block_size_shift,
+			cur->size << context->backend->block_size_shift);
 		return -EACCES;
 	}
 
@@ -410,7 +410,7 @@ void window_reset(struct mbox_context *context, struct window_context *window)
 	window->size = context->windows.default_size;
 	if (window->dirty_bmap) { /* Might not have been allocated */
 		window_set_bytemap(context, window, 0,
-				   window->size >> context->block_size_shift,
+				   window->size >> context->backend->block_size_shift,
 				   WINDOW_CLEAN);
 	}
 	window->age = 0;
@@ -609,7 +609,7 @@ int windows_create_map(struct mbox_context *context,
 		 */
 		if (context->version == API_VERSION_1) {
 			cur->size = align_down(context->flash_size - offset,
-					       1 << context->block_size_shift);
+					       1 << context->backend->block_size_shift);
 		} else {
 			/*
 			 * Allow requests to exceed the flash size, but limit
@@ -620,7 +620,7 @@ int windows_create_map(struct mbox_context *context,
 	}
 
 	/* Copy from flash into the window buffer */
-	rc = flash_copy(context, offset, cur->mem, cur->size);
+	rc = context->backend->copy(context, offset, cur->mem, cur->size);
 	if (rc < 0) {
 		/* We don't know how much we've copied -> better reset window */
 		window_reset(context, cur);
@@ -632,7 +632,7 @@ int windows_create_map(struct mbox_context *context,
 	 * FIXME: This should only be the case for the vpnor ToC now, so handle
 	 * it there
 	 */
-	cur->size = align_up(rc, (1ULL << context->block_size_shift));
+	cur->size = align_up(rc, (1ULL << context->backend->block_size_shift));
 	/* Would like a known value, pick 0xFF to it looks like erased flash */
 	memset(cur->mem + rc, 0xFF, cur->size - rc);
 
@@ -662,7 +662,7 @@ int windows_create_map(struct mbox_context *context,
 
 	/* Clear the bytemap of the window just loaded -> we know it's clean */
 	window_set_bytemap(context, cur, 0,
-			   cur->size >> context->block_size_shift,
+			   cur->size >> context->backend->block_size_shift,
 			   WINDOW_CLEAN);
 
 	/* Update so we know what's in the window */

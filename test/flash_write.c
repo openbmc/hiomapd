@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -65,6 +65,10 @@ int main(void)
 	atexit(cleanup);
 
 	mbox_vlog = &mbox_log_console;
+
+	context->flash.filename = get_dev_mtd();
+	rc = probe_mtd_backed_flash(context);
+	assert(rc == 0);
 
 	rc = flash_dev_init(context);
 	assert(rc == 0);
