@@ -90,7 +90,7 @@ static inline int mbox_xlate_errno(struct mbox_context *context,
  *
  * Return:	0 on success otherwise negative error code
  */
-static int transport_mbox_flush_events(struct mbox_context *context)
+static int transport_mbox_flush_events(struct mbox_context *context, uint8_t events)
 {
 	int rc;
 
@@ -122,19 +122,15 @@ static int transport_mbox_flush_events(struct mbox_context *context)
 }
 
 static int transport_mbox_set_events(struct mbox_context *context,
-				     uint8_t events)
+				     uint8_t events, uint8_t mask)
 {
-	context->bmc_events |= events;
-
-	return transport_mbox_flush_events(context);
+	return transport_mbox_flush_events(context, context->bmc_events & mask);
 }
 
 static int transport_mbox_clear_events(struct mbox_context *context,
-				       uint8_t events)
+				       uint8_t events, uint8_t mask)
 {
-	context->bmc_events &= ~events;
-
-	return transport_mbox_flush_events(context);
+	return transport_mbox_flush_events(context, context->bmc_events & mask);
 }
 
 static const struct transport_ops transport_mbox_ops = {
