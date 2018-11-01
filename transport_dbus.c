@@ -65,7 +65,7 @@ static int transport_dbus_signal_update(struct mbox_context *context,
 		}
 	}
 
-	if (events & BMC_EVENT_REBOOT) {
+	if (events & BMC_EVENT_PROTOCOL_RESET) {
 		sd_bus_message *m = NULL;
 
 		rc = sd_bus_message_new_signal(context->bus, &m,
