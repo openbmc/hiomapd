@@ -236,7 +236,7 @@ static int handle_cmd_resume(struct mboxctl_context *context, char *sarg)
 		goto out;
 	}
 
-	rc = sd_bus_message_append(m, "y", arg);
+	rc = sd_bus_message_append(m, "b", arg);
 	if (rc < 0) {
 		MSG_ERR("Failed to add args to message: %s\n",
 			strerror(-rc));
