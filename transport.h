@@ -7,8 +7,10 @@
 struct mbox_context;
 
 struct transport_ops {
-	int (*set_events)(struct mbox_context *context, uint8_t events);
-	int (*clear_events)(struct mbox_context *context, uint8_t events);
+	int (*set_events)(struct mbox_context *context, uint8_t events,
+			  uint8_t mask);
+	int (*clear_events)(struct mbox_context *context, uint8_t events,
+			    uint8_t mask);
 };
 
 #endif /* TRANSPORT_H */

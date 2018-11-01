@@ -40,7 +40,7 @@ int protocol_events_set(struct mbox_context *context, uint8_t bmc_event)
 	 */
 	context->bmc_events |= bmc_event;
 
-	return context->transport->set_events(context, (bmc_event & mask));
+	return context->transport->set_events(context, bmc_event, mask);
 }
 
 /*
@@ -56,7 +56,7 @@ int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event)
 
 	context->bmc_events &= ~bmc_event;
 
-	return context->transport->clear_events(context, (bmc_event & mask));
+	return context->transport->clear_events(context, bmc_event, mask);
 }
 
 int protocol_v1_reset(struct mbox_context *context)

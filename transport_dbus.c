@@ -19,6 +19,7 @@ static int transport_dbus_property_update(struct mbox_context *context,
 	/* Two properties plus a terminating NULL */
 	char *props[3] = { 0 };
 	int i = 0;
+	int rc;
 
 	if (events & BMC_EVENT_FLASH_CTRL_LOST) {
 		props[i++] = "FlashControlLost";
@@ -28,19 +29,21 @@ static int transport_dbus_property_update(struct mbox_context *context,
 		props[i++] = "DaemonReady";
 	}
 
-	return sd_bus_emit_properties_changed_strv(context->bus,
+	rc = sd_bus_emit_properties_changed_strv(context->bus,
 						 MBOX_DBUS_OBJECT,
 						 /* FIXME: Hard-coding v2 */
 						 MBOX_DBUS_PROTOCOL_IFACE_V2,
 						 props);
+
+	return (rc < 0) ? rc : 0;
 }
 
 static int transport_dbus_set_events(struct mbox_context *context,
-				     uint8_t events)
+				     uint8_t events, uint8_t mask)
 {
 	int rc;
 
-	rc = transport_dbus_property_update(context, events);
+	rc = transport_dbus_property_update(context, events & mask);
 	if (rc < 0) {
 		return rc;
 	}
@@ -89,10 +92,10 @@ static int transport_dbus_set_events(struct mbox_context *context,
 }
 
 static int transport_dbus_clear_events(struct mbox_context *context,
-				       uint8_t events)
+				       uint8_t events, uint8_t mask)
 {
 	/* No need to emit signals for ackable events on clear */
-	return transport_dbus_property_update(context, events);
+	return transport_dbus_property_update(context, events & mask);
 }
 
 static const struct transport_ops transport_dbus_ops = {
