@@ -51,7 +51,8 @@
 "\t\t\t\t(default: 1MB)\n" \
 "\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
 
-static int dbus_init(struct mbox_context *context)
+static int dbus_init(struct mbox_context *context,
+		     const struct transport_ops **ops)
 {
 	int rc;
 
@@ -76,7 +77,7 @@ static int dbus_init(struct mbox_context *context)
 		return rc;
 	}
 
-	rc = transport_dbus_init(context);
+	rc = transport_dbus_init(context, ops);
 	if (rc < 0) {
 		MSG_ERR("Failed to initialise DBus protocol interface: %s\n",
 			strerror(-rc));
@@ -346,6 +347,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 int main(int argc, char **argv)
 {
+	const struct transport_ops *mbox_ops, *dbus_ops;
 	struct mbox_context *context;
 	char *name = argv[0];
 	sigset_t set;
@@ -379,7 +381,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = transport_mbox_init(context);
+	rc = transport_mbox_init(context, &mbox_ops);
 	if (rc) {
 		goto finish;
 	}
@@ -400,7 +402,7 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = dbus_init(context);
+	rc = dbus_init(context, &dbus_ops);
 	if (rc) {
 		goto finish;
 	}
@@ -415,7 +417,16 @@ int main(int argc, char **argv)
 		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
 	}
 
-	rc = protocol_events_set(context, BMC_EVENT_DAEMON_READY);
+	/* We're ready to go, alert the host */
+	context->bmc_events |= BMC_EVENT_DAEMON_READY;
+
+	/* Alert on all supported transports */
+	rc = protocol_events_put(context, mbox_ops);
+	if (rc) {
+		goto finish;
+	}
+
+	rc = protocol_events_put(context, dbus_ops);
 	if (rc) {
 		goto finish;
 	}
@@ -427,7 +438,11 @@ int main(int argc, char **argv)
 
 finish:
 	MSG_INFO("Daemon Exiting...\n");
-	protocol_events_clear(context, BMC_EVENT_DAEMON_READY);
+	context->bmc_events &= ~BMC_EVENT_DAEMON_READY;
+
+	/* Alert on all supported transports */
+	protocol_events_put(context, mbox_ops);
+	protocol_events_put(context, dbus_ops);
 
 #ifdef VIRTUAL_PNOR_ENABLED
 	destroy_vpnor(context);

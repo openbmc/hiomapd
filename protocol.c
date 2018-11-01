@@ -23,7 +23,23 @@ static inline uint8_t protocol_get_bmc_event_mask(struct mbox_context *context)
 }
 
 /*
- * protocol_events_set() - Set BMC events
+ * protocol_events_put() - Push the full set/cleared state of BMC events on the
+ * 			   provided transport
+ * @context:    The mbox context pointer
+ * @ops:	The operations struct for the transport of interest
+ *
+ * Return:      0 on success otherwise negative error code
+ */
+int protocol_events_put(struct mbox_context *context,
+			const struct transport_ops *ops)
+{
+	const uint8_t mask = protocol_get_bmc_event_mask(context);
+
+	return ops->put_events(context, mask);
+}
+
+/*
+ * protocol_events_set() - Update the set BMC events on the active transport
  * @context:	The mbox context pointer
  * @bmc_event:	The bits to set
  *
@@ -44,7 +60,8 @@ int protocol_events_set(struct mbox_context *context, uint8_t bmc_event)
 }
 
 /*
- * protocol_events_clear() - Clear BMC events
+ * protocol_events_clear() - Update the cleared BMC events on the active
+ *                           transport
  * @context:	The mbox context pointer
  * @bmc_event:	The bits to clear
  *

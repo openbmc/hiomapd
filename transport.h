@@ -7,6 +7,7 @@
 struct mbox_context;
 
 struct transport_ops {
+	int (*put_events)(struct mbox_context *context, uint8_t mask);
 	int (*set_events)(struct mbox_context *context, uint8_t events,
 			  uint8_t mask);
 	int (*clear_events)(struct mbox_context *context, uint8_t events,
