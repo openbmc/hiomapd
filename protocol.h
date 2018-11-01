@@ -5,6 +5,7 @@
 #define PROTOCOL_H
 
 struct mbox_context;
+struct transport_ops;
 
 /*
  * The GET_MBOX_INFO command is special as it can change the interface based on
@@ -120,6 +121,8 @@ void protocol_free(struct mbox_context *context);
 
 int protocol_negotiate_version(struct mbox_context *context, uint8_t requested);
 
+int protocol_events_put(struct mbox_context *context,
+			const struct transport_ops *ops);
 int protocol_events_set(struct mbox_context *context, uint8_t bmc_event);
 int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event);
 

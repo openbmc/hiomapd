@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 struct mbox_context;
+struct transport_ops;
 
 /* Command Values */
 #define MBOX_C_RESET_STATE		0x01
@@ -52,7 +53,8 @@ union mbox_regs {
 };
 
 int transport_mbox_dispatch(struct mbox_context *context);
-int transport_mbox_init(struct mbox_context *context);
+int transport_mbox_init(struct mbox_context *context,
+			const struct transport_ops **ops);
 void transport_mbox_free(struct mbox_context *context);
 
 #endif /* MBOXD_MSG_H */

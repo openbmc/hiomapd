@@ -121,21 +121,22 @@ static int transport_mbox_flush_events(struct mbox_context *context, uint8_t eve
 	return 0;
 }
 
-static int transport_mbox_set_events(struct mbox_context *context,
-				     uint8_t events, uint8_t mask)
+static int transport_mbox_put_events(struct mbox_context *context,
+					uint8_t mask)
 {
 	return transport_mbox_flush_events(context, context->bmc_events & mask);
 }
 
-static int transport_mbox_clear_events(struct mbox_context *context,
-				       uint8_t events, uint8_t mask)
+static int transport_mbox_update_events(struct mbox_context *context,
+					uint8_t events, uint8_t mask)
 {
 	return transport_mbox_flush_events(context, context->bmc_events & mask);
 }
 
 static const struct transport_ops transport_mbox_ops = {
-	.set_events = transport_mbox_set_events,
-	.clear_events = transport_mbox_clear_events,
+	.put_events = transport_mbox_put_events,
+	.set_events = transport_mbox_update_events,
+	.clear_events = transport_mbox_update_events,
 };
 
 /* Command Handlers */
@@ -665,9 +666,20 @@ int __transport_mbox_init(struct mbox_context *context, const char *path)
 	return 0;
 }
 
-int transport_mbox_init(struct mbox_context *context)
+int transport_mbox_init(struct mbox_context *context,
+			const struct transport_ops **ops)
 {
-	return __transport_mbox_init(context, MBOX_HOST_PATH);
+	int rc;
+
+	rc = __transport_mbox_init(context, MBOX_HOST_PATH);
+	if (rc)
+		return rc;
+
+	if (ops) {
+		*ops = &transport_mbox_ops;
+	}
+
+	return 0;
 }
 
 void transport_mbox_free(struct mbox_context *context)

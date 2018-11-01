@@ -38,15 +38,10 @@ static int transport_dbus_property_update(struct mbox_context *context,
 	return (rc < 0) ? rc : 0;
 }
 
-static int transport_dbus_set_events(struct mbox_context *context,
-				     uint8_t events, uint8_t mask)
+static int transport_dbus_signal_update(struct mbox_context *context,
+					uint8_t events)
 {
 	int rc;
-
-	rc = transport_dbus_property_update(context, events & mask);
-	if (rc < 0) {
-		return rc;
-	}
 
 	/*
 	 * Handle signals - edge triggered, only necessary when they're
@@ -91,6 +86,38 @@ static int transport_dbus_set_events(struct mbox_context *context,
 	return 0;
 }
 
+static int transport_dbus_put_events(struct mbox_context *context, uint8_t mask)
+{
+	int rc;
+
+	/* Always update all properties */
+	rc = transport_dbus_property_update(context, mask);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/*
+	 * Still test signals against the values set as sending them indicates
+	 * the event has been asserted, so we must not send them if the bits
+	 * are not set.
+	 */
+	return transport_dbus_signal_update(context,
+					    context->bmc_events & mask);
+}
+
+static int transport_dbus_set_events(struct mbox_context *context,
+				     uint8_t events, uint8_t mask)
+{
+	int rc;
+
+	rc = transport_dbus_property_update(context, events & mask);
+	if (rc < 0) {
+		return rc;
+	}
+
+	return transport_dbus_signal_update(context, events & mask);
+}
+
 static int transport_dbus_clear_events(struct mbox_context *context,
 				       uint8_t events, uint8_t mask)
 {
@@ -99,6 +126,7 @@ static int transport_dbus_clear_events(struct mbox_context *context,
 }
 
 static const struct transport_ops transport_dbus_ops = {
+	.put_events = transport_dbus_put_events,
 	.set_events = transport_dbus_set_events,
 	.clear_events = transport_dbus_clear_events,
 };
@@ -509,7 +537,8 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 	SD_BUS_VTABLE_END
 };
 
-int transport_dbus_init(struct mbox_context *context)
+int transport_dbus_init(struct mbox_context *context,
+			const struct transport_ops **ops)
 {
 	int rc;
 
@@ -526,8 +555,15 @@ int transport_dbus_init(struct mbox_context *context)
 					MBOX_DBUS_OBJECT,
 					MBOX_DBUS_PROTOCOL_IFACE_V2,
 					protocol_v2_vtable, context);
+	if (rc < 0) {
+		return rc;
+	}
 
-	return rc;
+	if (ops) {
+		*ops = &transport_dbus_ops;
+	}
+
+	return 0;
 }
 
 #define __unused __attribute__((unused))
