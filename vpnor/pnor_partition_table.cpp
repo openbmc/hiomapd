@@ -296,6 +296,15 @@ static inline void writeUserdata(pnor_partition& part, uint32_t version,
         }
     }
 
+    // Awful hack: Detect the TOC partition and force it read-only.
+    //
+    // Note that as it stands in the caller code we populate the critical
+    // elements before the user data. These tests make doing so a requirement.
+    if (part.data.id == 0 && !part.data.base && part.data.size)
+    {
+        perms |= PARTITION_READONLY;
+    }
+
     part.data.user.data[0] = state;
     part.data.user.data[1] = perms;
     part.data.user.data[1] |= version;
@@ -374,6 +383,9 @@ void parseTocLine(const std::string& line, size_t blockSize,
 
     // Use the shift to convert "80" to 0x80000000
     unsigned long version = std::stoul(match[VERSION_MATCH].str(), nullptr, 16);
+    // Note that we must have written the partition ID and sizes prior to
+    // populating the userdata. See the note about awful hacks in
+    // writeUserdata()
     writeUserdata(part, version << versionShift, match.suffix().str());
     part.checksum = details::checksum(part.data);
 }
