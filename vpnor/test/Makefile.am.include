@@ -219,6 +219,13 @@ vpnor_test_create_write_window_unmapped_SOURCES = \
 vpnor_test_create_write_window_unmapped_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_create_write_window_unmapped_LDADD = $(VPNOR_LDADD)
 
+vpnor_test_write_toc_SOURCES = \
+	$(TEST_MOCK_SRCS) \
+	$(TEST_MBOX_VPNOR_INTEG_SRCS) \
+	%reldir%/write_toc.cpp
+vpnor_test_write_toc_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+vpnor_test_write_toc_LDADD = $(VPNOR_LDADD)
+
 if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
@@ -248,5 +255,9 @@ check_PROGRAMS += \
 	%reldir%/create_read_window_remap \
 	%reldir%/create_write_window_ro_partition \
 	%reldir%/create_write_window_rw_partition \
-	%reldir%/create_write_window_unmapped
+	%reldir%/create_write_window_unmapped \
+	%reldir%/write_toc
+
+XFAIL_TESTS += \
+	%reldir%/write_toc
 endif
