@@ -267,6 +267,5 @@ check_PROGRAMS += \
 	%reldir%/force_readonly_toc
 
 XFAIL_TESTS += \
-	%reldir%/write_toc \
-	%reldir%/force_readonly_toc
+	%reldir%/write_toc
 endif
