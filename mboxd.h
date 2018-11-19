@@ -5,6 +5,7 @@
 #define MBOX_H
 
 #include <assert.h>
+#include <linux/blktrace_api.h>
 #include <mtd/mtd-abi.h>
 #include <systemd/sd-bus.h>
 #include <poll.h>
@@ -101,6 +102,11 @@ struct mbox_context {
 	uint32_t mem_size;
 	/* LPC Bus Base Address (bytes) */
 	uint32_t lpc_base;
+
+	/* Tracing */
+	int blktracefd;
+	struct blk_io_trace trace;
+	int64_t blktrace_start;
 };
 
 #endif /* MBOX_H */
