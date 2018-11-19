@@ -4,12 +4,20 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "flash.h"
 #include "mboxd.h"
 #include "lpc.h"
 #include "windows.h"
+
+#include <linux/blktrace_api.h>
+
+extern int blktracefd;
+struct blk_io_trace trace;
+int64_t blktrace_start;
+
 
 #define BLOCK_SIZE_SHIFT_V1		12 /* 4K */
 
@@ -149,6 +157,108 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 	return lpc_addr >> context->block_size_shift;
 }
 
+static void blktrace_flush_start(const struct mbox_context *context)
+{
+	struct timespec now;
+
+	if (!blktracefd)
+		return;
+
+	if (!blktrace_start) {
+		clock_gettime(CLOCK_REALTIME, &now);
+		blktrace_start = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	}
+
+	trace.magic = BLK_IO_TRACE_MAGIC | BLK_IO_TRACE_VERSION;
+	trace.sequence++;
+	clock_gettime(CLOCK_REALTIME, &now);
+	trace.time = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	trace.time -= blktrace_start;
+	trace.sector = context->current->flash_offset / 512;
+	trace.bytes = context->current->size;
+	if (context->current_is_write)
+		trace.action = BLK_TA_QUEUE | BLK_TC_ACT(BLK_TC_WRITE);
+	else
+		trace.action = BLK_TA_QUEUE | BLK_TC_ACT(BLK_TC_READ);
+	trace.pid = 0;
+	trace.device = 0;
+	trace.cpu = 0;
+	trace.error = 0;
+	trace.pdu_len = 0;
+	write(blktracefd, &trace, sizeof(trace));
+	trace.sequence++;
+	clock_gettime(CLOCK_REALTIME, &now);
+	trace.time = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	trace.time -= blktrace_start;
+	trace.action &= ~BLK_TA_QUEUE;
+	trace.action |= BLK_TA_ISSUE;
+	write(blktracefd, &trace, sizeof(trace));}
+
+static void blktrace_flush_done(const struct mbox_context *context)
+{
+	struct timespec now;
+
+	if (!blktracefd)
+		return;
+
+	trace.sequence++;
+	clock_gettime(CLOCK_REALTIME, &now);
+	trace.time = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	trace.time -= blktrace_start;
+	trace.action &= ~BLK_TA_ISSUE;
+	trace.action |= BLK_TA_COMPLETE;
+	write(blktracefd, &trace, sizeof(trace));
+}
+
+static void blktrace_window_start(const struct mbox_context *context)
+{
+	struct timespec now;
+
+	if (!blktracefd)
+		return;
+
+	if (!blktrace_start) {
+		clock_gettime(CLOCK_REALTIME, &now);
+		blktrace_start = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	}
+
+	trace.magic = BLK_IO_TRACE_MAGIC | BLK_IO_TRACE_VERSION;
+	trace.sequence++;
+	clock_gettime(CLOCK_REALTIME, &now);
+	trace.time = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	trace.time -= blktrace_start;
+	trace.action = BLK_TA_QUEUE | BLK_TC_ACT(BLK_TC_READ);
+	trace.pid = 0;
+	trace.device = 0;
+	trace.cpu = 0;
+	trace.error = 0;
+	trace.pdu_len = 0;
+}
+
+static void blktrace_window_done(const struct mbox_context *context)
+{
+	struct timespec now;
+
+	if (!blktracefd)
+		return;
+
+	trace.sector = context->current->flash_offset / 512;
+	trace.bytes = context->current->size;
+	write(blktracefd, &trace, sizeof(trace));
+	trace.sequence++;
+	trace.action &= ~BLK_TA_QUEUE;
+	trace.action |= BLK_TA_ISSUE;
+	write(blktracefd, &trace, sizeof(trace));
+
+	trace.sequence++;
+	clock_gettime(CLOCK_REALTIME, &now);
+	trace.time = (int64_t)(now.tv_sec) * (int64_t)1000000000 + (int64_t)(now.tv_nsec);
+	trace.time -= blktrace_start;
+	trace.action &= ~BLK_TA_ISSUE;
+	trace.action |= BLK_TA_COMPLETE;
+	write(blktracefd, &trace, sizeof(trace));
+}
+
 int protocol_v1_create_window(struct mbox_context *context,
 			      struct protocol_create_window *io)
 {
@@ -164,7 +274,9 @@ int protocol_v1_create_window(struct mbox_context *context,
 		 * write_flush() to make sure we pick the right one.
 		 */
 		if (context->current_is_write) {
+			blktrace_flush_start(context);
 			rc = context->protocol->flush(context, NULL);
+			blktrace_flush_done(context);
 			if (rc < 0) {
 				MSG_ERR("Couldn't Flush Write Window\n");
 				return rc;
@@ -176,6 +288,7 @@ int protocol_v1_create_window(struct mbox_context *context,
 	/* Offset the host has requested */
 	MSG_INFO("Host requested flash @ 0x%.8x\n", offset);
 	/* Check if we have an existing window */
+	blktrace_window_start(context);
 	context->current = windows_search(context, offset,
 					  context->version == API_VERSION_1);
 
@@ -190,6 +303,7 @@ int protocol_v1_create_window(struct mbox_context *context,
 			return rc;
 		}
 	}
+	blktrace_window_done(context);
 
 	context->current_is_write = !io->req.ro;
 

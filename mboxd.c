@@ -49,7 +49,10 @@
 "\t\t\t\t(default: fill the reserved memory region)\n" \
 "\t-w | --window-size\tThe window size (power of 2) in MB\n" \
 "\t\t\t\t(default: 1MB)\n" \
-"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+"\t-f | --flash\t\tSize of flash in [K|M] bytes\n" \
+"\t-t | --trace\t\tFile to write trace data to (in blktrace format)\n\n"
+
+int blktracefd;
 
 static int dbus_init(struct mbox_context *context,
 		     const struct transport_ops **ops)
@@ -249,6 +252,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	static const struct option long_options[] = {
 		{ "flash",		required_argument,	0, 'f' },
+		{ "trace",		optional_argument,	0, 't' },
 		{ "window-size",	optional_argument,	0, 'w' },
 		{ "window-num",		optional_argument,	0, 'n' },
 		{ "verbose",		no_argument,		0, 'v' },
@@ -323,6 +327,14 @@ static bool parse_cmdline(int argc, char **argv,
 		case 'V':
 			printf("%s V%s\n", THIS_NAME, PACKAGE_VERSION);
 			exit(0);
+		case 'b':
+			blktracefd = open(argv[optind], O_CREAT|O_TRUNC|O_WRONLY, 0666);
+			printf("Recording blktrace output to %s\n", argv[optind]);
+			if (blktracefd == -1) {
+				perror("Couldn't open blktrace file for writing");
+				exit(2);
+			}
+			break;
 		case 'h':
 			return false; /* This will print the usage message */
 		default:
