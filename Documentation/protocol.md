@@ -375,8 +375,7 @@ The wire command framing is as follows:
 DBus defines its own wire-format for messages, and so support for this
 transport concentrates on mapping commands and events onto DBus concepts.
 Specifically, commands are represented by DBus methods and events are
-represented by properties for level-triggered (persistent) events and signals
-for edge-triggered (acknowledgeable) events. DBus will automatically generate a
+represented by properties. DBus will automatically generate a
 `PropertiesChanged` signal for changes to properties allowing consumers to
 learn of updates as they happen.
 
@@ -1397,8 +1396,11 @@ dirty or erased then this command must fail.
 The M, I, and D columns represent the Mailbox, IPMI and DBus transports
 respectively. The values in the M, I or D columns represent the events' bit
 index in the status byte, or in the case of the DBus transport the name of the
-relevant property or signal.
+relevant property.
 
+For the DBus interface, properties are used for all event types regardless of
+whether they should be acknowledged or not as part of the protocol. This
+ensures that state changes can be published atomically.
 
 ## `PROTOCOL_RESET` Event
 

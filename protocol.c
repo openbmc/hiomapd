@@ -357,8 +357,12 @@ int protocol_v1_close(struct mbox_context *context, struct protocol_close *io)
 
 int protocol_v1_ack(struct mbox_context *context, struct protocol_ack *io)
 {
-	return protocol_events_clear(context,
-				     (io->req.flags & BMC_EVENT_ACK_MASK));
+	/* Don't send out a property update */
+	const uint8_t mask = protocol_get_bmc_event_mask(context);
+
+	context->bmc_events &= ~(io->req.flags & mask);
+
+	return 0;
 }
 
 /*
