@@ -17,7 +17,7 @@ static int transport_dbus_property_update(struct mbox_context *context,
 					  uint8_t events)
 {
 	/* Two properties plus a terminating NULL */
-	char *props[3] = { 0 };
+	char *props[5] = { 0 };
 	int i = 0;
 	int rc;
 
@@ -27,6 +27,14 @@ static int transport_dbus_property_update(struct mbox_context *context,
 
 	if (events & BMC_EVENT_DAEMON_READY) {
 		props[i++] = "DaemonReady";
+	}
+
+	if (events & BMC_EVENT_WINDOW_RESET) {
+		props[i++] = "WindowReset";
+	}
+
+	if (events & BMC_EVENT_PROTOCOL_RESET) {
+		props[i++] = "ProtocolReset";
 	}
 
 	rc = sd_bus_emit_properties_changed_strv(context->bus,
@@ -482,6 +490,10 @@ static int transport_dbus_get_property(sd_bus *bus,
 		value = context->bmc_events & BMC_EVENT_FLASH_CTRL_LOST;
 	} else if (!strcmp("DaemonReady", property)) {
 		value = context->bmc_events & BMC_EVENT_DAEMON_READY;
+	} else if (!strcmp("WindowReset", property)) {
+		value = context->bmc_events & BMC_EVENT_WINDOW_RESET;
+	} else if (!strcmp("ProtocolReset", property)) {
+		value = context->bmc_events & BMC_EVENT_PROTOCOL_RESET;
 	} else {
 		MSG_ERR("Unknown DBus property: %s\n", property);
 		return -EINVAL;
@@ -534,6 +546,14 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_SIGNAL("ProtocolReset", NULL, 0),
 	SD_BUS_SIGNAL("WindowReset", NULL, 0),
+	SD_BUS_PROPERTY("ProtocolReset",  "b",
+			transport_dbus_get_property,
+			0, /* Just a pointer to struct mbox_context */
+			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+	SD_BUS_PROPERTY("WindowReset", "b",
+			transport_dbus_get_property,
+			0, /* Just a pointer to struct mbox_context */
+			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_VTABLE_END
 };
 

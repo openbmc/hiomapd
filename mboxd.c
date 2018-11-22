@@ -193,13 +193,8 @@ static int poll_loop(struct mbox_context *context)
 
 	/* Best to reset windows and the lpc mapping for safety */
 	/* Host didn't request reset -> Notify it */
-	if (windows_reset_all(context)) {
-	       rc = protocol_events_set(context, BMC_EVENT_WINDOW_RESET);
-	       if (rc < 0) {
-		      MSG_ERR("Failed to notify host of reset, expect host-side corruption\n");
-		      return rc;
-	       }
-	}
+	windows_reset_all(context);
+
 	rc = lpc_reset(context);
 	/* Not much we can do if this fails */
 	if (rc < 0) {
