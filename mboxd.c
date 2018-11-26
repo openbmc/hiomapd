@@ -437,8 +437,10 @@ finish:
 	context->bmc_events |= BMC_EVENT_PROTOCOL_RESET;
 
 	/* Alert on all supported transports */
+	MSG_INFO("Sending events on all transports\n");
 	protocol_events_put(context, mbox_ops);
 	protocol_events_put(context, dbus_ops);
+	MSG_INFO("Completed event send on all transports\n");
 
 #ifdef VIRTUAL_PNOR_ENABLED
 	destroy_vpnor(context);
