@@ -414,6 +414,7 @@ int main(int argc, char **argv)
 
 	/* We're ready to go, alert the host */
 	context->bmc_events |= BMC_EVENT_DAEMON_READY;
+	context->bmc_events |= BMC_EVENT_PROTOCOL_RESET;
 
 	/* Alert on all supported transports */
 	rc = protocol_events_put(context, mbox_ops);
