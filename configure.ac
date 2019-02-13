@@ -53,7 +53,7 @@ AS_IF([test "x$enable_virtual_pnor" == "xyes"],
     [
         PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus])
         PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging])
-        AX_PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [],[phosphor-dbus-interfaces])
+        PKG_CHECK_MODULES([PHOSPHOR_DBUS_INTERFACES], [phosphor-dbus-interfaces])
 
         AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, true)
         AX_APPEND_COMPILE_FLAGS([-DVIRTUAL_PNOR_ENABLED], [CXXFLAGS])
