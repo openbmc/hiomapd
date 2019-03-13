@@ -3,22 +3,22 @@
 
 #include "config.h"
 
-#include <assert.h>
+extern "C" {
+#include "common.h"
+#include "flash.h"
+#include "mboxd.h"
+}
+
+#include "vpnor/test/tmpd.hpp"
+
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/syslog.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <experimental/filesystem>
-
-#include "common.h"
-#include "mboxd.h"
-extern "C" {
-#include "flash.h"
-}
-
-#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 static constexpr auto DATA_SIZE = 8;

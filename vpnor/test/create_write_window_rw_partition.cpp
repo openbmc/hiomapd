@@ -3,16 +3,16 @@
 
 #include "config.h"
 
-#include <assert.h>
-
-#include "vpnor/mboxd_pnor_partition_table.h"
-
 extern "C" {
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
 #include "vpnor/test/tmpd.hpp"
+
+#include <cassert>
+
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 const std::string toc[] = {
     "partition01=HBB,00001000,00002000,80,ECC,READWRITE",

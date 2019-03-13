@@ -3,18 +3,18 @@
 
 #include "config.h"
 
-#include <assert.h>
-#include <string.h>
-
-#include "transport_mbox.h"
-#include "vpnor/mboxd_pnor_partition_table.h"
-
 extern "C" {
 #include "test/mbox.h"
 #include "test/system.h"
+#include "transport_mbox.h"
 }
 
 #include "vpnor/test/tmpd.hpp"
+
+#include <cassert>
+#include <cstring>
+
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 struct test_context
 {

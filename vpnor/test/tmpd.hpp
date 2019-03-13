@@ -3,16 +3,17 @@
 
 #include "config.h"
 
+extern "C" {
+#include "mboxd.h"
+}
+
 #include "vpnor/pnor_partition_table.hpp"
 
-#include <assert.h>
-#include <string.h>
-
+#include <cassert>
+#include <cstring>
 #include <experimental/filesystem>
 #include <fstream>
 #include <vector>
-
-#include "mboxd.h"
 
 namespace openpower
 {

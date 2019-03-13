@@ -5,7 +5,7 @@
 
 #include "vpnor/pnor_partition_table.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 #include "common.h"
 #include "vpnor/pnor_partition_defs.h"

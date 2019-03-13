@@ -5,8 +5,8 @@
 #include "vpnor/pnor_partition_table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 extern "C" {
 #include "test/mbox.h"

@@ -4,10 +4,11 @@
 
 #include "vpnor/pnor_partition_table.hpp"
 
-#include <assert.h>
 #include <endian.h>
-#include <string.h>
 #include <sys/mman.h>
+
+#include <cassert>
+#include <cstring>
 
 extern "C" {
 #include "test/mbox.h"

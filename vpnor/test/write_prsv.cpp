@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
-#include <assert.h>
+extern "C" {
+#include "common.h"
+#include "flash.h"
+#include "mboxd.h"
+}
+
+#include "vpnor/test/tmpd.hpp"
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "common.h"
-#include "mboxd.h"
-extern "C" {
-#include "flash.h"
-}
-
-#include "vpnor/test/tmpd.hpp"
+#include <cassert>
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 

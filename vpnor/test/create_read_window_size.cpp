@@ -3,18 +3,18 @@
 
 #include "config.h"
 
-#include <assert.h>
-
-#include <experimental/filesystem>
-
-#include "vpnor/mboxd_pnor_partition_table.h"
-
 extern "C" {
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
 #include "vpnor/test/tmpd.hpp"
+
+#include <cassert>
+#include <experimental/filesystem>
+
+#include "vpnor/mboxd_pnor_partition_table.h"
+
 static const auto BLOCK_SIZE = 4096;
 static const auto ERASE_SIZE = BLOCK_SIZE;
 static const auto WINDOW_SIZE = 2 * BLOCK_SIZE;

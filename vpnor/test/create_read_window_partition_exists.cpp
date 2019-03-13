@@ -3,21 +3,20 @@
 
 #include "config.h"
 
-#include <assert.h>
-#include <string.h>
-
-#include <experimental/filesystem>
-#include <fstream>
-#include <vector>
-
-#include "vpnor/mboxd_pnor_partition_table.h"
-
 extern "C" {
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
 #include "vpnor/test/tmpd.hpp"
+
+#include <cassert>
+#include <cstring>
+#include <experimental/filesystem>
+#include <fstream>
+#include <vector>
+
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 // A read window assumes that the toc is located at offset 0,
 // so create dummy partition at arbitrary offset 0x1000.
