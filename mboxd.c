@@ -38,18 +38,23 @@
 #include "windows.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
 
-#define USAGE \
-"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n" \
-"\t\t[-n | --window-num <num>]\n" \
-"\t\t[-w | --window-size <size>M]\n" \
-"\t\t-f | --flash <size>[K|M]\n\n" \
-"\t-v | --verbose\t\tBe [more] verbose\n" \
-"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n" \
-"\t-n | --window-num\tThe number of windows\n" \
-"\t\t\t\t(default: fill the reserved memory region)\n" \
-"\t-w | --window-size\tThe window size (power of 2) in MB\n" \
-"\t\t\t\t(default: 1MB)\n" \
-"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n"
+const char* USAGE =
+	"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n"
+	"\t\t[-n | --window-num <num>]\n"
+	"\t\t[-w | --window-size <size>M]\n"
+	"\t\t-f | --flash <size>[K|M]\n"
+#ifdef VIRTUAL_PNOR_ENABLED
+	"\t\t-s | --source <vpnor|path>\n\n"
+#else
+	"\t\t-s | --source <path>\n\n"
+#endif
+	"\t-v | --verbose\t\tBe [more] verbose\n"
+	"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n"
+	"\t-n | --window-num\tThe number of windows\n"
+	"\t\t\t\t(default: fill the reserved memory region)\n"
+	"\t-w | --window-size\tThe window size (power of 2) in MB\n"
+	"\t\t\t\t(default: 1MB)\n"
+	"\t-f | --flash\t\tSize of flash in [K|M] bytes\n\n";
 
 static int dbus_init(struct mbox_context *context,
 		     const struct transport_ops **ops)
@@ -226,6 +231,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	static const struct option long_options[] = {
 		{ "flash",		required_argument,	0, 'f' },
+		{ "backend",		required_argument,	0, 'b' },
 		{ "window-size",	optional_argument,	0, 'w' },
 		{ "window-num",		optional_argument,	0, 'n' },
 		{ "verbose",		no_argument,		0, 'v' },
@@ -240,7 +246,7 @@ static bool parse_cmdline(int argc, char **argv,
 
 	context->current = NULL; /* No current window */
 
-	while ((opt = getopt_long(argc, argv, "f:w::n::vsVh", long_options, NULL))
+	while ((opt = getopt_long(argc, argv, "f:b:w::n::vsVh", long_options, NULL))
 			!= -1) {
 		switch (opt) {
 		case 0:
@@ -264,6 +270,9 @@ static bool parse_cmdline(int argc, char **argv,
 					*endptr);
 				return false;
 			}
+			break;
+		case 'b':
+			context->path = optarg;
 			break;
 		case 'n':
 			context->windows.num = strtol(argv[optind], &endptr,
@@ -338,6 +347,10 @@ static int mboxd_backend_init(struct mbox_context *context)
 #endif
 	{
 		rc = backend_probe_mtd(&context->backend, context->path);
+		if (rc) {
+			rc = backend_probe_file(&context->backend,
+						context->path);
+		}
 	}
 
 	return rc;

@@ -19,6 +19,9 @@ mboxd_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 # MTD Backing storage
 include mtd/Makefile.am.include
 
+#File Backing storage
+include file/Makefile.am.include
+
 if VIRTUAL_PNOR_ENABLED
 # VPNOR Backing storage
 include vpnor/Makefile.am.include

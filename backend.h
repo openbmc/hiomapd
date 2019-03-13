@@ -17,6 +17,7 @@
 #define FLASH_ACCESS_MS_PER_MB		8000
 
 struct backend backend_get_mtd(void);
+struct backend backend_get_file(void);
 struct backend backend_get_vpnor(void);
 
 enum backend_reset_mode { reset_lpc_flash, reset_lpc_memory };
@@ -224,6 +225,7 @@ static inline int backend_reset(struct backend *backend, void *buf,
 }
 
 int backend_probe_mtd(struct backend *master, const char *path);
+int backend_probe_file(struct backend *master, const char *path);
 /* Avoid dependency on vpnor/mboxd_pnor_partition_table.h */
 struct vpnor_partition_paths;
 int backend_probe_vpnor(struct backend *master,
