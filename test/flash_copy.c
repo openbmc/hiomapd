@@ -71,7 +71,7 @@ int main(void)
 
 	assert(!backend_probe_mtd(&context.backend, tmp.path));
 
-	flash_copy(&context, 0, dst, TEST_SIZE);
+	backend_copy(&context.backend, 0, dst, TEST_SIZE);
 	assert(0 == memcmp(src, dst, TEST_SIZE));
 
 	backend_free(&context.backend);

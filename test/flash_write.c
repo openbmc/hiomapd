@@ -74,31 +74,31 @@ int main(void)
 	assert(map != MAP_FAILED);
 
 	memset(src, 0xaa, sizeof(src));
-	rc = flash_write(context, 0, src, sizeof(src));
+	rc = backend_write(backend, 0, src, sizeof(src));
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	memset(src, 0x55, sizeof(src));
-	rc = flash_write(context, 0, src, sizeof(src));
+	rc = backend_write(backend, 0, src, sizeof(src));
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	src[0] = 0xff;
-	rc = flash_write(context, 0, src, 1);
+	rc = backend_write(backend, 0, src, 1);
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	src[1] = 0xff;
-	rc = flash_write(context, 1, &src[1], 1);
+	rc = backend_write(backend, 1, &src[1], 1);
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
 	src[2] = 0xff;
-	rc = flash_write(context, 2, &src[2], 1);
+	rc = backend_write(backend, 2, &src[2], 1);
 	assert(rc == 0);
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);

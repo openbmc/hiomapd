@@ -57,7 +57,7 @@ int main(void)
 
     /* Test */
     memset(src, 0x33, sizeof(src));
-    rc = flash_write(ctx, 0x1000, src, sizeof(src));
+    rc = backend_write(&ctx->backend, 0x1000, src, sizeof(src));
     assert(rc == 0);
 
     /* Check that RW file is unmodified after the patch write */

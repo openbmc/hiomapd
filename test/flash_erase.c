@@ -117,7 +117,7 @@ int main(void)
 	assert(!backend_probe_mtd(backend, get_dev_mtd()));
 
 	/* Erase from an unknown state */
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -129,7 +129,7 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase an erased flash */
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 0);
@@ -137,9 +137,9 @@ int main(void)
 	memset(data, 0xaa, sizeof(data));
 
 	/* Erase written flash */
-	rc = flash_write(&context, 0, data, sizeof(data));
+	rc = backend_write(backend, 0, data, sizeof(data));
 	assert(rc == 0);
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -151,9 +151,9 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase the start of flash */
-	rc = flash_write(&context, 0, data, sizeof(data) - 1);
+	rc = backend_write(backend, 0, data, sizeof(data) - 1);
 	assert(rc == 0);
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -165,9 +165,9 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase the end of flash */
-	rc = flash_write(&context, 1, data, sizeof(data) - 1);
+	rc = backend_write(backend, 1, data, sizeof(data) - 1);
 	assert(rc == 0);
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);
@@ -179,10 +179,10 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase each end of flash */
-	rc = flash_write(&context, 0, data, 1);
-	rc = flash_write(&context, 2, data, 1);
+	rc = backend_write(backend, 0, data, 1);
+	rc = backend_write(backend, 2, data, 1);
 	assert(rc == 0);
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 2);
@@ -196,9 +196,9 @@ int main(void)
 	n_ioctls = 0;
 
 	/* Erase the middle of flash */
-	rc = flash_write(&context, 1, data, 1);
+	rc = backend_write(backend, 1, data, 1);
 	assert(rc == 0);
-	rc = flash_erase(&context, 0, sizeof(data));
+	rc = backend_erase(backend, 0, sizeof(data));
 
 	assert(rc == 0);
 	assert(n_ioctls == 1);

@@ -138,8 +138,8 @@ int lpc_map_flash(struct mbox_context *context)
 	 * Since the host now has access to the flash it can change it out from
 	 * under us
 	 */
-	return flash_set_bytemap(context, 0, context->backend.flash_size,
-				 FLASH_DIRTY);
+	return backend_set_bytemap(&context->backend, 0,
+				   context->backend.flash_size, FLASH_DIRTY);
 }
 
 /*

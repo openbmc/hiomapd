@@ -437,9 +437,6 @@ finish:
 	protocol_events_put(context, mbox_ops);
 	protocol_events_put(context, dbus_ops);
 
-#ifdef VIRTUAL_PNOR_ENABLED
-	vpnor_destroy(&context->backend);
-#endif
 	dbus_free(context);
 	backend_free(&context->backend);
 	lpc_dev_free(context);
