@@ -97,6 +97,42 @@ void flash_dev_free(struct mbox_context* context)
     // No-op
 }
 
+static bool vpnor_partition_is_readonly(const pnor_partition& part)
+{
+    return part.data.user.data[1] & PARTITION_READONLY;
+}
+
+int flash_validate(struct mbox_context* context, uint32_t offset,
+                   uint32_t size __attribute__((unused)), bool ro)
+{
+    /* All reads are allowed */
+    if (ro)
+    {
+        return 0;
+    }
+
+    /* Only allow write windows on regions mapped by the ToC as writeable */
+    try
+    {
+        const pnor_partition& part = context->vpnor->table->partition(offset);
+        if (vpnor_partition_is_readonly(part))
+        {
+            return -EPERM;
+        }
+    }
+    catch (const openpower::virtual_pnor::UnmappedOffset& e)
+    {
+        /*
+         * Writes to unmapped areas are not meaningful, so deny the request.
+         * This removes the ability for a compromised host to abuse unused
+         * space if any data was to be persisted (which it isn't).
+         */
+        return -EACCES;
+    }
+
+    return 0;
+}
+
 int flash_set_bytemap(struct mbox_context* context, uint32_t offset,
                       uint32_t count, uint8_t val)
 {

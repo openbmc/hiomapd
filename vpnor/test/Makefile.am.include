@@ -14,8 +14,6 @@ TEST_MBOX_VPNOR_INTEG_SRCS = \
 	vpnor/flash.cpp \
 	vpnor/pnor_partition.cpp \
 	vpnor/pnor_partition_table.cpp \
-	vpnor/protocol.cpp \
-	vpnor/protocol_negotiate_version.cpp \
 	%reldir%/tmpd.cpp
 
 VPNOR_LDADD = -lstdc++fs \

@@ -4,6 +4,7 @@
 #ifndef FLASH_H
 #define FLASH_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define FLASH_DIRTY	0x00
@@ -16,6 +17,8 @@ struct mbox_context;
 
 int flash_dev_init(struct mbox_context *context);
 void flash_dev_free(struct mbox_context *context);
+int flash_validate(struct mbox_context *context, uint32_t offset,
+		   uint32_t size, bool ro);
 int64_t flash_copy(struct mbox_context *context, uint32_t offset, void *mem,
 		   uint32_t size);
 int flash_set_bytemap(struct mbox_context *context, uint32_t offset,
