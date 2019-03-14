@@ -290,6 +290,8 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 	struct mbox_test_context *arg;
 	void *map;
 
+	assert(test.flash.fd > 2);
+
 	/* Sanity check */
 	arg = container_of(context, struct mbox_test_context, context);
 	assert(&test == arg);
