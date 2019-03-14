@@ -100,16 +100,20 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
 
         size_t tocOffset = 0;
 
-        // Copy TOC
-        flash_copy(&local, tocOffset,
-                   static_cast<uint8_t*>(context->mem) + tocStart,
-                   blTable.capacity());
         const pnor_partition& partition = blTable.partition(blPartitionName);
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
-        // Copy HBB
-        flash_copy(&local, hbbOffset,
-                   static_cast<uint8_t*>(context->mem) + hbbOffset, hbbSize);
+
+        if (context->mem_size < tocStart + blTable.capacity() ||
+            context->mem_size < hbbOffset + hbbSize)
+        {
+            MSG_ERR("Reserved memory too small for dumb bootstrap\n");
+            return -EINVAL;
+        }
+
+        uint8_t* buf8 = static_cast<uint8_t*>(context->mem);
+        flash_copy(&local, tocOffset, buf8 + tocStart, blTable.capacity());
+        flash_copy(&local, hbbOffset, buf8 + hbbOffset, hbbSize);
     }
     catch (err::InternalFailure& e)
     {
