@@ -121,6 +121,12 @@ void protocol_free(struct mbox_context *context);
 
 int protocol_negotiate_version(struct mbox_context *context, uint8_t requested);
 
+/* Sneaky reset: Don't tell the host */
+int __protocol_reset(struct mbox_context *context);
+
+/* Noisy reset: Tell the host */
+int protocol_reset(struct mbox_context *context);
+
 int protocol_events_put(struct mbox_context *context,
 			const struct transport_ops *ops);
 int protocol_events_set(struct mbox_context *context, uint8_t bmc_event);

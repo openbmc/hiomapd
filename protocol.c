@@ -532,3 +532,38 @@ void protocol_free(struct mbox_context *context)
 {
 	return;
 }
+
+/* Don't do any state manipulation, just perform the reset */
+int __protocol_reset(struct mbox_context *context)
+{
+	windows_reset_all(context);
+
+	return lpc_reset(context);
+}
+
+/* Prevent the host from performing actions whilst reset takes place */
+int protocol_reset(struct mbox_context *context)
+{
+	int rc;
+
+	rc = protocol_events_clear(context, BMC_EVENT_DAEMON_READY);
+	if (rc < 0) {
+		MSG_ERR("Failed to clear daemon ready state, reset failed\n");
+		return rc;
+	}
+
+	rc = __protocol_reset(context);
+	if (rc < 0) {
+		MSG_ERR("Failed to reset protocol, daemon remains not ready\n");
+		return rc;
+	}
+
+	rc = protocol_events_set(context,
+			BMC_EVENT_DAEMON_READY | BMC_EVENT_PROTOCOL_RESET);
+	if (rc < 0) {
+		MSG_ERR("Failed to set daemon ready state, daemon remains not ready\n");
+		return rc;
+	}
+
+	return 0;
+}
