@@ -8,13 +8,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "windows.h"
@@ -212,8 +214,9 @@ void cleanup(void)
 int __transport_mbox_init(struct mbox_context *context, const char *path);
 int __lpc_dev_init(struct mbox_context *context, const char *path);
 
-struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
+struct mbox_context *mbox_create_frontend_context(int n_windows, size_t len)
 {
+	struct mtd_info_user mtd_info;
 	int rc;
 
 	mbox_vlog = &mbox_log_console;
@@ -222,9 +225,6 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	atexit(cleanup);
 
 	rc = tmpf_init(&test.mbox, "mbox-store.XXXXXX");
-	assert(rc == 0);
-
-	rc = tmpf_init(&test.flash, "flash-store.XXXXXX");
 	assert(rc == 0);
 
 	rc = tmpf_init(&test.lpc, "lpc-store.XXXXXX");
@@ -247,11 +247,17 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;
 
-	rc = flash_dev_init(&test.context);
+	/* Instantiate the mtd backend */
+	rc = tmpf_init(&test.flash, "flash-store.XXXXXX");
 	assert(rc == 0);
 
-	rc = fallocate(test.flash.fd, 0, 0, test.context.mtd_info.size);
+	rc = ioctl(test.flash.fd, MEMGETINFO, &mtd_info);
 	assert(rc == 0);
+
+	rc = fallocate(test.flash.fd, 0, 0, mtd_info.size);
+	assert(rc == 0);
+
+	test.context.backend.flash_size = mtd_info.size;
 
 	rc = __lpc_dev_init(&test.context, test.lpc.path);
 	assert(rc == 0);
@@ -263,6 +269,20 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 	assert(rc == 0);
 
 	return rc ? NULL : &test.context;
+}
+
+struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
+{
+	struct mbox_context *ctx;
+	int rc;
+
+	ctx = mbox_create_frontend_context(n_windows, len);
+	assert(ctx);
+
+	rc = backend_probe_mtd(&ctx->backend, test.flash.path);
+	assert(rc == 0);
+
+	return ctx;
 }
 
 /* From ccan's container_of module, CC0 license */
@@ -295,13 +315,13 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 	/* Sanity check */
 	arg = container_of(context, struct mbox_test_context, context);
 	assert(&test == arg);
-	assert(len <= test.context.flash_size);
+	assert(len <= test.context.backend.flash_size);
 
-	map = mmap(NULL, test.context.mtd_info.size, PROT_WRITE, MAP_SHARED,
-			test.flash.fd, 0);
+	map = mmap(NULL, test.context.backend.flash_size,
+		   PROT_WRITE, MAP_SHARED, test.flash.fd, 0);
 	assert(map != MAP_FAILED);
 	memcpy(map, data, len);
-	munmap(map, test.context.mtd_info.size);
+	munmap(map, test.context.backend.flash_size);
 
 	return 0;
 }

@@ -34,9 +34,9 @@ int main()
 
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(PNOR_SIZE, ERASE_SIZE);
-    ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
-    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    const openpower::virtual_pnor::partition::Table table(ctx);
+    ctx = mbox_create_frontend_context(N_WINDOWS, WINDOW_SIZE);
+    test::VpnorRoot root(&ctx->backend, toc, BLOCK_SIZE);
+    const openpower::virtual_pnor::partition::Table table(&ctx->backend);
 
     pnor_partition_table expectedTable{};
     expectedTable.data.magic = PARTITION_HEADER_MAGIC;
@@ -77,6 +77,8 @@ int main()
     const pnor_partition& first = table.partition(0);
     rc = memcmp(&first, &result.partitions[0], sizeof(pnor_partition));
     assert(rc == 0);
+
+    vpnor_destroy(&ctx->backend);
 
     return 0;
 }

@@ -6,7 +6,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "windows.h"
@@ -62,7 +62,8 @@ int control_kill(struct mbox_context *context)
 int control_modified(struct mbox_context *context)
 {
 	/* Flash has been modified - can no longer trust our erased bytemap */
-	flash_set_bytemap(context, 0, context->flash_size, FLASH_DIRTY);
+	flash_set_bytemap(context, 0, context->backend.flash_size,
+			    FLASH_DIRTY);
 
 	/* Force daemon to reload all windows -> Set BMC event to notify host */
 	if (windows_reset_all(context)) {

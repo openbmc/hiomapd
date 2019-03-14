@@ -11,7 +11,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/system.h"
 #include "test/tmpf.h"
@@ -69,12 +69,15 @@ int main(void)
 		goto free;
 	}
 
-	context.fds[MTD_FD].fd = tmp.fd;
+	assert(!backend_probe_mtd(&context.backend, tmp.path));
 
 	flash_copy(&context, 0, dst, TEST_SIZE);
 	assert(0 == memcmp(src, dst, TEST_SIZE));
 
+	backend_free(&context.backend);
+
 free:
+
 	free(src);
 	free(dst);
 

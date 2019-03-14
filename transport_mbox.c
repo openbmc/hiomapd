@@ -264,7 +264,7 @@ static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
 
 	MSG_DBG("LPC address of current window: 0x%.8x\n", lpc_addr);
 
-	return lpc_addr >> context->block_size_shift;
+	return lpc_addr >> context->backend.block_size_shift;
 }
 
 static int mbox_handle_create_window(struct mbox_context *context, bool ro,

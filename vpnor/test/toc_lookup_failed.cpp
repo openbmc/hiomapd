@@ -37,10 +37,10 @@ int main()
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(MEM_SIZE, ERASE_SIZE);
 
-    ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
+    ctx = mbox_create_frontend_context(N_WINDOWS, WINDOW_SIZE);
 
-    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    vpnor::partition::Table table(ctx);
+    test::VpnorRoot root(&ctx->backend, toc, BLOCK_SIZE);
+    vpnor::partition::Table table(&ctx->backend);
 
     try
     {
@@ -48,6 +48,8 @@ int main()
     }
     catch (vpnor::UnknownPartition& e)
     {
+        vpnor_destroy(&ctx->backend);
+
         return 0;
     }
 

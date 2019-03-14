@@ -13,7 +13,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -32,7 +32,7 @@ char *get_dev_mtd(void)
 	if (rc < 0)
 		return NULL;
 
-	return strdup(mtd.path);
+	return mtd.path;
 }
 
 struct erase_info_user *recorded;
@@ -98,9 +98,12 @@ void dump_ioctls(void)
 
 int main(void)
 {
-	struct mbox_context context;
+	struct mbox_context context = {0};
+	struct backend *backend;
 	char data[MEM_SIZE];
 	int rc;
+
+	backend = &context.backend;
 
 	rc = atexit(cleanup_mtd);
 	if (rc)
@@ -111,7 +114,7 @@ int main(void)
 	n_ioctls = 0;
 	recorded = NULL;
 
-	flash_dev_init(&context);
+	assert(!backend_probe_mtd(backend, get_dev_mtd()));
 
 	/* Erase from an unknown state */
 	rc = flash_erase(&context, 0, sizeof(data));
@@ -206,7 +209,7 @@ int main(void)
 	recorded = NULL;
 	n_ioctls = 0;
 
-	flash_dev_free(&context);
+	backend_free(backend);
 
 	return rc;
 }

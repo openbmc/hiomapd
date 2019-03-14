@@ -2,8 +2,8 @@
 // Copyright (C) 2018 IBM Corp.
 
 extern "C" {
+#include "backend.h"
 #include "common.h"
-#include "flash.h"
 #include "mboxd.h"
 }
 
@@ -41,8 +41,8 @@ int main(void)
     mbox_vlog = &mbox_log_console;
     verbosity = (verbose)2;
 
-    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
-    init_vpnor_from_paths(ctx);
+    ctx->backend.flash_size = 0x2000;
+    test::VpnorRoot root(&ctx->backend, toc, BLOCK_SIZE);
 
     /* Test */
     memset(src, 0xaa, sizeof(src));
@@ -61,7 +61,7 @@ int main(void)
     close(fd);
 
     /* Cleanup */
-    destroy_vpnor(ctx);
+    vpnor_destroy(&ctx->backend);
 
     return 0;
 }

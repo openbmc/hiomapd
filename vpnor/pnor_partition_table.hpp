@@ -7,8 +7,12 @@
 #include <numeric>
 #include <vector>
 
+extern "C" {
+#include "backend.h"
 #include "common.h"
+#include "mboxd_pnor_partition_table.h"
 #include "pnor_partition_defs.h"
+}
 
 struct mbox_context;
 
@@ -97,7 +101,7 @@ class Table
      *
      * Throws MalformedTocEntry, InvalidTocEntry
      */
-    Table(const struct mbox_context* ctx);
+    Table(const struct backend* be);
 
     Table(const Table&) = delete;
     Table& operator=(const Table&) = delete;
@@ -186,7 +190,7 @@ class Table
      *
      * Throws: MalformedTocEntry, InvalidTocEntry
      */
-    void preparePartitions(const struct mbox_context* ctx);
+    void preparePartitions(const struct vpnor_data* ctx);
 
     /** @brief Prepares the PNOR header.
      */

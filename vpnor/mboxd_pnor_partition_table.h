@@ -6,6 +6,7 @@
 
 #include <limits.h>
 #include "pnor_partition_defs.h"
+#include "backend.h"
 
 struct mbox_context;
 struct vpnor_partition_table;
@@ -18,47 +19,55 @@ struct vpnor_partition_paths
     char patch_loc[PATH_MAX];
 };
 
+struct vpnor_data {
+	struct vpnor_partition_table *vpnor;
+	struct vpnor_partition_paths paths;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** @brief Populate the path object with the default partition paths
+ *
+ *  @param[in/out] paths - A paths object in which to store the defaults
+ *
+ *  Returns 0 if the call succeeds, else a negative error code.
+ */
+void vpnor_default_paths(struct vpnor_partition_paths *paths);
+
 /** @brief Create a virtual PNOR partition table.
  *
- *  @param[in] context - mbox context pointer
+ *  @param[in] backend - The backend context pointer
+ *  @param[in] paths - A paths object pointer to initialise vpnor
  *
  *  This API should be called before calling any other APIs below. If a table
  *  already exists, this function will not do anything further. This function
  *  will not do anything if the context is NULL.
  *
- *  Returns 0 if the call succeeds, else a negative error code.
- */
-int init_vpnor(struct mbox_context *context);
-
-/** @brief Create a virtual PNOR partition table.
- *
- *  @param[in] context - mbox context pointer
- *
- *  This API is same as above one but requires context->path is initialised
- *  with all the necessary paths.
+ *  The content of the paths object is copied out, ownership is retained by the
+ *  caller.
  *
  *  Returns 0 if the call succeeds, else a negative error code.
  */
 
-int init_vpnor_from_paths(struct mbox_context *context);
+int vpnor_init(struct backend *backend,
+	       const struct vpnor_partition_paths *paths);
 
 /** @brief Copy bootloader partition (alongwith TOC) to LPC memory
  *
- *  @param[in] context - mbox context pointer
+ *  @param[in] backend - The backend context pointer
  *
  *  @returns 0 on success, negative error code on failure
  */
-int vpnor_copy_bootloader_partition(const struct mbox_context *context);
+int vpnor_copy_bootloader_partition(const struct backend *backend, void *buf,
+				    uint32_t count);
 
 /** @brief Destroy partition table, if it exists.
  *
- *  @param[in] context - mbox context pointer
+ *  @param[in] backend - The backend context pointer
  */
-void destroy_vpnor(struct mbox_context *context);
+void vpnor_destroy(struct backend *backend);
 
 #ifdef __cplusplus
 }

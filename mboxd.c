@@ -31,7 +31,7 @@
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
-#include "flash.h"
+#include "backend.h"
 #include "lpc.h"
 #include "transport_mbox.h"
 #include "transport_dbus.h"
@@ -246,7 +246,7 @@ static bool parse_cmdline(int argc, char **argv,
 		case 0:
 			break;
 		case 'f':
-			context->flash_size = strtol(optarg, &endptr, 10);
+			context->backend.flash_size = strtol(optarg, &endptr, 10);
 			if (optarg == endptr) {
 				fprintf(stderr, "Unparseable flash size\n");
 				return false;
@@ -255,9 +255,9 @@ static bool parse_cmdline(int argc, char **argv,
 			case '\0':
 				break;
 			case 'M':
-				context->flash_size <<= 10;
+				context->backend.flash_size <<= 10;
 			case 'K':
-				context->flash_size <<= 10;
+				context->backend.flash_size <<= 10;
 				break;
 			default:
 				fprintf(stderr, "Unknown units '%c'\n",
@@ -307,12 +307,15 @@ static bool parse_cmdline(int argc, char **argv,
 		}
 	}
 
-	if (!context->flash_size) {
+	if (!context->path) {
+		context->path = get_dev_mtd();
+	}
+	if (!context->backend.flash_size) {
 		fprintf(stderr, "Must specify a non-zero flash size\n");
 		return false;
 	}
 
-	MSG_INFO("Flash size: 0x%.8x\n", context->flash_size);
+	MSG_INFO("Flash size: 0x%.8x\n", context->backend.flash_size);
 
 	if (verbosity) {
 		MSG_INFO("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
@@ -320,6 +323,24 @@ static bool parse_cmdline(int argc, char **argv,
 	}
 
 	return true;
+}
+
+static int mboxd_backend_init(struct mbox_context *context)
+{
+	int rc;
+
+#ifdef VIRTUAL_PNOR_ENABLED
+	struct vpnor_partition_paths paths;
+	vpnor_default_paths(&paths);
+
+	rc = backend_probe_vpnor(&context->backend, &paths);
+	if(rc)
+#endif
+	{
+		rc = backend_probe_mtd(&context->backend, context->path);
+	}
+
+	return rc;
 }
 
 int main(int argc, char **argv)
@@ -353,6 +374,11 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
+	rc = mboxd_backend_init(context);
+	if (rc) {
+		goto finish;
+	}
+
 	rc = protocol_init(context);
 	if (rc) {
 		goto finish;
@@ -374,19 +400,10 @@ int main(int argc, char **argv)
 		goto finish;
 	}
 
-	rc = flash_dev_init(context);
-	if (rc) {
-		goto finish;
-	}
-
 	rc = dbus_init(context, &dbus_ops);
 	if (rc) {
 		goto finish;
 	}
-
-#ifdef VIRTUAL_PNOR_ENABLED
-	init_vpnor(context);
-#endif
 
 	/* Set the LPC bus mapping */
 	__protocol_reset(context);
@@ -421,10 +438,10 @@ finish:
 	protocol_events_put(context, dbus_ops);
 
 #ifdef VIRTUAL_PNOR_ENABLED
-	destroy_vpnor(context);
+	vpnor_destroy(&context->backend);
 #endif
 	dbus_free(context);
-	flash_dev_free(context);
+	backend_free(&context->backend);
 	lpc_dev_free(context);
 	transport_mbox_free(context);
 	windows_free(context);

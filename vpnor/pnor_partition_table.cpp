@@ -14,8 +14,11 @@
 #include <phosphor-logging/elog-errors.hpp>
 #include <regex>
 
+extern "C" {
+#include "backend.h"
 #include "common.h"
 #include "mboxd.h"
+}
 
 namespace openpower
 {
@@ -28,11 +31,11 @@ using namespace sdbusplus::xyz::openbmc_project::Common::Error;
 namespace partition
 {
 
-Table::Table(const struct mbox_context* ctx) :
+Table::Table(const struct backend* be) :
     szBytes(sizeof(pnor_partition_table)), numParts(0),
-    blockSize(1 << ctx->erase_size_shift), pnorSize(ctx->flash_size)
+    blockSize(1 << be->erase_size_shift), pnorSize(be->flash_size)
 {
-    preparePartitions(ctx);
+    preparePartitions((const struct vpnor_data*)be->priv);
     prepareHeader();
     hostTbl = endianFixup(tbl);
 }
@@ -74,10 +77,10 @@ inline void Table::allocateMemory(const fs::path& tocFile)
     tbl.resize(capacity());
 }
 
-void Table::preparePartitions(const struct mbox_context* ctx)
+void Table::preparePartitions(const struct vpnor_data* priv)
 {
-    const fs::path roDir = ctx->paths.ro_loc;
-    const fs::path patchDir = ctx->paths.patch_loc;
+    const fs::path roDir(priv->paths.ro_loc);
+    const fs::path patchDir(priv->paths.patch_loc);
     fs::path tocFile = roDir / PARTITION_TOC_FILE;
     allocateMemory(tocFile);
 

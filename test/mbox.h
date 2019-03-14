@@ -14,6 +14,7 @@
 #include "tmpf.h"
 
 struct mbox_context *mbox_create_test_context(int n_windows, size_t len);
+struct mbox_context *mbox_create_frontend_context(int n_windows, size_t len);
 
 int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 		size_t len);

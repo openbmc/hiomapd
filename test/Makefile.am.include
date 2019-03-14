@@ -2,20 +2,23 @@ test_sanity_SOURCES = %reldir%/sanity.c
 
 test_flash_copy_SOURCES = \
 	%reldir%/flash_copy.c \
-	flash.c \
+	mtd/backend.c \
+	lpc.c \
 	common.c mtd.c \
 	%reldir%/tmpf.c \
 	%reldir%/system.c
 
 test_flash_erase_SOURCES = \
 	%reldir%/flash_erase.c \
-	flash.c \
+	mtd/backend.c \
+	lpc.c \
 	common.c \
 	%reldir%/tmpf.c
 
 test_flash_write_SOURCES = \
 	%reldir%/flash_write.c \
-	flash.c \
+	mtd/backend.c \
+	lpc.c \
 	common.c \
 	%reldir%/tmpf.c
 
@@ -23,12 +26,16 @@ TEST_MBOX_SRCS = \
 	transport_mbox.c \
 	windows.c \
 	lpc.c \
-	lpc_reset.c \
 	common.c \
-	flash.c \
 	protocol.c
 
-TEST_MOCK_SRCS = %reldir%/tmpf.c %reldir%/mbox.c %reldir%/system.c
+TEST_MOCK_CORE = \
+	%reldir%/tmpf.c \
+	mtd/backend.c \
+	%reldir%/mbox.c \
+	%reldir%/system.c
+
+TEST_MOCK_SRCS = %reldir%/backend.c $(TEST_MOCK_CORE)
 
 test_get_mbox_info_v2_SOURCES = %reldir%/get_mbox_info_v2.c \
 				$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)

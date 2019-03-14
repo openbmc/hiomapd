@@ -68,9 +68,8 @@ int main()
     system_set_reserved_size(MEM_SIZE);
     system_set_mtd_sizes(PNOR_SIZE, ERASE_SIZE);
 
-    tctx->ctx = mbox_create_test_context(N_WINDOWS, WINDOW_SIZE);
-    test::VpnorRoot root(tctx->ctx, toc, BLOCK_SIZE);
-    init_vpnor_from_paths(tctx->ctx);
+    tctx->ctx = mbox_create_frontend_context(N_WINDOWS, WINDOW_SIZE);
+    test::VpnorRoot root(&tctx->ctx->backend, toc, BLOCK_SIZE);
 
     rc = mbox_command_dispatch(tctx->ctx, get_info, sizeof(get_info));
     assert(rc == 1);
@@ -88,6 +87,8 @@ int main()
         len = get_u16(&msg->args[2]);
         pos = get_u16(&msg->args[4]) + len;
     }
+
+    vpnor_destroy(&tctx->ctx->backend);
 
     return 0;
 }
