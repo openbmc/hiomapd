@@ -13,6 +13,7 @@
 #include "mboxd.h"
 #include "flash.h"
 
+#include "test/system.h"
 #include "test/tmpf.h"
 
 #define TEST_SIZE 4096
@@ -26,7 +27,7 @@ void cleanup(void)
 
 int main(void)
 {
-	struct mbox_context context;
+	struct mbox_context context = {0};
 	ssize_t processed;
 	int rand_fd;
 	char *src;
@@ -34,6 +35,8 @@ int main(void)
 	int rc;
 
 	atexit(cleanup);
+
+	system_set_mtd_sizes(TEST_SIZE, TEST_SIZE);
 
 	mbox_vlog = &mbox_log_console;
 

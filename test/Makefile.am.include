@@ -4,7 +4,8 @@ test_flash_copy_SOURCES = \
 	%reldir%/flash_copy.c \
 	flash.c \
 	common.c mtd.c \
-	%reldir%/tmpf.c
+	%reldir%/tmpf.c \
+	%reldir%/system.c
 
 test_flash_erase_SOURCES = \
 	%reldir%/flash_erase.c \
