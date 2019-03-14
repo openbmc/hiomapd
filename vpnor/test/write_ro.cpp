@@ -43,7 +43,7 @@ int main(void)
     test::VpnorRoot root(&ctx->backend, toc, BLOCK_SIZE);
 
     /* Test */
-    rc = flash_write(ctx, 0x1000, src, sizeof(src));
+    rc = backend_write(&ctx->backend, 0x1000, src, sizeof(src));
 
     /* Verify we can't write to RO partitions */
     assert(rc != 0);

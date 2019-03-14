@@ -103,30 +103,4 @@ struct mbox_context {
 	uint32_t lpc_base;
 };
 
-/* Temporary flash API compatibility */
-static inline int64_t flash_copy(struct mbox_context *context, uint32_t offset,
-				 void *mem, uint32_t size)
-{
-	return backend_copy(&context->backend, offset, mem, size);
-}
-
-static inline int flash_set_bytemap(struct mbox_context *context,
-				    uint32_t offset, uint32_t count,
-				    uint8_t val)
-{
-	return backend_set_bytemap(&context->backend, offset, count, val);
-}
-
-static inline int flash_erase(struct mbox_context *context, uint32_t offset,
-			      uint32_t count)
-{
-	return backend_erase(&context->backend, offset, count);
-}
-
-static inline int flash_write(struct mbox_context *context, uint32_t offset,
-			      void *buf, uint32_t count)
-{
-	return backend_write(&context->backend, offset, buf, count);
-}
-
 #endif /* MBOX_H */

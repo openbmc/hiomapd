@@ -56,7 +56,7 @@ int main(void)
 
     /* Test */
     std::vector<uint8_t> update(UPDATE_SIZE, 0x55);
-    rc = flash_write(ctx, 0x1000, update.data(), update.size());
+    rc = backend_write(&ctx->backend, 0x1000, update.data(), update.size());
     assert(rc == 0);
 
     /* Check that PATCH is modified with the new data */
