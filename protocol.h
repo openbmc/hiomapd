@@ -119,8 +119,6 @@ struct protocol_ops {
 int protocol_init(struct mbox_context *context);
 void protocol_free(struct mbox_context *context);
 
-int protocol_negotiate_version(struct mbox_context *context, uint8_t requested);
-
 /* Sneaky reset: Don't tell the host */
 int __protocol_reset(struct mbox_context *context);
 
@@ -131,33 +129,5 @@ int protocol_events_put(struct mbox_context *context,
 			const struct transport_ops *ops);
 int protocol_events_set(struct mbox_context *context, uint8_t bmc_event);
 int protocol_events_clear(struct mbox_context *context, uint8_t bmc_event);
-
-/* Protocol v1 */
-int protocol_v1_reset(struct mbox_context *context);
-int protocol_v1_get_info(struct mbox_context *context,
-			 struct protocol_get_info *io);
-int protocol_v1_get_flash_info(struct mbox_context *context,
-			       struct protocol_get_flash_info *io);
-int protocol_v1_create_window(struct mbox_context *context,
-			      struct protocol_create_window *io);
-int protocol_v1_mark_dirty(struct mbox_context *context,
-			   struct protocol_mark_dirty *io);
-int protocol_v1_flush(struct mbox_context *context, struct protocol_flush *io);
-int protocol_v1_close(struct mbox_context *context, struct protocol_close *io);
-int protocol_v1_ack(struct mbox_context *context, struct protocol_ack *io);
-
-/* Protocol v2 */
-int protocol_v2_get_info(struct mbox_context *context,
-			 struct protocol_get_info *io);
-int protocol_v2_get_flash_info(struct mbox_context *context,
-			       struct protocol_get_flash_info *io);
-int protocol_v2_create_window(struct mbox_context *context,
-			      struct protocol_create_window *io);
-int protocol_v2_mark_dirty(struct mbox_context *context,
-			   struct protocol_mark_dirty *io);
-int protocol_v2_erase(struct mbox_context *context,
-		      struct protocol_erase *io);
-int protocol_v2_flush(struct mbox_context *context, struct protocol_flush *io);
-int protocol_v2_close(struct mbox_context *context, struct protocol_close *io);
 
 #endif /* PROTOCOL_H */

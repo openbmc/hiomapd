@@ -105,6 +105,13 @@ void flash_dev_free(struct mbox_context *context)
 
 /* Flash Functions */
 
+int flash_validate(struct mbox_context *context, uint32_t offset,
+		   uint32_t size, bool ro)
+{
+	/* Default behaviour is all accesses are valid */
+	return 0;
+}
+
 /*
  * flash_is_erased() - Check if an offset into flash is erased
  * @context:	The mbox context pointer
