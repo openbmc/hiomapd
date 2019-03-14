@@ -147,21 +147,9 @@ static int poll_loop(struct mbox_context *context)
 				context->terminate = true;
 				break;
 			case SIGHUP:
-				/* Host didn't request reset -> Notify it */
-				if (windows_reset_all(context)) {
-				       rc = protocol_events_set(context,
-						     BMC_EVENT_WINDOW_RESET);
-				       if (rc < 0) {
-					      MSG_ERR("Failed to notify host of reset, expect host-side corruption\n");
-					      break;
-				       }
-				}
-				rc = lpc_reset(context);
+				rc = protocol_reset(context);
 				if (rc < 0) {
-					MSG_ERR("WARNING: Failed to point the "
-						"LPC bus back to flash on "
-						"SIGHUP\nIf the host requires "
-						"this expect problems...\n");
+					MSG_ERR("Failed to reset on SIGHUP\n");
 				}
 				break;
 			default:
@@ -191,15 +179,9 @@ static int poll_loop(struct mbox_context *context)
 		}
 	}
 
-	/* Best to reset windows and the lpc mapping for safety */
-	/* Host didn't request reset -> Notify it */
-	windows_reset_all(context);
-
-	rc = lpc_reset(context);
-	/* Not much we can do if this fails */
+	rc = protocol_reset(context);
 	if (rc < 0) {
-		MSG_ERR("WARNING: Failed to point the LPC bus back to flash\n"
-			"If the host requires this expect problems...\n");
+		MSG_ERR("Failed to reset during poll loop cleanup\n");
 	}
 
 	return rc;
@@ -407,10 +389,7 @@ int main(int argc, char **argv)
 #endif
 
 	/* Set the LPC bus mapping */
-	rc = lpc_reset(context);
-	if (rc) {
-		MSG_ERR("LPC configuration failed, RESET required: %d\n", rc);
-	}
+	__protocol_reset(context);
 
 	/* We're ready to go, alert the host */
 	context->bmc_events |= BMC_EVENT_DAEMON_READY;

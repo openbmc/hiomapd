@@ -36,8 +36,6 @@ int control_lpc_state(struct mbox_context *context)
 
 int control_reset(struct mbox_context *context)
 {
-	int rc;
-
 	/* We don't let the host access flash if the daemon is suspened */
 	if (context->state & STATE_SUSPENDED) {
 		return -EBUSY;
@@ -49,18 +47,7 @@ int control_reset(struct mbox_context *context)
 	 * mapping back to flash, or memory in case we're using a virtual pnor.
 	 * Better set the bmc event to notify the host of this.
 	 */
-	if (windows_reset_all(context)) {
-		rc = protocol_events_set(context, BMC_EVENT_WINDOW_RESET);
-		if (rc < 0) {
-			return rc;
-		}
-	}
-	rc = lpc_reset(context);
-	if (rc < 0) {
-		return rc;
-	}
-
-	return 0;
+	return protocol_reset(context);
 }
 
 int control_kill(struct mbox_context *context)
