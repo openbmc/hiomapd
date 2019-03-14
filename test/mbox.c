@@ -292,11 +292,8 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 
 	/* Sanity check */
 	arg = container_of(context, struct mbox_test_context, context);
-	if (&test != arg)
-		return -1;
-
-	if (len > test.context.mtd_info.size)
-		return -2;
+	assert(&test == arg);
+	assert(len <= test.context.flash_size);
 
 	map = mmap(NULL, test.context.mtd_info.size, PROT_WRITE, MAP_SHARED,
 			test.flash.fd, 0);
