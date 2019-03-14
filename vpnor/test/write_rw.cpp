@@ -3,8 +3,8 @@
 #include "config.h"
 
 extern "C" {
+#include "backend.h"
 #include "common.h"
-#include "flash.h"
 #include "mboxd.h"
 }
 
@@ -41,10 +41,10 @@ int main(void)
     mbox_vlog = &mbox_log_console;
     verbosity = (verbose)2;
 
-    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
+    ctx->backend.flash_size = 0x2000;
+    test::VpnorRoot root(&ctx->backend, toc, BLOCK_SIZE);
     /* flash_write() doesn't copy the file for us */
     assert(fs::copy_file(root.ro() / "TEST1", root.rw() / "TEST1"));
-    init_vpnor_from_paths(ctx);
 
     /* Test */
     memset(src, 0xbb, sizeof(src));
@@ -94,8 +94,6 @@ int main(void)
 
     munmap(map, sizeof(src));
     close(fd);
-
-    destroy_vpnor(ctx);
 
     return 0;
 }

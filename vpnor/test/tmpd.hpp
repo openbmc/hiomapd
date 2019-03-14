@@ -4,6 +4,7 @@
 #include "config.h"
 
 extern "C" {
+#include "backend.h"
 #include "mboxd.h"
 }
 
@@ -28,8 +29,9 @@ class VpnorRoot
 {
   public:
     template <std::size_t N>
-    VpnorRoot(struct mbox_context* ctx, const std::string (&toc)[N],
-              size_t blockSize)
+    VpnorRoot(struct backend* backend, const std::string (&toc)[N],
+              size_t blockSize) :
+        backend(backend)
     {
         char tmplt[] = "/tmp/vpnor_root.XXXXXX";
         char* tmpdir = mkdtemp(tmplt);
@@ -58,14 +60,21 @@ class VpnorRoot
             std::ofstream(tocFilePath, std::ofstream::app) << line << "\n";
         }
 
-        strncpy(ctx->paths.ro_loc, ro().c_str(), PATH_MAX - 1);
-        ctx->paths.ro_loc[PATH_MAX - 1] = '\0';
-        strncpy(ctx->paths.rw_loc, rw().c_str(), PATH_MAX - 1);
-        ctx->paths.rw_loc[PATH_MAX - 1] = '\0';
-        strncpy(ctx->paths.prsv_loc, prsv().c_str(), PATH_MAX - 1);
-        ctx->paths.prsv_loc[PATH_MAX - 1] = '\0';
-        strncpy(ctx->paths.patch_loc, patch().c_str(), PATH_MAX - 1);
-        ctx->paths.patch_loc[PATH_MAX - 1] = '\0';
+        vpnor_partition_paths paths{};
+
+        snprintf(paths.ro_loc, PATH_MAX - 1, "%s/ro", root.c_str());
+        paths.ro_loc[PATH_MAX - 1] = '\0';
+        snprintf(paths.rw_loc, PATH_MAX - 1, "%s/rw", root.c_str());
+        paths.rw_loc[PATH_MAX - 1] = '\0';
+        snprintf(paths.prsv_loc, PATH_MAX - 1, "%s/prsv", root.c_str());
+        paths.prsv_loc[PATH_MAX - 1] = '\0';
+        snprintf(paths.patch_loc, PATH_MAX - 1, "%s/patch", root.c_str());
+        paths.patch_loc[PATH_MAX - 1] = '\0';
+
+        if (backend_probe_vpnor(backend, &paths))
+        {
+            throw std::system_error(errno, std::system_category());
+        }
     }
 
     VpnorRoot(const VpnorRoot&) = delete;
@@ -75,6 +84,7 @@ class VpnorRoot
 
     ~VpnorRoot()
     {
+        backend_free(backend);
         fs::remove_all(root);
     }
     fs::path ro()
@@ -97,6 +107,7 @@ class VpnorRoot
     size_t patch(const std::string& name, const void* data, size_t len);
 
   private:
+    struct backend* backend;
     fs::path root;
     const std::string attributes[4] = {"ro", "rw", "prsv", "patch"};
 };

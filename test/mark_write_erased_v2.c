@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 
 #include "mboxd.h"
+#include "mtd/backend.h"
 #include "transport_mbox.h"
 
 #include "test/mbox.h"
@@ -74,7 +75,7 @@ int main(void)
 	assert(rc == 0);
 
 	map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE,
-			ctx->fds[MTD_FD].fd, 0);
+			((struct mtd_data *)ctx->backend.priv)->fd, 0);
 	assert(map != MAP_FAILED);
 
 	rc = memcmp(start_data, map, sizeof(start_data));

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
-extern "C" {
-#include "flash.h"
-}
-
 #include "config.h"
+
+#include <assert.h>
+
+extern "C" {
+#include "backend.h"
+}
 
 #include "pnor_partition_table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
@@ -16,57 +18,58 @@ extern "C" {
 #include "mboxd.h"
 #include "mboxd_pnor_partition_table.h"
 
-int init_vpnor(struct mbox_context* context)
+void vpnor_default_paths(vpnor_partition_paths* paths)
 {
-    if (context && !context->vpnor)
-    {
-        int rc;
-
-        strncpy(context->paths.ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
-        context->paths.ro_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
-        context->paths.rw_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
-        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
-        strncpy(context->paths.patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
-        context->paths.prsv_loc[PATH_MAX - 1] = '\0';
-
-        rc = init_vpnor_from_paths(context);
-        if (rc < 0)
-        {
-            return rc;
-        }
-    }
-
-    return 0;
+    strncpy(paths->ro_loc, PARTITION_FILES_RO_LOC, PATH_MAX);
+    paths->ro_loc[PATH_MAX - 1] = '\0';
+    strncpy(paths->rw_loc, PARTITION_FILES_RW_LOC, PATH_MAX);
+    paths->rw_loc[PATH_MAX - 1] = '\0';
+    strncpy(paths->prsv_loc, PARTITION_FILES_PRSV_LOC, PATH_MAX);
+    paths->prsv_loc[PATH_MAX - 1] = '\0';
+    strncpy(paths->patch_loc, PARTITION_FILES_PATCH_LOC, PATH_MAX);
+    paths->prsv_loc[PATH_MAX - 1] = '\0';
 }
 
-int init_vpnor_from_paths(struct mbox_context* context)
+int vpnor_init(struct backend* backend, const vpnor_partition_paths* paths)
 {
     namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
     namespace fs = std::experimental::filesystem;
     namespace vpnor = openpower::virtual_pnor;
 
-    if (context && !context->vpnor)
+    if (!(backend && paths))
+        return -EINVAL;
+
+    vpnor_data* priv = new vpnor_data;
+    assert(priv);
+
+    priv->paths = *paths;
+    backend->priv = priv;
+
+    try
     {
+        priv->vpnor = new vpnor_partition_table;
+        priv->vpnor->table =
+            new openpower::virtual_pnor::partition::Table(backend);
+    }
+    catch (vpnor::TocEntryError& e)
+    {
+        MSG_ERR("%s\n", e.what());
         try
         {
-            context->vpnor = new vpnor_partition_table;
-            context->vpnor->table =
-                new openpower::virtual_pnor::partition::Table(context);
-        }
-        catch (vpnor::TocEntryError& e)
-        {
-            MSG_ERR("%s\n", e.what());
             phosphor::logging::commit<err::InternalFailure>();
-            return -EINVAL;
         }
+        catch (const std::exception& e)
+        {
+            MSG_ERR("Failed to commit InternalFailure: %s\n", e.what());
+        }
+        return -EINVAL;
     }
 
     return 0;
 }
 
-int vpnor_copy_bootloader_partition(const struct mbox_context* context)
+int vpnor_copy_bootloader_partition(const struct backend* backend, void* buf,
+                                    uint32_t count)
 {
     // The hostboot bootloader has certain size/offset assumptions, so
     // we need a special partition table here.
@@ -90,8 +93,12 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
     try
     {
         vpnor_partition_table vtbl{};
-        struct mbox_context local = *context;
-        local.vpnor = &vtbl;
+        struct vpnor_data priv;
+        struct backend local = *backend;
+
+        priv.vpnor = &vtbl;
+        priv.paths = ((struct vpnor_data*)backend->priv)->paths;
+        local.priv = &priv;
         local.block_size_shift = log_2(eraseSize);
 
         openpower::virtual_pnor::partition::Table blTable(&local);
@@ -104,16 +111,16 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
         size_t hbbOffset = partition.data.base * eraseSize;
         uint32_t hbbSize = partition.data.actual;
 
-        if (context->mem_size < tocStart + blTable.capacity() ||
-            context->mem_size < hbbOffset + hbbSize)
+        if (count < tocStart + blTable.capacity() ||
+            count < hbbOffset + hbbSize)
         {
             MSG_ERR("Reserved memory too small for dumb bootstrap\n");
             return -EINVAL;
         }
 
-        uint8_t* buf8 = static_cast<uint8_t*>(context->mem);
-        flash_copy(&local, tocOffset, buf8 + tocStart, blTable.capacity());
-        flash_copy(&local, hbbOffset, buf8 + hbbOffset, hbbSize);
+        uint8_t* buf8 = static_cast<uint8_t*>(buf);
+        backend_copy(&local, tocOffset, buf8 + tocStart, blTable.capacity());
+        backend_copy(&local, hbbOffset, buf8 + hbbOffset, hbbSize);
     }
     catch (err::InternalFailure& e)
     {
@@ -130,12 +137,17 @@ int vpnor_copy_bootloader_partition(const struct mbox_context* context)
     return 0;
 }
 
-void destroy_vpnor(struct mbox_context* context)
+void vpnor_destroy(struct backend* backend)
 {
-    if (context && context->vpnor)
+    struct vpnor_data* priv = (struct vpnor_data*)backend->priv;
+
+    if (priv)
     {
-        delete context->vpnor->table;
-        delete context->vpnor;
-        context->vpnor = nullptr;
+        if (priv->vpnor)
+        {
+            delete priv->vpnor->table;
+        }
+        delete priv->vpnor;
     }
+    delete priv;
 }

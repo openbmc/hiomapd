@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "mboxd.h"
-#include "flash.h"
+#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -31,7 +31,7 @@ char *get_dev_mtd(void)
 	if (rc < 0)
 		return NULL;
 
-	return strdup(tmp->path);
+	return tmp->path;
 }
 
 #define MEM_SIZE 3
@@ -58,6 +58,7 @@ int ioctl(int fd, unsigned long request, ...)
 int main(void)
 {
 	struct mbox_context _context, *context = &_context;
+	struct backend *backend = &context->backend;
 	char src[MEM_SIZE];
 	uint8_t *map;
 	int rc;
@@ -66,7 +67,7 @@ int main(void)
 
 	mbox_vlog = &mbox_log_console;
 
-	rc = flash_dev_init(context);
+	rc = backend_probe_mtd(backend, get_dev_mtd());
 	assert(rc == 0);
 
 	map = mmap(NULL, MEM_SIZE, PROT_READ, MAP_PRIVATE, tmp->fd, 0);
@@ -102,7 +103,7 @@ int main(void)
 	rc = memcmp(src, map, sizeof(src));
 	assert(rc == 0);
 
-	flash_dev_free(context);
+	backend_free(backend);
 
 	return rc;
 }

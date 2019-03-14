@@ -4,8 +4,8 @@
 #include "config.h"
 
 extern "C" {
+#include "backend.h"
 #include "common.h"
-#include "flash.h"
 #include "mboxd.h"
 }
 
@@ -46,14 +46,13 @@ int main(void)
     mbox_vlog = &mbox_log_console;
     verbosity = (verbose)2;
 
-    test::VpnorRoot root(ctx, toc, BLOCK_SIZE);
+    ctx->backend.flash_size = 0x2000;
+    test::VpnorRoot root(&ctx->backend, toc, BLOCK_SIZE);
     std::vector<uint8_t> roContent(PART_SIZE, 0xff);
     root.write("TEST1", roContent.data(), roContent.size());
     /* flash_write doesn't copy the file for us */
     std::vector<uint8_t> patchContent(PATCH_SIZE, 0xaa);
     root.patch("TEST1", patchContent.data(), patchContent.size());
-
-    init_vpnor_from_paths(ctx);
 
     /* Test */
     std::vector<uint8_t> update(UPDATE_SIZE, 0x55);
@@ -70,9 +69,6 @@ int main(void)
     assert(rc == 0);
     munmap(map, update.size());
     close(fd);
-
-    destroy_vpnor(ctx);
-    free(ctx->flash_bmap);
 
     return rc;
 }

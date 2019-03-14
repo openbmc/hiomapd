@@ -29,7 +29,7 @@
 #include "common.h"
 #include "transport_mbox.h"
 #include "windows.h"
-#include "flash.h"
+#include "backend.h"
 
 /* Initialisation Functions */
 
@@ -173,11 +173,11 @@ int window_flush_v1(struct mbox_context *context,
 	 * 		   boundary
 	 */
 	low_mem.flash_offset = align_down(flash_offset,
-					  context->mtd_info.erasesize);
+					  1 << context->backend.erase_size_shift);
 	low_mem.size = flash_offset - low_mem.flash_offset;
 	high_mem.flash_offset = flash_offset + count_bytes;
 	high_mem.size = align_up(high_mem.flash_offset,
-				 context->mtd_info.erasesize) -
+				 1 << context->backend.erase_size_shift) -
 			high_mem.flash_offset;
 
 	/*
@@ -279,8 +279,8 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 		      uint32_t count, uint8_t type)
 {
 	int rc;
-	uint32_t flash_offset, count_bytes = count << context->block_size_shift;
-	uint32_t offset_bytes = offset << context->block_size_shift;
+	uint32_t flash_offset, count_bytes = count << context->backend.block_size_shift;
+	uint32_t offset_bytes = offset << context->backend.block_size_shift;
 
 	switch (type) {
 	case WINDOW_ERASED: /* >= V2 ONLY -> block_size == erasesize */
@@ -297,8 +297,8 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 		 * so we have a special function to make sure that we do this
 		 * correctly without losing data.
 		 */
-		if (log_2(context->mtd_info.erasesize) !=
-						context->block_size_shift) {
+		if (context->backend.erase_size_shift !=
+				context->backend.block_size_shift) {
 			return window_flush_v1(context, offset_bytes,
 						    count_bytes);
 		}
@@ -345,7 +345,7 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
 		free(cur->dirty_bmap);
 		/* Allocate the new one */
 		cur->dirty_bmap = calloc((context->windows.default_size >>
-					  context->block_size_shift),
+					  context->backend.block_size_shift),
 					 sizeof(*cur->dirty_bmap));
 	}
 }
@@ -363,12 +363,12 @@ void windows_alloc_dirty_bytemap(struct mbox_context *context)
 int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 		       uint32_t offset, uint32_t size, uint8_t val)
 {
-	if (offset + size > (cur->size >> context->block_size_shift)) {
+	if (offset + size > (cur->size >> context->backend.block_size_shift)) {
 		MSG_ERR("Tried to set window bytemap past end of window\n");
 		MSG_ERR("Requested offset: 0x%x size: 0x%x window size: 0x%x\n",
-			offset << context->block_size_shift,
-			size << context->block_size_shift,
-			cur->size << context->block_size_shift);
+			offset << context->backend.block_size_shift,
+			size << context->backend.block_size_shift,
+			cur->size << context->backend.block_size_shift);
 		return -EACCES;
 	}
 
@@ -410,7 +410,7 @@ void window_reset(struct mbox_context *context, struct window_context *window)
 	window->size = context->windows.default_size;
 	if (window->dirty_bmap) { /* Might not have been allocated */
 		window_set_bytemap(context, window, 0,
-				   window->size >> context->block_size_shift,
+				   window->size >> context->backend.block_size_shift,
 				   WINDOW_CLEAN);
 	}
 	window->age = 0;
@@ -593,10 +593,10 @@ int windows_create_map(struct mbox_context *context,
 	}
 #endif
 
-	if (offset > context->flash_size) {
+	if (offset > context->backend.flash_size) {
 		MSG_ERR("Tried to open read window past flash limit\n");
 		return -EINVAL;
-	} else if ((offset + cur->size) > context->flash_size) {
+	} else if ((offset + cur->size) > context->backend.flash_size) {
 		/*
 		 * There is V1 skiboot implementations out there which don't
 		 * mask offset with window size, meaning when we have
@@ -608,14 +608,14 @@ int windows_create_map(struct mbox_context *context,
 		 * this.
 		 */
 		if (context->version == API_VERSION_1) {
-			cur->size = align_down(context->flash_size - offset,
-					       1 << context->block_size_shift);
+			cur->size = align_down(context->backend.flash_size - offset,
+					       1 << context->backend.block_size_shift);
 		} else {
 			/*
 			 * Allow requests to exceed the flash size, but limit
 			 * the response to the size of the flash.
 			 */
-			cur->size = context->flash_size - offset;
+			cur->size = context->backend.flash_size - offset;
 		}
 	}
 
@@ -632,7 +632,7 @@ int windows_create_map(struct mbox_context *context,
 	 * FIXME: This should only be the case for the vpnor ToC now, so handle
 	 * it there
 	 */
-	cur->size = align_up(rc, (1ULL << context->block_size_shift));
+	cur->size = align_up(rc, (1ULL << context->backend.block_size_shift));
 	/* Would like a known value, pick 0xFF to it looks like erased flash */
 	memset(cur->mem + rc, 0xFF, cur->size - rc);
 
@@ -662,7 +662,7 @@ int windows_create_map(struct mbox_context *context,
 
 	/* Clear the bytemap of the window just loaded -> we know it's clean */
 	window_set_bytemap(context, cur, 0,
-			   cur->size >> context->block_size_shift,
+			   cur->size >> context->backend.block_size_shift,
 			   WINDOW_CLEAN);
 
 	/* Update so we know what's in the window */

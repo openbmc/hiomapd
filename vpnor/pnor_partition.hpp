@@ -3,7 +3,8 @@
 #pragma once
 
 extern "C" {
-#include "mboxd.h"
+#include "backend.h"
+#include "mboxd_pnor_partition_table.h"
 };
 
 #include "pnor_partition_table.hpp"
@@ -13,8 +14,6 @@ extern "C" {
 
 #include <experimental/filesystem>
 #include <string>
-
-#include "mboxd_pnor_partition_table.h"
 
 namespace openpower
 {
@@ -28,7 +27,7 @@ class Request
   public:
     /** @brief Construct a flash access request
      *
-     *  @param[in] ctx - The mbox context used to process the request
+     *  @param[in] backend - The backend context used to process the request
      *  @param[in] offset - The absolute offset into the flash device as
      *                      provided by the mbox message associated with the
      *                      request
@@ -37,9 +36,10 @@ class Request
      *  the ctx pointer must strictly exceed the lifetime of the class
      *  instance.
      */
-    Request(struct mbox_context* ctx, size_t offset) :
-        ctx(ctx), partition(ctx->vpnor->table->partition(offset)),
-        base(partition.data.base << ctx->block_size_shift),
+    Request(struct backend* backend, size_t offset) :
+        backend(backend), partition(((struct vpnor_data*)backend->priv)
+                                        ->vpnor->table->partition(offset)),
+        base(partition.data.base << backend->block_size_shift),
         offset(offset - base)
     {
     }
@@ -64,7 +64,8 @@ class Request
             std::stringstream err;
             err << "Request size 0x" << std::hex << len << " from offset 0x"
                 << std::hex << offset << " exceeds the partition size 0x"
-                << std::hex << (partition.data.size << ctx->block_size_shift);
+                << std::hex
+                << (partition.data.size << backend->block_size_shift);
             throw OutOfBoundsOffset(err.str());
         }
         constexpr auto flags = O_RDWR;
@@ -132,7 +133,7 @@ class Request
     size_t fulfil(const std::experimental::filesystem::path& path, int flags,
                   void* dst, size_t len);
 
-    struct mbox_context* ctx;
+    struct backend* backend;
     const pnor_partition& partition;
     size_t base;
     size_t offset;

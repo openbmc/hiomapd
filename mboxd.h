@@ -4,11 +4,13 @@
 #ifndef MBOX_H
 #define MBOX_H
 
+#include <assert.h>
 #include <mtd/mtd-abi.h>
 #include <systemd/sd-bus.h>
 #include <poll.h>
 #include <stdbool.h>
 
+#include "backend.h"
 #include "protocol.h"
 #include "transport.h"
 #include "vpnor/mboxd_pnor_partition_table.h"
@@ -48,8 +50,7 @@ enum api_version {
 #define SIG_FD			2
 #define POLL_FDS		3 /* Number of FDs we poll on */
 #define LPC_CTRL_FD		3
-#define MTD_FD			4
-#define TOTAL_FDS		5
+#define TOTAL_FDS		4
 
 #define MAPS_FLASH		(1 << 0)
 #define MAPS_MEM		(1 << 1)
@@ -72,6 +73,10 @@ struct mbox_context {
 	enum api_version version;
 	const struct protocol_ops *protocol;
 	const struct transport_ops *transport;
+	struct backend backend;
+
+	/* Commandline parameters */
+	const char *path;
 
 /* System State */
 	enum mbox_state state;
@@ -96,21 +101,32 @@ struct mbox_context {
 	uint32_t mem_size;
 	/* LPC Bus Base Address (bytes) */
 	uint32_t lpc_base;
-	/* Flash size from command line (bytes) */
-	uint32_t flash_size;
-	/* Bytemap of the erased state of the entire flash */
-	uint8_t *flash_bmap;
-	/* Erase size (as a shift) */
-	uint32_t erase_size_shift;
-	/* Block size (as a shift) */
-	uint32_t block_size_shift;
-	/* Actual Flash Info */
-	struct mtd_info_user mtd_info;
-#ifdef VIRTUAL_PNOR_ENABLED
-	/* Virtual PNOR partition table */
-	struct vpnor_partition_table *vpnor;
-	struct vpnor_partition_paths paths;
-#endif
 };
+
+/* Temporary flash API compatibility */
+static inline int64_t flash_copy(struct mbox_context *context, uint32_t offset,
+				 void *mem, uint32_t size)
+{
+	return backend_copy(&context->backend, offset, mem, size);
+}
+
+static inline int flash_set_bytemap(struct mbox_context *context,
+				    uint32_t offset, uint32_t count,
+				    uint8_t val)
+{
+	return backend_set_bytemap(&context->backend, offset, count, val);
+}
+
+static inline int flash_erase(struct mbox_context *context, uint32_t offset,
+			      uint32_t count)
+{
+	return backend_erase(&context->backend, offset, count);
+}
+
+static inline int flash_write(struct mbox_context *context, uint32_t offset,
+			      void *buf, uint32_t count)
+{
+	return backend_write(&context->backend, offset, buf, count);
+}
 
 #endif /* MBOX_H */
