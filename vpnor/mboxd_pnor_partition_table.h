@@ -2,8 +2,6 @@
 /* Copyright (C) 2018 IBM Corp. */
 #pragma once
 
-#ifdef VIRTUAL_PNOR_ENABLED
-
 #include <limits.h>
 #include "pnor_partition_defs.h"
 #include "backend.h"
@@ -34,8 +32,16 @@ extern "C" {
  *
  *  Returns 0 if the call succeeds, else a negative error code.
  */
+#ifdef VIRTUAL_PNOR_ENABLED
 void vpnor_default_paths(struct vpnor_partition_paths *paths);
+#else
+static inline void vpnor_default_paths(struct vpnor_partition_paths *paths)
+{
+    memset(paths, 0, sizeof(*paths));
+}
+#endif
 
+#ifdef VIRTUAL_PNOR_ENABLED
 /** @brief Create a virtual PNOR partition table.
  *
  *  @param[in] backend - The backend context pointer

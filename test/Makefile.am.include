@@ -35,7 +35,7 @@ TEST_MOCK_CORE = \
 	%reldir%/mbox.c \
 	%reldir%/system.c
 
-TEST_MOCK_SRCS = %reldir%/backend.c $(TEST_MOCK_CORE)
+TEST_MOCK_SRCS = $(TEST_MOCK_CORE)
 
 test_get_mbox_info_v2_SOURCES = %reldir%/get_mbox_info_v2.c \
 				$(TEST_MBOX_SRCS) $(TEST_MOCK_SRCS)

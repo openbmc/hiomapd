@@ -6,6 +6,7 @@
 #define BACKEND_H
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <mtd/mtd-abi.h>
@@ -15,10 +16,6 @@
 
 /* Estimate as to how long (milliseconds) it takes to access a MB from flash */
 #define FLASH_ACCESS_MS_PER_MB		8000
-
-struct backend backend_get_mtd(void);
-struct backend backend_get_file(void);
-struct backend backend_get_vpnor(void);
 
 enum backend_reset_mode { reset_lpc_flash, reset_lpc_memory };
 
@@ -146,7 +143,8 @@ static inline int backend_init(struct backend *master, struct backend *with,
 	master->block_size_shift = 34;
 #endif
 
-	assert(master->ops->init);
+	if (!master->ops->init)
+		return -ENOTSUP;
 
 	rc = master->ops->init(master, data);
 	if (rc < 0)
@@ -224,11 +222,32 @@ static inline int backend_reset(struct backend *backend, void *buf,
 	return backend->ops->reset(backend, buf, count);
 }
 
+struct backend backend_get_mtd(void);
 int backend_probe_mtd(struct backend *master, const char *path);
+
+struct backend backend_get_file(void);
 int backend_probe_file(struct backend *master, const char *path);
+
 /* Avoid dependency on vpnor/mboxd_pnor_partition_table.h */
 struct vpnor_partition_paths;
+#ifdef VIRTUAL_PNOR_ENABLED
+struct backend backend_get_vpnor(void);
+
 int backend_probe_vpnor(struct backend *master,
                         const struct vpnor_partition_paths *paths);
+#else
+static inline struct backend backend_get_vpnor(void)
+{
+	struct backend be = { 0 };
+
+	return be;
+}
+
+static inline int backend_probe_vpnor(struct backend *master,
+				      const struct vpnor_partition_paths *paths)
+{
+	return -ENOTSUP;
+}
+#endif
 
 #endif /* BACKEND_H */
