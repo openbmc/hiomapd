@@ -3,12 +3,12 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include "backend.h"
 #include "common.h"
 #include "dbus.h"
-#include "mboxd.h"
-#include "backend.h"
 #include "lpc.h"
-#include "transport_mbox.h"
+#include "mboxd.h"
+#include "protocol.h"
 #include "windows.h"
 
 int control_ping(struct mbox_context *context)
@@ -115,4 +115,30 @@ int control_resume(struct mbox_context *context, bool modified)
 	context->state &= ~STATE_SUSPENDED;
 
 	return rc;
+}
+
+int control_set_backend(struct mbox_context *context, struct backend *backend,
+			void *data)
+{
+	int rc;
+
+	if (context->state & STATE_SUSPENDED)
+		return -EINVAL;
+
+	rc = protocol_events_clear(context, BMC_EVENT_DAEMON_READY);
+	if (rc < 0)
+		return rc;
+
+	backend_free(&context->backend);
+
+	rc = backend_init(&context->backend, backend, data);
+	if (rc < 0)
+		return rc;
+
+	rc = __protocol_reset(context);
+	if (rc < 0)
+		return rc;
+
+	return protocol_events_set(context,
+			BMC_EVENT_DAEMON_READY | BMC_EVENT_PROTOCOL_RESET);
 }

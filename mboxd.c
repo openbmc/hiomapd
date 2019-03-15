@@ -44,9 +44,9 @@ const char* USAGE =
 	"\t\t[-w | --window-size <size>M]\n"
 	"\t\t-f | --flash <size>[K|M]\n"
 #ifdef VIRTUAL_PNOR_ENABLED
-	"\t\t-s | --source <vpnor|path>\n\n"
+	"\t\t-b | --backend <vpnor|mtd[:PATH]|file:PATH>\n"
 #else
-	"\t\t-s | --source <path>\n\n"
+	"\t\t-b | --backend <mtd[:PATH]|file:PATH>\n"
 #endif
 	"\t-v | --verbose\t\tBe [more] verbose\n"
 	"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n"
@@ -272,7 +272,7 @@ static bool parse_cmdline(int argc, char **argv,
 			}
 			break;
 		case 'b':
-			context->path = optarg;
+			context->source = optarg;
 			break;
 		case 'n':
 			context->windows.num = strtol(argv[optind], &endptr,
@@ -316,9 +316,6 @@ static bool parse_cmdline(int argc, char **argv,
 		}
 	}
 
-	if (!context->path) {
-		context->path = get_dev_mtd();
-	}
 	if (!context->backend.flash_size) {
 		fprintf(stderr, "Must specify a non-zero flash size\n");
 		return false;
@@ -336,22 +333,43 @@ static bool parse_cmdline(int argc, char **argv,
 
 static int mboxd_backend_init(struct mbox_context *context)
 {
+	const char *delim;
+	const char *path;
 	int rc;
 
-#ifdef VIRTUAL_PNOR_ENABLED
-	struct vpnor_partition_paths paths;
-	vpnor_default_paths(&paths);
+	if (!context->source) {
+		struct vpnor_partition_paths paths;
+		vpnor_default_paths(&paths);
 
-	rc = backend_probe_vpnor(&context->backend, &paths);
-	if(rc)
-#endif
-	{
-		rc = backend_probe_mtd(&context->backend, context->path);
-		if (rc) {
-			rc = backend_probe_file(&context->backend,
-						context->path);
-		}
+		rc = backend_probe_vpnor(&context->backend, &paths);
+		if(rc < 0)
+			rc = backend_probe_mtd(&context->backend, NULL);
+
+		return rc;
 	}
+
+	delim = strchr(context->source, ':');
+	path = delim ? delim + 1 : NULL;
+
+	if (!strncmp(context->source, "vpnor", strlen("vpnor"))) {
+		struct vpnor_partition_paths paths;
+
+		if (path) {
+			rc = -EINVAL;
+		} else {
+			vpnor_default_paths(&paths);
+			rc = backend_probe_vpnor(&context->backend, &paths);
+		}
+	} else if (!strncmp(context->source, "mtd", strlen("mtd"))) {
+		rc = backend_probe_mtd(&context->backend, path);
+	} else if (!strncmp(context->source, "file", strlen("file"))) {
+		rc = backend_probe_file(&context->backend, path);
+	} else {
+		rc = -EINVAL;
+	}
+
+	if (rc < 0)
+		MSG_ERR("Invalid backend argument: %s\n", context->source);
 
 	return rc;
 }

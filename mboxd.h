@@ -76,7 +76,7 @@ struct mbox_context {
 	struct backend backend;
 
 	/* Commandline parameters */
-	const char *path;
+	const char *source;
 
 /* System State */
 	enum mbox_state state;
