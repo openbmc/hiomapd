@@ -44,9 +44,9 @@ const char* USAGE =
 	"\t\t[-w | --window-size <size>M]\n"
 	"\t\t-f | --flash <size>[K|M]\n"
 #ifdef VIRTUAL_PNOR_ENABLED
-	"\t\t-s | --source <vpnor|path>\n\n"
+	"\t\t-b | --backend <vpnor|mtd[:PATH]|file:PATH>\n"
 #else
-	"\t\t-s | --source <path>\n\n"
+	"\t\t-b | --backend <mtd[:PATH]|file:PATH>\n"
 #endif
 	"\t-v | --verbose\t\tBe [more] verbose\n"
 	"\t-s | --syslog\t\tLog output to syslog (pointless without -v)\n"

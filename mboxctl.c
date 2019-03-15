@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +26,8 @@
 "\t\t--suspend\t\t- suspend the daemon to inhibit flash accesses (0)\n" \
 "\t\t--resume\t\t- resume the daemon (1)\n" \
 "\t\t\targ[0]: < \"clean\" | \"modified\" >\n" \
-"\t\t--clear-cache\t- tell the daemon to discard any caches (0)\n"
+"\t\t--clear-cache\t- tell the daemon to discard any caches (0)\n" \
+"\t\t--backend <vpnor|mtd[:PATH]|file:PATH>\n"
 
 #define NAME		"Mailbox Control"
 
@@ -269,6 +271,95 @@ static int handle_cmd_modified(struct mboxctl_context *context)
 	return rc;
 }
 
+static int handle_cmd_backend(struct mboxctl_context *context, char *sarg)
+{
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	sd_bus_message *m = NULL, *n = NULL;
+	char *delim = NULL;
+	char *strv[2];
+	int rc;
+
+	if (!sarg) {
+		MSG_ERR("Backend command takes an argument\n");
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_new_method_call(context->bus, &m,
+					    MBOX_DBUS_NAME,
+					    MBOX_DBUS_OBJECT,
+					    MBOX_DBUS_CONTROL_IFACE,
+					    "SetBackend");
+	if (rc < 0) {
+		MSG_ERR("Failed to init method call: %s\n",
+			strerror(-rc));
+		goto out;
+	}
+
+	if (!strncmp(sarg, "vpnor", strlen("vpnor"))) {
+		if (strchr(sarg, ':')) {
+			MSG_ERR("Path parameter not supported for vpnor\n");
+			rc = -EINVAL;
+			goto out;
+		}
+
+		rc = sd_bus_message_append(m, "s", "vpnor");
+		if (rc < 0)
+			goto out;
+	} else if (!strncmp(sarg, "mtd", strlen("mtd"))) {
+		rc = sd_bus_message_append(m, "s", "mtd");
+		if (rc < 0)
+			goto out;
+	} else if (!strncmp(sarg, "file", strlen("file"))) {
+		rc = sd_bus_message_append(m, "s", "file");
+		if (rc < 0)
+			goto out;
+	} else {
+		rc = -EINVAL;
+		goto out;
+	}
+
+	delim = strchr(sarg, ':');
+	if (delim) {
+		char *path;
+
+		path = realpath(delim + 1, NULL);
+		if (!path) {
+			MSG_ERR("Failed to resolve path: %s\n",
+					strerror(errno));
+			rc = -errno;
+			goto out;
+		}
+
+		strv[0] = path;
+		strv[1] = NULL;
+
+		rc = sd_bus_message_append_strv(m, &strv[0]);
+		free(path);
+		if (rc < 0)
+			goto out;
+	} else {
+		strv[0] = NULL;
+		strv[1] = NULL;
+		rc = sd_bus_message_append_strv(m, &strv[0]);
+		if (rc < 0)
+			goto out;
+	}
+
+	rc = sd_bus_call(context->bus, m, 0, &error, &n);
+	if (rc < 0) {
+		MSG_ERR("Failed to post message: %s\n", strerror(-rc));
+		goto out;
+	}
+
+	MSG_OUT("SetBackend: %s\n", rc < 0 ? strerror(-rc) : "Success");
+
+out:
+	sd_bus_error_free(&error);
+	sd_bus_message_unref(m);
+
+	return rc < 0 ? rc : 0;
+}
+
 static int parse_cmdline(struct mboxctl_context *context, int argc, char **argv)
 {
 	int opt, rc = -1;
@@ -284,6 +375,7 @@ static int parse_cmdline(struct mboxctl_context *context, int argc, char **argv)
 		{ "suspend",		no_argument,		0, 'u' },
 		{ "resume",		required_argument,	0, 'e' },
 		{ "clear-cache",	no_argument,		0, 'c' },
+		{ "backend",		required_argument,	0, 'b' },
 		{ "version",		no_argument,		0, 'v' },
 		{ "help",		no_argument,		0, 'h' },
 		{ 0,			0,			0, 0   }
@@ -324,6 +416,9 @@ static int parse_cmdline(struct mboxctl_context *context, int argc, char **argv)
 			break;
 		case 'c':
 			rc = handle_cmd_modified(context);
+			break;
+		case 'b':
+			rc = handle_cmd_backend(context, optarg);
 			break;
 		case 'v':
 			MSG_OUT("%s V%s\n", NAME, PACKAGE_VERSION);

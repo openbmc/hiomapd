@@ -2,12 +2,14 @@
 // Copyright (C) 2018 IBM Corp.
 #include <assert.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <systemd/sd-bus.h>
 
 #include "common.h"
 #include "dbus.h"
 #include "control_dbus.h"
 #include "mboxd.h"
+#include "vpnor/mboxd_pnor_partition_table.h"
 
 typedef int (*control_action)(struct mbox_context *context);
 
@@ -108,6 +110,93 @@ static int control_dbus_resume(sd_bus_message *m, void *userdata,
 	return sd_bus_send(NULL, n, NULL);
 }
 
+static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
+				    sd_bus_error *ret_error)
+{
+	struct mbox_context *context;
+	struct backend backend;
+	sd_bus_message *n;
+	const char *name;
+	int rc;
+
+	context = (struct mbox_context *) userdata;
+	if (!context) {
+		MSG_ERR("DBUS Internal Error\n");
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_read_basic(m, 's', &name);
+	if (rc < 0) {
+		MSG_ERR("DBUS error reading message: %s\n", strerror(-rc));
+		return rc;
+	}
+
+#ifdef VIRTUAL_PNOR_ENABLED
+	if (!strcmp(name, "vpnor")) {
+		struct vpnor_partition_paths paths;
+
+		vpnor_default_paths(&paths);
+		backend = backend_get_vpnor();
+		rc = control_set_backend(context, &backend, &paths);
+		if (rc < 0)
+			return rc;
+	} else
+#endif
+	if (!strcmp(name, "mtd")) {
+		char **paths = NULL;
+		char *path = NULL;
+
+		rc = sd_bus_message_read_strv(m, &paths);
+		if (rc < 0)
+			return rc;
+
+		if (paths && *paths)
+			path = *paths;
+		else
+			path = get_dev_mtd();
+
+		backend = backend_get_mtd();
+
+		rc = control_set_backend(context, &backend, path);
+		if (rc < 0)
+			return rc;
+
+		free(path);
+		free(paths);
+	} else if (!strcmp(name, "file")) {
+		char **paths = NULL;
+		char *path = NULL;
+
+		rc = sd_bus_message_read_strv(m, &paths);
+		if (rc < 0)
+			return rc;
+
+		if (!(paths && *paths))
+			return -EINVAL;
+
+		path = *paths;
+
+		backend = backend_get_file();
+
+		rc = control_set_backend(context, &backend, path);
+		if (rc < 0)
+			return rc;
+
+		free(path);
+		free(paths);
+	} else {
+		return -EINVAL;
+	}
+
+	rc = sd_bus_message_new_method_return(m, &n);
+	if (rc < 0) {
+		MSG_ERR("sd_bus_message_new_method_return failed: %d\n", rc);
+		return rc;
+	}
+
+	return sd_bus_send(NULL, n, NULL);
+}
+
 static int control_dbus_get_u8(sd_bus *bus, const char *path,
 			       const char *interface, const char *property,
 			       sd_bus_message *reply, void *userdata,
@@ -143,6 +232,8 @@ static const sd_bus_vtable mboxd_vtable[] = {
 	SD_BUS_METHOD("Suspend", NULL, NULL, &control_dbus_suspend,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_METHOD("Resume", "b", NULL, &control_dbus_resume,
+		      SD_BUS_VTABLE_UNPRIVILEGED),
+	SD_BUS_METHOD("SetBackend", "sas", NULL, &control_dbus_set_backend,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_PROPERTY("DaemonState", "y", &control_dbus_get_u8, 0,
 		        SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
