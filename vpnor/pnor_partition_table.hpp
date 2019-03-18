@@ -86,7 +86,7 @@ namespace partition
  *  PNOR image.
  *  These files are stored in a well-known location on the PNOR.
  *  Based on this information, this class prepares the partition table whose
- *  structure is as outlined in pnor_partition.h.
+ *  structure is as outlined in partition.hpp.
  *
  *  The virtual PNOR supports 4KB erase blocks - partitions must be aligned to
  *  this size.
