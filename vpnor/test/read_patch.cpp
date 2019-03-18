@@ -13,7 +13,7 @@ extern "C" {
 
 #include <cassert>
 
-#include "vpnor/mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 static constexpr auto ERASE_SIZE = BLOCK_SIZE;

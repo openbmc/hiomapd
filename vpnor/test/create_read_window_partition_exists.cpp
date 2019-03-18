@@ -16,7 +16,7 @@ extern "C" {
 #include <fstream>
 #include <vector>
 
-#include "vpnor/mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 // A read window assumes that the toc is located at offset 0,
 // so create dummy partition at arbitrary offset 0x1000.

@@ -14,7 +14,7 @@ extern "C" {
 #include <cassert>
 #include <cstring>
 
-#include "vpnor/mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 struct test_context
 {
