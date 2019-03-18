@@ -4,7 +4,7 @@
 
 extern "C" {
 #include "backend.h"
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 };
 
 #include "pnor_partition_table.hpp"

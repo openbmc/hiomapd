@@ -13,7 +13,7 @@
 #include "backend.h"
 #include "protocol.h"
 #include "transport.h"
-#include "vpnor/mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 #include "windows.h"
 
 enum api_version {
