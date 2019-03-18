@@ -9,7 +9,7 @@ extern "C" {
 #include "vpnor/ffs.h"
 }
 
-#include "vpnor/pnor_partition_table.hpp"
+#include "vpnor/table.hpp"
 #include "vpnor/test/tmpd.hpp"
 
 #include <endian.h>

@@ -8,7 +8,7 @@ TEST_MBOX_VPNOR_INTEG_SRCS = \
 	lpc.c \
 	vpnor/backend.cpp \
 	vpnor/partition.cpp \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/tmpd.cpp
 
 VPNOR_LDADD = -lstdc++fs \
@@ -60,42 +60,42 @@ vpnor_test_write_rw_LDADD = $(VPNOR_LDADD)
 
 vpnor_test_toc_no_name_SOURCES = \
 	common.c \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/toc_no_name.cpp
 vpnor_test_toc_no_name_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_toc_no_name_LDADD = $(VPNOR_LDADD)
 
 vpnor_test_toc_start_gt_end_SOURCES = \
 	common.c \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/toc_start_gt_end.cpp
 vpnor_test_toc_start_gt_end_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_toc_start_gt_end_LDADD = $(VPNOR_LDADD)
 
 vpnor_test_toc_no_start_SOURCES = \
 	common.c \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/toc_no_start.cpp
 vpnor_test_toc_no_start_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_toc_no_start_LDADD = $(VPNOR_LDADD)
 
 vpnor_test_toc_no_end_SOURCES = \
 	common.c \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/toc_no_end.cpp
 vpnor_test_toc_no_end_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_toc_no_end_LDADD = $(VPNOR_LDADD)
 
 vpnor_test_toc_no_version_SOURCES = \
 	common.c \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/toc_no_version.cpp
 vpnor_test_toc_no_version_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_toc_no_version_LDADD = $(VPNOR_LDADD)
 
 vpnor_test_toc_flags_SOURCES = \
 	common.c \
-	vpnor/pnor_partition_table.cpp \
+	vpnor/table.cpp \
 	%reldir%/toc_flags.cpp
 vpnor_test_toc_flags_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_toc_flags_LDADD = $(VPNOR_LDADD)
