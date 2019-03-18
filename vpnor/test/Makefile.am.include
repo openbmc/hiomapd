@@ -7,7 +7,6 @@ TEST_MBOX_VPNOR_INTEG_SRCS = \
 	windows.c \
 	lpc.c \
 	vpnor/backend.cpp \
-	vpnor/mboxd_pnor_partition_table.cpp \
 	vpnor/pnor_partition.cpp \
 	vpnor/pnor_partition_table.cpp \
 	%reldir%/tmpd.cpp

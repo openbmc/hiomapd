@@ -10,8 +10,8 @@
 extern "C" {
 #include "backend.h"
 #include "common.h"
-#include "pnor_partition_defs.h"
 #include "vpnor/backend.h"
+#include "vpnor/pnor_partition_defs.h"
 }
 
 struct mbox_context;
@@ -97,7 +97,7 @@ class Table
     /** @brief Constructor accepting the path of the directory
      *         that houses the PNOR partition files.
      *
-     *  @param[in] ctx - Acquire sizes and paths relevant to the table
+     *  @param[in] be - Acquire sizes and paths relevant to the table
      *
      * Throws MalformedTocEntry, InvalidTocEntry
      */

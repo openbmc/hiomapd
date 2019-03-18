@@ -1,5 +1,4 @@
 mboxd_SOURCES += %reldir%/pnor_partition_table.cpp \
-	%reldir%/mboxd_pnor_partition_table.cpp \
 	%reldir%/backend.cpp \
 	%reldir%/pnor_partition.cpp
 
