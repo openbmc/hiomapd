@@ -8,7 +8,7 @@ extern "C" {
 #include "mboxd.h"
 }
 
-#include "vpnor/pnor_partition_table.hpp"
+#include "vpnor/table.hpp"
 
 #include <cassert>
 #include <cstring>

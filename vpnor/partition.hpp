@@ -7,7 +7,7 @@ extern "C" {
 #include "vpnor/backend.h"
 };
 
-#include "pnor_partition_table.hpp"
+#include "vpnor/table.hpp"
 
 #include <fcntl.h>
 #include <unistd.h>

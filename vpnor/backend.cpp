@@ -22,8 +22,8 @@ extern "C" {
 #include "vpnor/backend.h"
 }
 
-#include "pnor_partition_table.hpp"
 #include "vpnor/partition.hpp"
+#include "vpnor/table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 #include <cassert>
