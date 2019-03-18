@@ -2,21 +2,21 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
+extern "C" {
+#include "backend.h"
+#include "test/mbox.h"
+#include "test/system.h"
+#include "vpnor/pnor_partition_defs.h"
+}
+
 #include "vpnor/pnor_partition_table.hpp"
+#include "vpnor/test/tmpd.hpp"
 
 #include <endian.h>
 #include <sys/mman.h>
 
 #include <cassert>
 #include <cstring>
-
-extern "C" {
-#include "test/mbox.h"
-#include "test/system.h"
-#include "vpnor/pnor_partition_defs.h"
-}
-
-#include "vpnor/test/tmpd.hpp"
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 static constexpr auto PNOR_SIZE = BLOCK_SIZE;

@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
+
 #include "config.h"
 
-#include "vpnor/pnor_partition_table.hpp"
-
-#include <cassert>
-#include <cstring>
-
 extern "C" {
+#include "backend.h"
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
+#include "vpnor/pnor_partition_table.hpp"
 #include "vpnor/test/tmpd.hpp"
+
+#include <cassert>
+#include <cstring>
 
 static const auto BLOCK_SIZE = 4 * 1024;
 static const auto ERASE_SIZE = BLOCK_SIZE;

@@ -2,8 +2,13 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
-#include "pnor_partition_table.hpp"
+extern "C" {
+#include "backend.h"
+#include "common.h"
+#include "mboxd.h"
+}
 
+#include "pnor_partition_table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 #include <endian.h>
@@ -13,12 +18,6 @@
 #include <fstream>
 #include <phosphor-logging/elog-errors.hpp>
 #include <regex>
-
-extern "C" {
-#include "backend.h"
-#include "common.h"
-#include "mboxd.h"
-}
 
 namespace openpower
 {
