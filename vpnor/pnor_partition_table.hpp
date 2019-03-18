@@ -10,8 +10,8 @@
 extern "C" {
 #include "backend.h"
 #include "common.h"
-#include "mboxd_pnor_partition_table.h"
 #include "pnor_partition_defs.h"
+#include "vpnor/backend.h"
 }
 
 struct mbox_context;

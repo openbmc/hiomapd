@@ -13,7 +13,7 @@ extern "C" {
 #include <cassert>
 #include <cstring>
 
-#include "vpnor/mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 const std::string toc[] = {
     "partition01=HBB,00001000,00002000,80,ECC,READONLY",

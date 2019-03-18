@@ -28,7 +28,7 @@ extern "C" {
 #include <string>
 
 #include "common.h"
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 namespace openpower
 {

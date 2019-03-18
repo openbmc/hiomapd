@@ -16,7 +16,7 @@ extern "C" {
 
 #include "common.h"
 #include "mboxd.h"
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 void vpnor_default_paths(vpnor_partition_paths* paths)
 {

@@ -31,7 +31,7 @@ extern "C" {
 #include <stdexcept>
 #include <string>
 
-#include "mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
 namespace fs = std::experimental::filesystem;

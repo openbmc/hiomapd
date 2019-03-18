@@ -36,7 +36,7 @@
 #include "transport_mbox.h"
 #include "transport_dbus.h"
 #include "windows.h"
-#include "vpnor/mboxd_pnor_partition_table.h"
+#include "vpnor/backend.h"
 
 const char* USAGE =
 	"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n"
