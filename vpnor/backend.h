@@ -3,8 +3,6 @@
 #pragma once
 
 #include <limits.h>
-#include "pnor_partition_defs.h"
-#include "backend.h"
 
 struct mbox_context;
 struct vpnor_partition_table;
@@ -41,42 +39,6 @@ static inline void vpnor_default_paths(struct vpnor_partition_paths *paths)
 }
 #endif
 
-#ifdef VIRTUAL_PNOR_ENABLED
-/** @brief Create a virtual PNOR partition table.
- *
- *  @param[in] backend - The backend context pointer
- *  @param[in] paths - A paths object pointer to initialise vpnor
- *
- *  This API should be called before calling any other APIs below. If a table
- *  already exists, this function will not do anything further. This function
- *  will not do anything if the context is NULL.
- *
- *  The content of the paths object is copied out, ownership is retained by the
- *  caller.
- *
- *  Returns 0 if the call succeeds, else a negative error code.
- */
-
-int vpnor_init(struct backend *backend,
-	       const struct vpnor_partition_paths *paths);
-
-/** @brief Copy bootloader partition (alongwith TOC) to LPC memory
- *
- *  @param[in] backend - The backend context pointer
- *
- *  @returns 0 on success, negative error code on failure
- */
-int vpnor_copy_bootloader_partition(const struct backend *backend, void *buf,
-				    uint32_t count);
-
-/** @brief Destroy partition table, if it exists.
- *
- *  @param[in] backend - The backend context pointer
- */
-void vpnor_destroy(struct backend *backend);
-
 #ifdef __cplusplus
 }
-#endif
-
 #endif
