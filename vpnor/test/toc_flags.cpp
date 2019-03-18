@@ -8,7 +8,7 @@
 #include <cassert>
 
 #include "common.h"
-#include "vpnor/pnor_partition_defs.h"
+#include "vpnor/ffs.h"
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 static constexpr auto DATA_MASK = ((1 << 24) - 1);

@@ -11,7 +11,7 @@ extern "C" {
 #include "backend.h"
 #include "common.h"
 #include "vpnor/backend.h"
-#include "vpnor/pnor_partition_defs.h"
+#include "vpnor/ffs.h"
 }
 
 struct mbox_context;
