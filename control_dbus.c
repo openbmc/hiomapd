@@ -9,7 +9,6 @@
 #include "dbus.h"
 #include "control_dbus.h"
 #include "mboxd.h"
-#include "vpnor/mboxd_pnor_partition_table.h"
 
 typedef int (*control_action)(struct mbox_context *context);
 
