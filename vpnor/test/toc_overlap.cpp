@@ -2,7 +2,7 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
-#include "vpnor/pnor_partition_table.hpp"
+#include "vpnor/table.hpp"
 
 #include <cassert>
 #include <cstring>

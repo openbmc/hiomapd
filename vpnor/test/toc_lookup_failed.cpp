@@ -8,7 +8,7 @@ extern "C" {
 #include "test/system.h"
 }
 
-#include "vpnor/pnor_partition_table.hpp"
+#include "vpnor/table.hpp"
 #include "vpnor/test/tmpd.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
