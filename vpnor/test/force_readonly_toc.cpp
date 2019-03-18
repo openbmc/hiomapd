@@ -6,7 +6,7 @@ extern "C" {
 #include "backend.h"
 #include "test/mbox.h"
 #include "test/system.h"
-#include "vpnor/pnor_partition_defs.h"
+#include "vpnor/ffs.h"
 }
 
 #include "vpnor/pnor_partition_table.hpp"
