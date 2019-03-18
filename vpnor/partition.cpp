@@ -6,8 +6,8 @@ extern "C" {
 
 #include "config.h"
 
-#include "pnor_partition.hpp"
 #include "pnor_partition_table.hpp"
+#include "vpnor/partition.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
 
 #include <assert.h>
