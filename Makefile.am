@@ -42,7 +42,10 @@ AM_CFLAGS = $(CODE_COVERAGE_CFLAGS)
 AM_CXXFLAGS = $(CODE_COVERAGE_CXXFLAGS)
 
 include test/Makefile.am.include
+
+if VIRTUAL_PNOR_ENABLED
 include vpnor/test/Makefile.am.include
+endif
 
 TESTS = $(check_PROGRAMS)
 

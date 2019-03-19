@@ -226,7 +226,6 @@ vpnor_test_force_readonly_toc_SOURCES = \
 vpnor_test_force_readonly_toc_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_force_readonly_toc_LDADD = $(VPNOR_LDADD)
 
-if VIRTUAL_PNOR_ENABLED
 check_PROGRAMS += \
 	%reldir%/create_pnor_partition_table \
 	%reldir%/create_read_window_partition_exists \
@@ -261,4 +260,3 @@ check_PROGRAMS += \
 
 XFAIL_TESTS += \
 	%reldir%/write_toc
-endif
