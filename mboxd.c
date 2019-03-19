@@ -402,38 +402,38 @@ int main(int argc, char **argv)
 
 	rc = init_signals(context, &set);
 	if (rc) {
-		goto finish;
+		goto cleanup_context;
 	}
 
 	rc = mboxd_backend_init(context);
 	if (rc) {
-		goto finish;
+		goto cleanup_context;
 	}
 
 	rc = protocol_init(context);
 	if (rc) {
-		goto finish;
+		goto cleanup_backend;
 	}
 
 	rc = transport_mbox_init(context, &mbox_ops);
 	if (rc) {
-		goto finish;
+		goto cleanup_protocol;
 	}
 
 	rc = lpc_dev_init(context);
 	if (rc) {
-		goto finish;
+		goto cleanup_mbox;
 	}
 
 	/* We've found the reserved memory region -> we can assign to windows */
 	rc = windows_init(context);
 	if (rc) {
-		goto finish;
+		goto cleanup_lpc;
 	}
 
 	rc = dbus_init(context, &dbus_ops);
 	if (rc) {
-		goto finish;
+		goto cleanup_windows;
 	}
 
 	/* Set the LPC bus mapping */
@@ -446,12 +446,12 @@ int main(int argc, char **argv)
 	/* Alert on all supported transports */
 	rc = protocol_events_put(context, mbox_ops);
 	if (rc) {
-		goto finish;
+		goto cleanup;
 	}
 
 	rc = protocol_events_put(context, dbus_ops);
 	if (rc) {
-		goto finish;
+		goto cleanup;
 	}
 
 	MSG_INFO("Entering Polling Loop\n");
@@ -459,7 +459,6 @@ int main(int argc, char **argv)
 
 	MSG_INFO("Exiting Poll Loop: %d\n", rc);
 
-finish:
 	MSG_INFO("Daemon Exiting...\n");
 	context->bmc_events &= ~BMC_EVENT_DAEMON_READY;
 	context->bmc_events |= BMC_EVENT_PROTOCOL_RESET;
@@ -468,12 +467,19 @@ finish:
 	protocol_events_put(context, mbox_ops);
 	protocol_events_put(context, dbus_ops);
 
+cleanup:
 	dbus_free(context);
-	backend_free(&context->backend);
-	lpc_dev_free(context);
-	transport_mbox_free(context);
+cleanup_windows:
 	windows_free(context);
+cleanup_lpc:
+	lpc_dev_free(context);
+cleanup_mbox:
+	transport_mbox_free(context);
+cleanup_protocol:
 	protocol_free(context);
+cleanup_backend:
+	backend_free(&context->backend);
+cleanup_context:
 	free(context);
 
 	return rc;
