@@ -92,44 +92,15 @@ out:
 	return rc < 0 ? rc : 0;
 }
 
-static int mboxctl_getter(struct mboxctl_context *context, const char *cmd,
-			  uint8_t *resp)
+static int mboxctl_getter(struct mboxctl_context *context,
+			  const char *property, uint8_t *resp)
 {
 	sd_bus_error error = SD_BUS_ERROR_NULL;
-	sd_bus_message *m = NULL, *n = NULL;
-	int rc;
 
-	rc = sd_bus_message_new_method_call(context->bus, &m,
-					    MBOX_DBUS_NAME,
-					    MBOX_DBUS_OBJECT,
-					    MBOX_DBUS_CONTROL_IFACE,
-					    cmd);
-	if (rc < 0) {
-		MSG_ERR("Failed to init method call: %s\n",
-			strerror(-rc));
-		goto out;
-	}
-
-	rc = sd_bus_call(context->bus, m, 0, &error, &n);
-	if (rc < 0) {
-		MSG_ERR("Failed to post message: %s\n", strerror(-rc));
-		goto out;
-	}
-
-	rc = sd_bus_message_read_basic(n, 'y', resp);
-	if (rc < 0) {
-		MSG_ERR("Failed to read response args: %s\n",
-			strerror(-rc));
-		goto out;
-	}
-
-out:
-	sd_bus_error_free(&error);
-	sd_bus_message_unref(m);
-	sd_bus_message_unref(n);
-
-	return rc < 0 ? rc : 0;
-
+	return sd_bus_get_property_trivial(context->bus, MBOX_DBUS_NAME,
+					   MBOX_DBUS_OBJECT,
+					   MBOX_DBUS_CONTROL_IFACE,
+					   property, &error, 'y', resp);
 }
 
 static int handle_cmd_ping(struct mboxctl_context *context)
@@ -147,7 +118,7 @@ static int handle_cmd_daemon_state(struct mboxctl_context *context)
 	uint8_t resp;
 	int rc;
 
-	rc = mboxctl_getter(context, "GetDaemonState", &resp);
+	rc = mboxctl_getter(context, "DaemonState", &resp);
 	if (rc < 0)
 		return rc;
 
@@ -161,7 +132,7 @@ static int handle_cmd_lpc_state(struct mboxctl_context *context)
 	uint8_t resp;
 	int rc;
 
-	rc = mboxctl_getter(context, "GetLpcState", &resp);
+	rc = mboxctl_getter(context, "LpcState", &resp);
 	if (rc < 0)
 		return rc;
 
