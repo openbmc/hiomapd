@@ -508,6 +508,8 @@ int transport_dbus_init(struct mbox_context *context,
 		return rc;
 	}
 
+	context->transport = &transport_dbus_ops;
+
 	if (ops) {
 		*ops = &transport_dbus_ops;
 	}

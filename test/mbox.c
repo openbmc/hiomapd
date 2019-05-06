@@ -211,11 +211,13 @@ void cleanup(void)
 	tmpf_destroy(&test.lpc);
 }
 
-int __transport_mbox_init(struct mbox_context *context, const char *path);
+int __transport_mbox_init(struct mbox_context *context, const char *path,
+			  const struct transport_ops **ops);
 int __lpc_dev_init(struct mbox_context *context, const char *path);
 
 struct mbox_context *mbox_create_frontend_context(int n_windows, size_t len)
 {
+	const struct transport_ops *ops;
 	struct mtd_info_user mtd_info;
 	int rc;
 
@@ -242,7 +244,8 @@ struct mbox_context *mbox_create_frontend_context(int n_windows, size_t len)
 	 * /dev/null and replace it with our own fd for mbox device emulation
 	 * by the test framework.
 	 */
-	__transport_mbox_init(&test.context, "/dev/null");
+	__transport_mbox_init(&test.context, "/dev/null", &ops);
+	test.context.transport = ops;
 	rc = close(test.context.fds[MBOX_FD].fd);
 	assert(rc == 0);
 	test.context.fds[MBOX_FD].fd = test.mbox.fd;

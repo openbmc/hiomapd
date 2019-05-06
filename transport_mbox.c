@@ -646,22 +646,25 @@ int transport_mbox_dispatch(struct mbox_context *context)
 	return handle_mbox_req(context, &req);
 }
 
-int __transport_mbox_init(struct mbox_context *context, const char *path)
+int __transport_mbox_init(struct mbox_context *context, const char *path,
+			  const struct transport_ops **ops)
 {
 	int fd;
-
-	context->transport = &transport_mbox_ops;
 
 	/* Open MBOX Device */
 	fd = open(path, O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
-		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
+		MSG_INFO("Couldn't open %s with flags O_RDWR: %s\n",
 			path, strerror(errno));
 		return -errno;
 	}
 	MSG_DBG("Opened mbox dev: %s\n", path);
 
 	context->fds[MBOX_FD].fd = fd;
+
+	if (ops) {
+		*ops = &transport_mbox_ops;
+	}
 
 	return 0;
 }
@@ -671,13 +674,9 @@ int transport_mbox_init(struct mbox_context *context,
 {
 	int rc;
 
-	rc = __transport_mbox_init(context, MBOX_HOST_PATH);
+	rc = __transport_mbox_init(context, MBOX_HOST_PATH, ops);
 	if (rc)
 		return rc;
-
-	if (ops) {
-		*ops = &transport_mbox_ops;
-	}
 
 	return 0;
 }
