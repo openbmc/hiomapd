@@ -278,6 +278,7 @@ out:
 	}
 
 	rc = sd_bus_send(NULL, n, NULL); /* Send response */
+	sd_bus_message_unref(n);
 	if (rc < 0)
 		MSG_ERR("sd_bus_send failed: %d\n", rc);
 

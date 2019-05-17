@@ -93,7 +93,9 @@ static int transport_dbus_reset(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
@@ -146,7 +148,9 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
@@ -181,7 +185,9 @@ static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_create_window(struct mbox_context *context,
@@ -225,7 +231,9 @@ static int transport_dbus_create_window(struct mbox_context *context,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_create_read_window(sd_bus_message *m, void *userdata,
@@ -274,7 +282,9 @@ static int transport_dbus_close_window(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 
 }
 
@@ -308,7 +318,9 @@ static int transport_dbus_mark_dirty(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_write_flush(sd_bus_message *m, void *userdata,
@@ -334,7 +346,9 @@ static int transport_dbus_write_flush(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_ack(sd_bus_message *m, void *userdata,
@@ -367,7 +381,9 @@ static int transport_dbus_ack(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_erase(sd_bus_message *m, void *userdata,
@@ -400,7 +416,9 @@ static int transport_dbus_erase(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int transport_dbus_get_property(sd_bus *bus,

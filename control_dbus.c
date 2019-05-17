@@ -43,7 +43,9 @@ static int control_dbus_directive(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int control_dbus_ping(sd_bus_message *m, void *userdata,
@@ -190,7 +192,9 @@ static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	return sd_bus_send(NULL, n, NULL);
+	rc = sd_bus_send(NULL, n, NULL);
+	sd_bus_message_unref(n);
+	return rc;
 }
 
 static int control_dbus_get_u8(sd_bus *bus, const char *path,
