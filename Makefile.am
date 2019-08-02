@@ -31,7 +31,13 @@ mboxctl_SOURCES = mboxctl.c
 mboxctl_LDFLAGS = $(LIBSYSTEMD_LIBS)
 mboxctl_CFLAGS = $(LIBSYSTEMD_CFLAGS)
 
+if AUTOCONF_CODE_COVERAGE_2019_01_06
+include $(top_srcdir)/aminclude_static.am
+clean-local: code-coverage-clean
+distclean-local: code-coverage-dist-clean
+else
 @CODE_COVERAGE_RULES@
+endif
 
 check_PROGRAMS =
 XFAIL_TESTS =
