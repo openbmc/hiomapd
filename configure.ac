@@ -2,7 +2,7 @@
 AC_PREREQ([2.69])
 AC_INIT([mboxd], [2.1.1], [https://github.com/openbmc/mboxbridge/issues])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([subdir-objects -Wall foreign dist-xz])
+AM_INIT_AUTOMAKE([subdir-objects -Wall -Wno-portability foreign dist-xz])
 AM_SILENT_RULES([yes])
 AC_CONFIG_MACRO_DIRS([m4])
 
@@ -65,6 +65,10 @@ AS_IF([test "x$enable_virtual_pnor" == "xyes"],
 )
 
 AX_CODE_COVERAGE
+m4_ifdef([_AX_CODE_COVERAGE_RULES],
+    [AM_CONDITIONAL(AUTOCONF_CODE_COVERAGE_2019_01_06, [true])],
+    [AM_CONDITIONAL(AUTOCONF_CODE_COVERAGE_2019_01_06, [false])])
+AX_ADD_AM_MACRO_STATIC([])
 
 PKG_CHECK_MODULES(LIBSYSTEMD, libsystemd, , AC_MSG_ERROR([libsytemd not found]))
 AC_SUBST([LIBSYSTEMD_CFLAGS])
