@@ -1,0 +1,11 @@
+Ok-To-Test+1: Jenkins <openbmc-ci-admin@ozlabs.org>
+Verified+1: Andrew Jeffery <andrew@aj.id.au>
+Code-Review+1: Brad Bishop <radsquirrel@gmail.com>
+Ok-To-Test+1: Brad Bishop <radsquirrel@gmail.com>
+Verified+1: Jenkins <openbmc-ci-admin@ozlabs.org>
+Code-Review+2: Andrew Jeffery <andrew@aj.id.au>
+Submitted-by: Andrew Jeffery <andrew@aj.id.au>
+Submitted-at: Wed, 07 Aug 2019 03:59:18 +0000
+Reviewed-on: https://gerrit.openbmc-project.xyz/c/openbmc/mboxbridge/+/24104
+Project: openbmc/mboxbridge
+Branch: refs/heads/master
