@@ -91,6 +91,7 @@ fs::path Request::getPartitionFilePath(int flags)
 
     dst /= partition.data.name;
     fs::copy_file(src, dst);
+    fs::permissions(dst, fs::perms::add_perms | fs::perms::owner_write);
 
     return dst;
 }
