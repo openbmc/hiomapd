@@ -16,6 +16,14 @@ VPNOR_LDADD = -lstdc++fs \
 	$(PHOSPHOR_LOGGING_LIBS) \
 	$(PHOSPHOR_DBUS_INTERFACES_LIBS)
 
+
+vpnor_test_create_aligned_window_SOURCES = \
+	$(TEST_MOCK_VPNOR_SRCS) \
+	$(TEST_MBOX_VPNOR_INTEG_SRCS) \
+	%reldir%/create_aligned_window.cpp
+vpnor_test_create_aligned_window_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
+vpnor_test_create_aligned_window_LDADD = $(VPNOR_LDADD)
+
 vpnor_test_create_pnor_partition_table_SOURCES = \
 	$(TEST_MOCK_VPNOR_SRCS) \
 	$(TEST_MBOX_VPNOR_INTEG_SRCS) \
@@ -227,6 +235,7 @@ vpnor_test_force_readonly_toc_LDFLAGS = $(OESDK_TESTCASE_FLAGS)
 vpnor_test_force_readonly_toc_LDADD = $(VPNOR_LDADD)
 
 check_PROGRAMS += \
+        %reldir%/create_aligned_window \
 	%reldir%/create_pnor_partition_table \
 	%reldir%/create_read_window_partition_exists \
 	%reldir%/write_prsv \
@@ -260,3 +269,5 @@ check_PROGRAMS += \
 
 XFAIL_TESTS += \
 	%reldir%/write_toc
+
+
