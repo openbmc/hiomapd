@@ -645,21 +645,27 @@ int windows_create_map(struct mbox_context *context,
 	 * We just have to check for anything which maps the start or the end
 	 * of the window since all windows are the same size so another window
 	 * cannot map just the middle of this window.
+	 *
+	 * For V2, need to check every offset. Maybe there is a good way for
+	 * checking
 	 */
-	if (context->version == API_VERSION_1) {
-		uint32_t i;
+	MSG_DBG("Checking for window overlap for APIv%d\n", context->version);
+	uint32_t offset_inc = 0;
+	uint32_t i=0;
 
-		MSG_DBG("Checking for window overlap\n");
+	if (context->version == API_VERSION_1)
+		offset_inc = (cur->size - 1);
+	else if (context->version == API_VERSION_2)
+		offset_inc = 1;
 
-		for (i = offset; i < (offset + cur->size); i += (cur->size - 1)) {
-			struct window_context *tmp = NULL;
-			do {
-				tmp = windows_search(context, i, false);
-				if (tmp) {
-					window_reset(context, tmp);
-				}
-			} while (tmp);
-		}
+	for (i = offset; i < (offset + cur->size); i += offset_inc) {
+		struct window_context *tmp = NULL;
+		do {
+			tmp = windows_search(context, i, false);
+			if (tmp) {
+				window_reset(context, tmp);
+			}
+		} while (tmp);
 	}
 
 	/* Clear the bytemap of the window just loaded -> we know it's clean */
