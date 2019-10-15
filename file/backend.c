@@ -260,6 +260,7 @@ static const struct backend_ops file_ops = {
 	.write = file_write,
 	.reset = file_reset,
 	.validate = NULL,
+	.align_offset = NULL,
 };
 
 struct backend backend_get_file(void)
