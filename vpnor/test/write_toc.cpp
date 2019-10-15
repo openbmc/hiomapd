@@ -24,9 +24,10 @@ static constexpr auto N_WINDOWS = 1;
 static constexpr auto WINDOW_SIZE = BLOCK_SIZE;
 static constexpr auto TOC_PART_SIZE = BLOCK_SIZE;
 
+// TOC (id==0) will be set to READONLY forcely so set it to 1 here
 const std::string toc[] = {
-    "partition00=part,00000000,00001000,80,READWRITE",
-    "partition01=ONE,00001000,00002000,80,READWRITE",
+    "partition01=part,00000000,00001000,80,READWRITE",
+    "partition02=ONE,00001000,00002000,80,READWRITE",
 };
 
 static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
@@ -88,11 +89,9 @@ int main()
     rc = mbox_command_dispatch(ctx, read_one, sizeof(read_one));
     assert(rc == MBOX_R_SUCCESS);
 
+    // No erase op for vpnor so don't need to check the erase content
     rc = mbox_command_dispatch(ctx, read_toc, sizeof(read_toc));
     assert(rc == MBOX_R_SUCCESS);
-
-    rc = memcmp(ctx->mem, erased, BLOCK_SIZE);
-    assert(rc == 0);
 
     free(erased);
 
