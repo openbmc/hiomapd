@@ -574,26 +574,17 @@ int windows_create_map(struct mbox_context *context,
 		window_reset(context, cur);
 	}
 
-/*
- * In case of the virtual pnor, as of now it's possible that a window may
- * have content less than it's max size. We basically copy one flash partition
- * per window, and some partitions are smaller than the max size. An offset
- * right after such a small partition ends should lead to new mapping. The code
- * below prevents that.
- */
-#ifndef VIRTUAL_PNOR_ENABLED
+	/* Adjust the offset by the backend. VPONR will need this to adjust
+	 * the offset to the beginning of partition. It will help prevent the
+	 * overlap
+	 */
 	if (!exact) {
-		/*
-		 * It would be nice to align the offsets which we map to window
-		 * size, this will help prevent overlap which would be an
-		 * inefficient use of our reserved memory area (we would like
-		 * to "cache" as much of the acutal flash as possible in
-		 * memory). If we're protocol V1 however we must ensure the
-		 * offset requested is exactly mapped.
-		 */
-		offset &= ~(cur->size - 1);
+		MSG_INFO("Call backend_adjust_offset\n");
+		if (backend_adjust_offset(&(context->backend), &offset, cur->size)) {
+			MSG_ERR("Can't adjust the offset by backend\n");
+			return -EINVAL;
+		}
 	}
-#endif
 
 	if (offset > context->backend.flash_size) {
 		MSG_ERR("Tried to open read window past flash limit\n");

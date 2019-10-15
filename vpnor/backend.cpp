@@ -462,6 +462,48 @@ static int vpnor_reset(struct backend* backend, void* buf, uint32_t count)
     return reset_lpc_memory;
 }
 
+/*
+ * adjust_offset() - Adjust the offset if necessary
+ * @context:    The backend context pointer
+ * @offset:	The flash offset
+ * @window_size:The window size
+ *
+ * Return:      0 on success otherwise negative error code
+ */
+static int vpor_adjust_offset(struct backend* backend, uint32_t* offset,
+                              uint32_t window_size)
+{
+    const struct vpnor_data* priv = (const struct vpnor_data*)backend->priv;
+
+    /* Adjust the offset to the beginning of the partition */
+    try
+    {
+        // Get the base of the partition
+        const pnor_partition& part = priv->vpnor->table->partition(*offset);
+        const size_t blockSize = (1 << backend->erase_size_shift);
+        uint32_t base = part.data.base * blockSize;
+
+        // Get the base offset relative to the window_size
+        uint32_t base_offset = base & (window_size - 1);
+
+        // Adjust the offset to align with the base
+        *offset = ((*offset - base_offset) & ~(window_size - 1)) + base_offset;
+        MSG_DBG(
+            "vpor_adjust_offset: to @ 0x%.8x(base=0x%.8x base_offset=0x%.8x)\n",
+            *offset, base, base_offset);
+        return 0;
+    }
+    catch (const openpower::virtual_pnor::UnmappedOffset& e)
+    {
+        /*
+         * Writes to unmapped areas are not meaningful, so deny the request.
+         * This removes the ability for a compromised host to abuse unused
+         * space if any data was to be persisted (which it isn't).
+         */
+        return -EACCES;
+    }
+}
+
 static const struct backend_ops vpnor_ops = {
     .init = vpnor_dev_init,
     .free = vpnor_free,
@@ -471,6 +513,7 @@ static const struct backend_ops vpnor_ops = {
     .write = vpnor_write,
     .validate = vpnor_validate,
     .reset = vpnor_reset,
+    .adjust_offset = vpor_adjust_offset,
 };
 
 struct backend backend_get_vpnor(void)

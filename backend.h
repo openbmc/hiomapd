@@ -123,6 +123,17 @@ struct backend_ops {
 	 * Return:      0 on success otherwise negative error code
 	 */
 	int	(*reset)(struct backend *backend, void *buf, uint32_t count);
+
+	/*
+	 * adjust_offset() - Adjust the offset if necessary
+	 * @context:	The backend context pointer
+	 * @offset:	The flash offset
+	 * @window_size:The window size
+	 *
+	 * Return:      0 on success otherwise negative error code
+	 */
+	int	(*adjust_offset)(struct backend *backend, uint32_t *offset,
+	 			 uint32_t window_size);
 };
 
 /* Make this better */
@@ -220,6 +231,23 @@ static inline int backend_reset(struct backend *backend, void *buf,
 	assert(backend);
 	assert(backend->ops->reset);
 	return backend->ops->reset(backend, buf, count);
+}
+
+
+static inline int backend_adjust_offset(struct backend *backend, uint32_t *offset, uint32_t window_size)
+{
+	int rc;
+	assert(backend);
+	if (backend->ops->adjust_offset)
+		rc = backend->ops->adjust_offset(backend, offset, window_size);
+	else
+	{
+		// Align with windows by default
+		*offset = *offset & ~(window_size - 1);
+		rc = 0;
+	}
+
+	return rc;
 }
 
 struct backend backend_get_mtd(void);
