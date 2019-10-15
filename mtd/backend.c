@@ -349,6 +349,7 @@ static const struct backend_ops mtd_ops = {
 	.write = mtd_write,
 	.validate = NULL,
 	.reset = mtd_reset,
+	.align_offset = NULL,
 };
 
 struct backend backend_get_mtd(void)

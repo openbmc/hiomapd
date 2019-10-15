@@ -123,6 +123,17 @@ struct backend_ops {
 	 * Return:      0 on success otherwise negative error code
 	 */
 	int	(*reset)(struct backend *backend, void *buf, uint32_t count);
+
+	/*
+	 * align_offset() - Align the offset to avoid overlap
+	 * @context:	The backend context pointer
+	 * @offset:	The flash offset
+	 * @window_size:The window size
+	 *
+	 * Return:      0 on success otherwise negative error code
+	 */
+	int	(*align_offset)(struct backend *backend, uint32_t *offset,
+	 			 uint32_t window_size);
 };
 
 /* Make this better */
@@ -220,6 +231,26 @@ static inline int backend_reset(struct backend *backend, void *buf,
 	assert(backend);
 	assert(backend->ops->reset);
 	return backend->ops->reset(backend, buf, count);
+}
+
+
+static inline int backend_align_offset(struct backend *backend, uint32_t *offset, uint32_t window_size)
+{
+	assert(backend);
+	if (backend->ops->align_offset){
+		return  backend->ops->align_offset(backend, offset, window_size);
+	}else{
+		/*
+		 * It would be nice to align the offsets which we map to window
+		 * size, this will help prevent overlap which would be an
+		 * inefficient use of our reserved memory area (we would like
+		 * to "cache" as much of the acutal flash as possible in
+		 * memory). If we're protocol V1 however we must ensure the
+		 * offset requested is exactly mapped.
+		 */
+		*offset &= ~(window_size - 1);
+		return 0;
+	}
 }
 
 struct backend backend_get_mtd(void);

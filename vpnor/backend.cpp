@@ -419,6 +419,8 @@ static int vpnor_validate(struct backend* backend, uint32_t offset,
         const pnor_partition& part = priv->vpnor->table->partition(offset);
         if (vpnor_partition_is_readonly(part))
         {
+            MSG_DBG("Try to write read only partition (part=%s, offset=0x%x)\n",
+                    part.data.name, offset);
             return -EPERM;
         }
     }
@@ -462,6 +464,47 @@ static int vpnor_reset(struct backend* backend, void* buf, uint32_t count)
     return reset_lpc_memory;
 }
 
+/*
+ * vpnor_align_offset() - Align the offset
+ * @context:    The backend context pointer
+ * @offset:	The flash offset
+ * @window_size:The window size
+ *
+ * Return:      0 on success otherwise negative error code
+ */
+static int vpnor_align_offset(struct backend* backend, uint32_t* offset,
+                              uint32_t window_size)
+{
+    const struct vpnor_data* priv = (const struct vpnor_data*)backend->priv;
+
+    /* Adjust the offset to align with the offset of partition base */
+    try
+    {
+        // Get the base of the partition
+        const pnor_partition& part = priv->vpnor->table->partition(*offset);
+        uint32_t base = part.data.base * VPNOR_ERASE_SIZE;
+
+        // Get the base offset relative to the window_size
+        uint32_t base_offset = base & (window_size - 1);
+
+        // Adjust the offset to align with the base
+        *offset = ((*offset - base_offset) & ~(window_size - 1)) + base_offset;
+        MSG_DBG(
+            "vpnor_align_offset: to @ 0x%.8x(base=0x%.8x base_offset=0x%.8x)\n",
+            *offset, base, base_offset);
+        return 0;
+    }
+    catch (const openpower::virtual_pnor::UnmappedOffset& e)
+    {
+        /*
+         * Writes to unmapped areas are not meaningful, so deny the request.
+         * This removes the ability for a compromised host to abuse unused
+         * space if any data was to be persisted (which it isn't).
+         */
+        return -EACCES;
+    }
+}
+
 static const struct backend_ops vpnor_ops = {
     .init = vpnor_dev_init,
     .free = vpnor_free,
@@ -471,6 +514,7 @@ static const struct backend_ops vpnor_ops = {
     .write = vpnor_write,
     .validate = vpnor_validate,
     .reset = vpnor_reset,
+    .align_offset = vpnor_align_offset,
 };
 
 struct backend backend_get_vpnor(void)
