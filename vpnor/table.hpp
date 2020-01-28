@@ -2,6 +2,7 @@
 /* Copyright (C) 2018 IBM Corp. */
 #pragma once
 
+#include <cstring>
 #include <experimental/filesystem>
 #include <memory>
 #include <numeric>
@@ -51,7 +52,7 @@ namespace details
 {
 
 /** @brief Compute XOR-based checksum, by XORing consecutive words
- *         in the input data. Input must be aligned to word boundary.
+ *         in the input data.
  *
  *  @param[in] data - input data on which checksum is computed
  *
@@ -63,10 +64,12 @@ checksum_t checksum(const T& data)
     static_assert(sizeof(decltype(data)) % sizeof(checksum_t) == 0,
                   "sizeof(data) is not aligned to sizeof(checksum_t) boundary");
 
-    auto begin = reinterpret_cast<const checksum_t*>(&data);
-    auto end = begin + (sizeof(decltype(data)) / sizeof(checksum_t));
-
-    return std::accumulate(begin, end, 0, std::bit_xor<checksum_t>());
+    /* Shut the compiler up about alignment, consider alternatives */
+    const size_t n_elems = sizeof(decltype(data)) / sizeof(checksum_t);
+    checksum_t csdata[n_elems];
+    memcpy(csdata, &data, sizeof(csdata));
+    auto end = csdata + n_elems;
+    return std::accumulate(csdata, end, 0, std::bit_xor<checksum_t>());
 }
 
 } // namespace details
