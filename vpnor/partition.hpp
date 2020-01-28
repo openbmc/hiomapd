@@ -49,46 +49,12 @@ class Request
     Request& operator=(Request&&) = default;
     ~Request() = default;
 
-    ssize_t read(void* dst, size_t len)
-    {
-        len = clamp(len);
-        constexpr auto flags = O_RDONLY;
-        fs::path path = getPartitionFilePath(flags);
-        return fulfil(path, flags, dst, len);
-    }
-
-    ssize_t write(void* dst, size_t len)
-    {
-        if (len != clamp(len))
-        {
-            std::stringstream err;
-            err << "Request size 0x" << std::hex << len << " from offset 0x"
-                << std::hex << offset << " exceeds the partition size 0x"
-                << std::hex
-                << (partition.data.size << backend->block_size_shift);
-            throw OutOfBoundsOffset(err.str());
-        }
-        constexpr auto flags = O_RDWR;
-        /* Ensure file is at least the size of the maximum access */
-        fs::path path = getPartitionFilePath(flags);
-        resize(path, len);
-        return fulfil(path, flags, dst, len);
-    }
+    ssize_t read(void* dst, size_t len);
+    ssize_t write(void* dst, size_t len);
 
   private:
     /** @brief Clamp the access length to the maximum supported by the ToC */
     size_t clamp(size_t len);
-
-    /** @brief Ensure the backing file is sized appropriately for the access
-     *
-     *  We need to ensure the file is big enough to satisfy the request so that
-     *  mmap() will succeed for the required size.
-     *
-     *  @return The valid access length
-     *
-     *  Throws: std::system_error
-     */
-    void resize(const std::experimental::filesystem::path& path, size_t len);
 
     /** @brief Returns the partition file path associated with the offset.
      *
@@ -123,15 +89,6 @@ class Request
      *  Throws: std::filesystem_error, std::bad_alloc
      */
     std::experimental::filesystem::path getPartitionFilePath(int flags);
-
-    /** @brief Fill dst with the content of the partition relative to offset.
-     *
-     *  @param[in] offset - The pnor offset(bytes).
-     *  @param[out] dst - The buffer to fill with partition data
-     *  @param[in] len - The length of the destination buffer
-     */
-    size_t fulfil(const std::experimental::filesystem::path& path, int flags,
-                  void* dst, size_t len);
 
     struct backend* backend;
     const pnor_partition& partition;

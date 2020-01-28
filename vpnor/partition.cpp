@@ -103,80 +103,98 @@ size_t Request::clamp(size_t len)
     return std::min(maxAccess, partSize) - offset;
 }
 
-void Request::resize(const fs::path& path, size_t len)
+/* Post-condition: All bytes written or an error has occurred */
+#define request_access_all(fn, dst, src, len) \
+({ \
+    size_t __len = len; \
+    ssize_t wrote; \
+    while (__len) { \
+        wrote = TEMP_FAILURE_RETRY(fn(dst, src, __len)); \
+        if (wrote < 0) \
+            break; \
+        __len -= wrote; \
+    } \
+    __len ? -1 : 0; \
+})
+
+ssize_t Request::read(void* dst, size_t len)
 {
-    size_t maxAccess = offset + len;
-    size_t fileSize = fs::file_size(path);
-    if (maxAccess < fileSize)
-    {
-        return;
-    }
-    MSG_DBG("Resizing %s to %zu bytes\n", path.c_str(), maxAccess);
-    int rc = truncate(path.c_str(), maxAccess);
-    if (rc == -1)
-    {
-        MSG_ERR("Failed to resize %s: %d\n", path.c_str(), errno);
-        throw std::system_error(errno, std::system_category());
-    }
-}
+        len = clamp(len);
 
-size_t Request::fulfil(const fs::path& path, int flags, void* buf, size_t len)
-{
-    if (!(flags == O_RDONLY || flags == O_RDWR))
-    {
-        std::stringstream err;
-        err << "Require O_RDONLY (0x" << std::hex << O_RDONLY << " or O_RDWR "
-            << std::hex << O_RDWR << " for flags, got: 0x" << std::hex << flags;
-        throw std::invalid_argument(err.str());
-    }
+        fs::path path = getPartitionFilePath(O_RDONLY);
 
-    int fd = ::open(path.c_str(), flags);
-    if (fd == -1)
-    {
-        MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
-                errno);
-        throw std::system_error(errno, std::system_category());
-    }
-
-    if (flags == O_RDONLY)
-    {
         MSG_INFO("Fulfilling read request against %s at offset 0x%zx into %p "
                  "for %zu\n",
-                 path.c_str(), offset, buf, len);
-    }
-    else
-    {
+                 path.c_str(), offset, dst, len);
+
+        size_t fileSize = fs::file_size(path);
+
+        int fd = ::open(path.c_str(), O_RDONLY);
+        if (fd == -1)
+        {
+            MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
+                    errno);
+            throw std::system_error(errno, std::system_category());
+        }
+
+        int rc = lseek(fd, offset, SEEK_SET);
+        if (rc < 0) {
+            throw std::system_error(errno, std::system_category());
+        }
+
+        auto access_len = std::min(len, fileSize);
+        rc = request_access_all(::read, fd, dst, access_len);
+        if (rc < 0) {
+            throw std::system_error(errno, std::system_category());
+        }
+        memset((char *)dst + access_len, 0xff, len - access_len);
+
+        close(fd);
+
+        return len;
+}
+
+ssize_t Request::write(void* dst, size_t len)
+{
+        if (len != clamp(len))
+        {
+            std::stringstream err;
+            err << "Request size 0x" << std::hex << len << " from offset 0x"
+                << std::hex << offset << " exceeds the partition size 0x"
+                << std::hex
+                << (partition.data.size << backend->block_size_shift);
+            throw OutOfBoundsOffset(err.str());
+        }
+
+        /* Ensure file is at least the size of the maximum access */
+        fs::path path = getPartitionFilePath(O_RDWR);
+
         MSG_INFO("Fulfilling write request against %s at offset 0x%zx from %p "
                  "for %zu\n",
-                 path.c_str(), offset, buf, len);
-    }
+                 path.c_str(), offset, dst, len);
 
-    size_t fileSize = fs::file_size(path);
-    int mprot = PROT_READ | ((flags == O_RDWR) ? PROT_WRITE : 0);
-    auto map = mmap(NULL, fileSize, mprot, MAP_SHARED, fd, 0);
-    if (map == MAP_FAILED)
-    {
-        close(fd);
-        MSG_ERR("Failed to map backing file '%s' for %zd bytes: %d\n",
-                path.c_str(), fileSize, errno);
-        throw std::system_error(errno, std::system_category());
-    }
+        int fd = ::open(path.c_str(), O_RDWR);
+        if (fd == -1)
+        {
+            MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
+                    errno);
+            throw std::system_error(errno, std::system_category());
+        }
 
-    // copy to the reserved memory area
-    if (flags == O_RDONLY)
-    {
-        memset(buf, 0xff, len);
-        memcpy(buf, (char*)map + offset, std::min(len, fileSize));
-    }
-    else
-    {
-        memcpy((char*)map + offset, buf, len);
+        int rc = lseek(fd, offset, SEEK_SET);
+        if (rc < 0) {
+            throw std::system_error(errno, std::system_category());
+        }
+
+        rc = request_access_all(::write, fd, dst, len);
+        if (rc < 0) {
+            throw std::system_error(errno, std::system_category());
+        }
         backend_set_bytemap(backend, base + offset, len, FLASH_DIRTY);
-    }
-    munmap(map, fileSize);
-    close(fd);
 
-    return len;
+        close(fd);
+
+        return len;
 }
 
 } // namespace virtual_pnor
