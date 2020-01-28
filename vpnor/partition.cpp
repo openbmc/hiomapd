@@ -103,34 +103,37 @@ size_t Request::clamp(size_t len)
     return std::min(maxAccess, partSize) - offset;
 }
 
-void Request::resize(const fs::path& path, size_t len)
+/* Perform reads and writes for an entire buffer's worth of data
+ *
+ * Post-condition: All bytes read or written, or an error has occurred
+ *
+ * Yields 0 if the entire buffer was processed, otherwise -1
+ */
+#define fd_process_all(fn, fd, src, len)                                       \
+    ({                                                                         \
+        size_t __len = len;                                                    \
+        ssize_t __accessed = 0;                                                \
+        do                                                                     \
+        {                                                                      \
+            __len -= __accessed;                                               \
+            __accessed = TEMP_FAILURE_RETRY(fn(fd, src, __len));               \
+        } while (__len > 0 && __accessed > 0);                                 \
+        __len ? -1 : 0;                                                        \
+    })
+
+ssize_t Request::read(void* dst, size_t len)
 {
-    size_t maxAccess = offset + len;
+    len = clamp(len);
+
+    fs::path path = getPartitionFilePath(O_RDONLY);
+
+    MSG_INFO("Fulfilling read request against %s at offset 0x%zx into %p "
+             "for %zu\n",
+             path.c_str(), offset, dst, len);
+
     size_t fileSize = fs::file_size(path);
-    if (maxAccess < fileSize)
-    {
-        return;
-    }
-    MSG_DBG("Resizing %s to %zu bytes\n", path.c_str(), maxAccess);
-    int rc = truncate(path.c_str(), maxAccess);
-    if (rc == -1)
-    {
-        MSG_ERR("Failed to resize %s: %d\n", path.c_str(), errno);
-        throw std::system_error(errno, std::system_category());
-    }
-}
 
-size_t Request::fulfil(const fs::path& path, int flags, void* buf, size_t len)
-{
-    if (!(flags == O_RDONLY || flags == O_RDWR))
-    {
-        std::stringstream err;
-        err << "Require O_RDONLY (0x" << std::hex << O_RDONLY << " or O_RDWR "
-            << std::hex << O_RDWR << " for flags, got: 0x" << std::hex << flags;
-        throw std::invalid_argument(err.str());
-    }
-
-    int fd = ::open(path.c_str(), flags);
+    int fd = ::open(path.c_str(), O_RDONLY);
     if (fd == -1)
     {
         MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
@@ -138,42 +141,75 @@ size_t Request::fulfil(const fs::path& path, int flags, void* buf, size_t len)
         throw std::system_error(errno, std::system_category());
     }
 
-    if (flags == O_RDONLY)
+    int rc = lseek(fd, offset, SEEK_SET);
+    if (rc < 0)
     {
-        MSG_INFO("Fulfilling read request against %s at offset 0x%zx into %p "
-                 "for %zu\n",
-                 path.c_str(), offset, buf, len);
-    }
-    else
-    {
-        MSG_INFO("Fulfilling write request against %s at offset 0x%zx from %p "
-                 "for %zu\n",
-                 path.c_str(), offset, buf, len);
-    }
-
-    size_t fileSize = fs::file_size(path);
-    int mprot = PROT_READ | ((flags == O_RDWR) ? PROT_WRITE : 0);
-    auto map = mmap(NULL, fileSize, mprot, MAP_SHARED, fd, 0);
-    if (map == MAP_FAILED)
-    {
-        close(fd);
-        MSG_ERR("Failed to map backing file '%s' for %zd bytes: %d\n",
+        MSG_ERR("Failed to seek to %zu in %s (%zu bytes): %d\n", offset,
                 path.c_str(), fileSize, errno);
         throw std::system_error(errno, std::system_category());
     }
 
-    // copy to the reserved memory area
-    if (flags == O_RDONLY)
+    auto access_len = std::min(len, fileSize - offset);
+    rc = fd_process_all(::read, fd, dst, access_len);
+    if (rc < 0)
     {
-        memset(buf, 0xff, len);
-        memcpy(buf, (char*)map + offset, std::min(len, fileSize));
+        MSG_ERR("Requested %zu bytes but failed to read %zu from %s (%zu) at "
+                "%zu: %d\n",
+                len, access_len, path.c_str(), fileSize, offset, errno);
+        throw std::system_error(errno, std::system_category());
     }
-    else
+
+    /* Set any remaining buffer space to the erased state */
+    memset((char*)dst + access_len, 0xff, len - access_len);
+
+    close(fd);
+
+    return len;
+}
+
+ssize_t Request::write(void* dst, size_t len)
+{
+    if (len != clamp(len))
     {
-        memcpy((char*)map + offset, buf, len);
-        backend_set_bytemap(backend, base + offset, len, FLASH_DIRTY);
+        std::stringstream err;
+        err << "Request size 0x" << std::hex << len << " from offset 0x"
+            << std::hex << offset << " exceeds the partition size 0x"
+            << std::hex << (partition.data.size << backend->block_size_shift);
+        throw OutOfBoundsOffset(err.str());
     }
-    munmap(map, fileSize);
+
+    /* Ensure file is at least the size of the maximum access */
+    fs::path path = getPartitionFilePath(O_RDWR);
+
+    MSG_INFO("Fulfilling write request against %s at offset 0x%zx from %p "
+             "for %zu\n",
+             path.c_str(), offset, dst, len);
+
+    int fd = ::open(path.c_str(), O_RDWR);
+    if (fd == -1)
+    {
+        MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
+                errno);
+        throw std::system_error(errno, std::system_category());
+    }
+
+    int rc = lseek(fd, offset, SEEK_SET);
+    if (rc < 0)
+    {
+        MSG_ERR("Failed to seek to %zu in %s: %d\n", offset, path.c_str(),
+                errno);
+        throw std::system_error(errno, std::system_category());
+    }
+
+    rc = fd_process_all(::write, fd, dst, len);
+    if (rc < 0)
+    {
+        MSG_ERR("Failed to write %zu bytes to %s at %zu: %d\n", len,
+                path.c_str(), offset, errno);
+        throw std::system_error(errno, std::system_category());
+    }
+    backend_set_bytemap(backend, base + offset, len, FLASH_DIRTY);
+
     close(fd);
 
     return len;
