@@ -2,6 +2,7 @@
 /* Copyright (C) 2018 IBM Corp. */
 #pragma once
 
+#include <cstring>
 #include <experimental/filesystem>
 #include <memory>
 #include <numeric>
@@ -63,10 +64,11 @@ checksum_t checksum(const T& data)
     static_assert(sizeof(decltype(data)) % sizeof(checksum_t) == 0,
                   "sizeof(data) is not aligned to sizeof(checksum_t) boundary");
 
-    auto begin = reinterpret_cast<const checksum_t*>(&data);
-    auto end = begin + (sizeof(decltype(data)) / sizeof(checksum_t));
-
-    return std::accumulate(begin, end, 0, std::bit_xor<checksum_t>());
+    /* Shut the compiler up about alignment, consider alternatives */
+    checksum_t csdata[sizeof(decltype(data)) / sizeof(checksum_t)];
+    memcpy(&csdata, &data, sizeof(decltype(data)));
+    auto end = csdata + (sizeof(decltype(data)) / sizeof(checksum_t));
+    return std::accumulate(csdata, end, 0, std::bit_xor<checksum_t>());
 }
 
 } // namespace details
