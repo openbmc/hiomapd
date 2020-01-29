@@ -15,11 +15,10 @@ Building
 The build system is a standard autotools setup. `bootstrap.sh` runs all the
 jobs necessary to initialise autotools.
 
-By default the build is configured and built _without_ the 'virtual PNOR'
+By default the build is configured and built _with_ the 'virtual PNOR'
 feature discussed below. The virtual PNOR functionality is written in C++, and
 due to some autotools clunkiness even if it is disabled mboxd will still be
-linked with `CXX`. Point `CXX` to `cc` at configure time if you do not have a
-C++ compiler for your target (`./configure CXX=cc`).
+linked with `CXX`.
 
 If you are hacking on the reference implementation it's recommended to run
 `bootstrap.sh` with the `dev` argument:
@@ -43,14 +42,15 @@ $ make
 $ make check
 ```
 
-In addition to its role as a flash abstraction `mboxd` can also serve as a
-partition/filesystem abstraction. This feature is known as 'virtual PNOR' and
-it can be enabled at `configure` time (note that this requires a C++ compiler
-for your target):
+Through the virtual PNOR feature the daemon's role as a flash abstraction can
+be augmented to support partition/filesystem abstraction. This is complex and
+unnecessary for a number of platforms, and so the feature can be disabled at
+`configure` time. If you do not have a C++ compiler for your target, set
+`CXX=cc`.
 
 ```
 $ ./bootstrap.sh
-$ ./configure --enable-virtual-pnor
+$ ./configure CXX=cc --disable-virtual-pnor
 $ make
 $ make check
 ```

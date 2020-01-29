@@ -47,9 +47,9 @@ AS_IF([test "x$enable_oe_sdk" == "xyes"],
 )
 
 AC_ARG_ENABLE([virtual-pnor],
-    AS_HELP_STRING([--enable-virtual-pnor], [Turn on virtual pnor])
+    AS_HELP_STRING([--disable-virtual-pnor], [Turn off virtual pnor support])
 )
-AS_IF([test "x$enable_virtual_pnor" == "xyes"],
+AS_IF([test "x$enable_virtual_pnor" != "xno"],
     [
         PKG_CHECK_MODULES([SDBUSPLUS], [sdbusplus])
         PKG_CHECK_MODULES([PHOSPHOR_LOGGING], [phosphor-logging])
