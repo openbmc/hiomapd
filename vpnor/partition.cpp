@@ -133,30 +133,33 @@ ssize_t Request::read(void* dst, size_t len)
 
     size_t fileSize = fs::file_size(path);
 
-    int fd = ::open(path.c_str(), O_RDONLY);
-    if (fd == -1)
-    {
-        MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
-                errno);
-        throw std::system_error(errno, std::system_category());
-    }
+    size_t access_len = 0;
+    if (offset < fileSize) {
+        int fd = ::open(path.c_str(), O_RDONLY);
+        if (fd == -1)
+        {
+            MSG_ERR("Failed to open backing file at '%s': %d\n", path.c_str(),
+                    errno);
+            throw std::system_error(errno, std::system_category());
+        }
 
-    int rc = lseek(fd, offset, SEEK_SET);
-    if (rc < 0)
-    {
-        MSG_ERR("Failed to seek to %zu in %s (%zu bytes): %d\n", offset,
-                path.c_str(), fileSize, errno);
-        throw std::system_error(errno, std::system_category());
-    }
+        int rc = lseek(fd, offset, SEEK_SET);
+        if (rc < 0)
+        {
+            MSG_ERR("Failed to seek to %zu in %s (%zu bytes): %d\n", offset,
+                    path.c_str(), fileSize, errno);
+            throw std::system_error(errno, std::system_category());
+        }
 
-    auto access_len = std::min(len, fileSize - offset);
-    rc = fd_process_all(::read, fd, dst, access_len);
-    if (rc < 0)
-    {
-        MSG_ERR("Requested %zu bytes but failed to read %zu from %s (%zu) at "
-                "%zu: %d\n",
-                len, access_len, path.c_str(), fileSize, offset, errno);
-        throw std::system_error(errno, std::system_category());
+        access_len = std::min(len, fileSize - offset);
+        rc = fd_process_all(::read, fd, dst, access_len);
+        if (rc < 0)
+        {
+            MSG_ERR("Requested %zu bytes but failed to read %zu from %s (%zu) at "
+                    "%zu: %d\n",
+                    len, access_len, path.c_str(), fileSize, offset, errno);
+            throw std::system_error(errno, std::system_category());
+        }
     }
 
     /* Set any remaining buffer space to the erased state */
