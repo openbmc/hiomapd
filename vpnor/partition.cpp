@@ -146,26 +146,29 @@ ssize_t Request::read(void* dst, size_t len)
         int rc = lseek(fd, offset, SEEK_SET);
         if (rc < 0)
         {
+            int lerrno = errno;
+            close(fd);
             MSG_ERR("Failed to seek to %zu in %s (%zu bytes): %d\n", offset,
-                    path.c_str(), fileSize, errno);
-            throw std::system_error(errno, std::system_category());
+                    path.c_str(), fileSize, lerrno);
+            throw std::system_error(lerrno, std::system_category());
         }
 
         access_len = std::min(len, fileSize - offset);
         rc = fd_process_all(::read, fd, dst, access_len);
         if (rc < 0)
         {
+            int lerrno = errno;
+            close(fd);
             MSG_ERR("Requested %zu bytes but failed to read %zu from %s (%zu) at "
                     "%zu: %d\n",
-                    len, access_len, path.c_str(), fileSize, offset, errno);
-            throw std::system_error(errno, std::system_category());
+                    len, access_len, path.c_str(), fileSize, offset, lerrno);
+            throw std::system_error(lerrno, std::system_category());
         }
     }
 
     /* Set any remaining buffer space to the erased state */
     memset((char*)dst + access_len, 0xff, len - access_len);
 
-    close(fd);
 
     return len;
 }
@@ -199,17 +202,21 @@ ssize_t Request::write(void* dst, size_t len)
     int rc = lseek(fd, offset, SEEK_SET);
     if (rc < 0)
     {
+        int lerrno = errno;
+        close(fd);
         MSG_ERR("Failed to seek to %zu in %s: %d\n", offset, path.c_str(),
-                errno);
-        throw std::system_error(errno, std::system_category());
+                lerrno);
+        throw std::system_error(lerrno, std::system_category());
     }
 
     rc = fd_process_all(::write, fd, dst, len);
     if (rc < 0)
     {
+        int lerrno = errno;
+        close(fd);
         MSG_ERR("Failed to write %zu bytes to %s at %zu: %d\n", len,
-                path.c_str(), offset, errno);
-        throw std::system_error(errno, std::system_category());
+                path.c_str(), offset, lerrno);
+        throw std::system_error(lerrno, std::system_category());
     }
     backend_set_bytemap(backend, base + offset, len, FLASH_DIRTY);
 
