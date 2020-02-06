@@ -26,6 +26,9 @@ void mbox_log_console(int p, const char *fmt, va_list args)
 	fprintf(s, "[%s %ld.%.9ld] ", PREFIX, time.tv_sec, time.tv_nsec);
 
 	vfprintf(s, fmt, args);
+
+	if (s == stdout)
+		fflush(s);
 }
 
 __attribute__((format(printf, 2, 3)))
