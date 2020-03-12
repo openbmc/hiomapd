@@ -10,7 +10,6 @@ mboxd_SOURCES = \
 	lpc.c \
 	protocol.c \
 	transport_dbus.c \
-	transport_mbox.c \
 	windows.c \
 	mtd.c
 mboxd_LDFLAGS = $(LIBSYSTEMD_LIBS)
