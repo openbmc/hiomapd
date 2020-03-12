@@ -33,7 +33,6 @@
 #include "control_dbus.h"
 #include "backend.h"
 #include "lpc.h"
-#include "transport_mbox.h"
 #include "transport_dbus.h"
 #include "windows.h"
 #include "vpnor/backend.h"
@@ -175,13 +174,6 @@ static int poll_loop(struct mbox_context *context)
 		}
 		if (context->terminate) {
 			break; /* This should mean we clean up nicely */
-		}
-		if (context->fds[MBOX_FD].revents & POLLIN) { /* MBOX */
-			MSG_DBG("MBOX Event\n");
-			rc = transport_mbox_dispatch(context);
-			if (rc < 0) {
-				MSG_ERR("Error handling MBOX event\n");
-			}
 		}
 	}
 
@@ -344,54 +336,10 @@ static bool parse_cmdline(int argc, char **argv,
 	return true;
 }
 
-static int mboxd_backend_init(struct mbox_context *context)
-{
-	const char *delim;
-	const char *path;
-	int rc;
-
-	if (!context->source) {
-		struct vpnor_partition_paths paths;
-		vpnor_default_paths(&paths);
-
-		rc = backend_probe_vpnor(&context->backend, &paths);
-		if(rc < 0)
-			rc = backend_probe_mtd(&context->backend, NULL);
-
-		return rc;
-	}
-
-	delim = strchr(context->source, ':');
-	path = delim ? delim + 1 : NULL;
-
-	if (!strncmp(context->source, "vpnor", strlen("vpnor"))) {
-		struct vpnor_partition_paths paths;
-
-		if (path) {
-			rc = -EINVAL;
-		} else {
-			vpnor_default_paths(&paths);
-			rc = backend_probe_vpnor(&context->backend, &paths);
-		}
-	} else if (!strncmp(context->source, "mtd", strlen("mtd"))) {
-		rc = backend_probe_mtd(&context->backend, path);
-	} else if (!strncmp(context->source, "file", strlen("file"))) {
-		rc = backend_probe_file(&context->backend, path);
-	} else {
-		rc = -EINVAL;
-	}
-
-	if (rc < 0)
-		MSG_ERR("Invalid backend argument: %s\n", context->source);
-
-	return rc;
-}
-
 int main(int argc, char **argv)
 {
-	const struct transport_ops *mbox_ops, *dbus_ops;
+	const struct transport_ops *dbus_ops;
 	struct mbox_context *context;
-	bool have_transport_mbox;
 	char *name = argv[0];
 	sigset_t set;
 	int rc, i;
@@ -419,29 +367,14 @@ int main(int argc, char **argv)
 		goto cleanup_context;
 	}
 
-	rc = mboxd_backend_init(context);
-	if (rc) {
-		goto cleanup_context;
-	}
-
 	rc = protocol_init(context);
 	if (rc) {
 		goto cleanup_backend;
 	}
 
-	rc = transport_mbox_init(context, &mbox_ops);
-	/* TODO: Think about whether we could use a less branch-y strategy */
-	have_transport_mbox = rc == 0;
-	if (!have_transport_mbox) {
-		/* Disable MBOX for poll()ing purposes */
-		context->fds[MBOX_FD].fd = -1;
-		MSG_DBG("Failed to initialise MBOX transport: %d\n", rc);
-		MSG_INFO("MBOX transport unavailable\n");
-	}
-
 	rc = lpc_dev_init(context);
 	if (rc) {
-		goto cleanup_mbox;
+		goto cleanup_protocol;
 	}
 
 	/* We've found the reserved memory region -> we can assign to windows */
@@ -463,13 +396,6 @@ int main(int argc, char **argv)
 	context->bmc_events |= BMC_EVENT_PROTOCOL_RESET;
 
 	/* Alert on all supported transports, as required */
-	if (have_transport_mbox) {
-		rc = protocol_events_put(context, mbox_ops);
-		if (rc) {
-			goto cleanup;
-		}
-	}
-
 	rc = protocol_events_put(context, dbus_ops);
 	if (rc) {
 		goto cleanup;
@@ -485,10 +411,6 @@ int main(int argc, char **argv)
 	context->bmc_events |= BMC_EVENT_PROTOCOL_RESET;
 
 	/* Alert on all supported transports, as required */
-	if (have_transport_mbox) {
-		protocol_events_put(context, mbox_ops);
-	}
-
 	protocol_events_put(context, dbus_ops);
 
 cleanup:
@@ -497,10 +419,7 @@ cleanup_windows:
 	windows_free(context);
 cleanup_lpc:
 	lpc_dev_free(context);
-cleanup_mbox:
-	if (have_transport_mbox) {
-		transport_mbox_free(context);
-	}
+cleanup_protocol:
 	protocol_free(context);
 cleanup_backend:
 	backend_free(&context->backend);
