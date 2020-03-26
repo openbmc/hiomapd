@@ -344,7 +344,7 @@ static bool parse_cmdline(int argc, char **argv,
 	return true;
 }
 
-static int mboxd_backend_init(struct mbox_context *context)
+static int source_init(struct mbox_context *context)
 {
 	const char *delim;
 	const char *path;
@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 		goto cleanup_context;
 	}
 
-	rc = mboxd_backend_init(context);
+	rc = source_init(context);
 	if (rc) {
 		goto cleanup_context;
 	}
