@@ -154,7 +154,7 @@ static inline int backend_init(struct backend *master, struct backend *with,
 	master->block_size_shift = 34;
 #endif
 
-	if (!master->ops->init)
+	if (!(master && master->ops && master->ops->init))
 		return -ENOTSUP;
 
 	rc = master->ops->init(master, data);
