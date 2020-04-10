@@ -120,6 +120,7 @@ int control_resume(struct mbox_context *context, bool modified)
 int control_set_backend(struct mbox_context *context, struct backend *backend,
 			void *data)
 {
+	struct backend successor;
 	int rc;
 
 	if (context->state & STATE_SUSPENDED)
@@ -129,11 +130,13 @@ int control_set_backend(struct mbox_context *context, struct backend *backend,
 	if (rc < 0)
 		return rc;
 
-	backend_free(&context->backend);
-
-	rc = backend_init(&context->backend, backend, data);
+	rc = backend_init(&successor, backend, data);
 	if (rc < 0)
 		return rc;
+
+	backend_free(&context->backend);
+
+	context->backend = successor;
 
 	rc = __protocol_reset(context);
 	if (rc < 0)
