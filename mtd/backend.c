@@ -356,6 +356,7 @@ struct backend backend_get_mtd(void)
 {
 	struct backend be = {0};
 
+	be.name = "mtd";
 	be.ops = &mtd_ops;
 
 	return be;

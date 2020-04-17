@@ -354,9 +354,12 @@ static int mboxd_backend_init(struct mbox_context *context)
 		struct vpnor_partition_paths paths;
 		vpnor_default_paths(&paths);
 
+		printf("No backend specified. Probing...\n");
+
 		rc = backend_probe_vpnor(&context->backend, &paths);
-		if(rc < 0)
+		if (rc < 0) {
 			rc = backend_probe_mtd(&context->backend, NULL);
+		}
 
 		return rc;
 	}
@@ -423,6 +426,8 @@ int main(int argc, char **argv)
 	if (rc) {
 		goto cleanup_context;
 	}
+
+	printf("Using '%s' backend\n", context->backend.name);
 
 	rc = protocol_init(context);
 	if (rc) {

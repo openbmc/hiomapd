@@ -138,6 +138,8 @@ int control_set_backend(struct mbox_context *context, struct backend *backend,
 
 	context->backend = successor;
 
+	MSG_INFO("Using '%s' backend\n", context->backend.name);
+
 	rc = __protocol_reset(context);
 	if (rc < 0)
 		return rc;

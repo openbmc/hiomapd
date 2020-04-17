@@ -22,6 +22,7 @@ enum backend_reset_mode { reset_lpc_flash, reset_lpc_memory };
 struct backend_ops;
 
 struct backend {
+	const char *name;
 	const struct backend_ops *ops;
 
 	/* Backend private data */

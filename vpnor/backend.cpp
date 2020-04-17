@@ -521,6 +521,7 @@ struct backend backend_get_vpnor(void)
 {
     struct backend be = {0};
 
+    be.name = "vpnor";
     be.ops = &vpnor_ops;
 
     return be;
