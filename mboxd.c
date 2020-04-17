@@ -149,7 +149,7 @@ static int poll_loop(struct mbox_context *context)
 			switch (info.ssi_signo) {
 			case SIGINT:
 			case SIGTERM:
-				MSG_INFO("Caught Signal - Exiting...\n");
+				printf("Caught Signal - Exiting...\n");
 				context->terminate = true;
 				break;
 			case SIGHUP:
@@ -415,7 +415,7 @@ int main(int argc, char **argv)
 		context->fds[i].fd = -1;
 	}
 
-	MSG_INFO("Starting Daemon\n");
+	printf("Starting Daemon\n");
 
 	rc = init_signals(context, &set);
 	if (rc) {
@@ -485,7 +485,7 @@ int main(int argc, char **argv)
 
 	MSG_INFO("Exiting Poll Loop: %d\n", rc);
 
-	MSG_INFO("Daemon Exiting...\n");
+	printf("Daemon Exiting...\n");
 	context->bmc_events &= ~BMC_EVENT_DAEMON_READY;
 	context->bmc_events |= BMC_EVENT_PROTOCOL_RESET;
 
