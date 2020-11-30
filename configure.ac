@@ -63,6 +63,12 @@ AS_IF([test "x$enable_virtual_pnor" != "xno"],
         AM_CONDITIONAL(VIRTUAL_PNOR_ENABLED, false)
     ]
 )
+AC_ARG_ENABLE([writable-virtual-pnor],
+    AS_HELP_STRING([--enable-writable-virtual-pnor], [Enable writable virtual pnor support])
+)
+AS_IF([test "x$enable_writable_virtual_pnor" == "xyes"], \
+    [AC_DEFINE([WRITABLE_VIRTUAL_PNOR_ENABLED], [], [Enable writable virtual pnor support.])]
+)
 
 AX_CODE_COVERAGE
 m4_ifdef([_AX_CODE_COVERAGE_RULES],

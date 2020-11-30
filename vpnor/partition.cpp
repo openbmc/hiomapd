@@ -56,7 +56,11 @@ fs::path Request::getPartitionFilePath(int flags)
             break;
 
         case PARTITION_READONLY:
+#ifdef WRITABLE_VIRTUAL_PNOR_ENABLED
+            dst = priv->paths.rw_loc;
+#else
             dst = priv->paths.ro_loc;
+#endif
             break;
 
         default:
@@ -71,7 +75,11 @@ fs::path Request::getPartitionFilePath(int flags)
 
     if (flags == O_RDONLY)
     {
+#ifdef WRITABLE_VIRTUAL_PNOR_ENABLED
+        dst = fs::path(priv->paths.rw_loc) / partition.data.name;
+#else
         dst = fs::path(priv->paths.ro_loc) / partition.data.name;
+#endif
         assert(fs::exists(dst));
         return dst;
     }
