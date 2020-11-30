@@ -48,6 +48,13 @@ fs::path Request::getPartitionFilePath(int flags)
         return dst;
     }
 
+    // Check if partition exists in rw location (default)
+    dst = fs::path(priv->paths.rw_loc) / partition.data.name;
+    if (fs::exists(dst))
+    {
+        return dst;
+    }
+
     switch (partition.data.user.data[1] &
             (PARTITION_PRESERVED | PARTITION_READONLY))
     {
@@ -58,9 +65,6 @@ fs::path Request::getPartitionFilePath(int flags)
         case PARTITION_READONLY:
             dst = priv->paths.ro_loc;
             break;
-
-        default:
-            dst = priv->paths.rw_loc;
     }
     dst /= partition.data.name;
 
