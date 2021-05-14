@@ -158,7 +158,7 @@ void Table::preparePartitions(const struct vpnor_data* priv)
 
 const pnor_partition& Table::partition(size_t offset) const
 {
-    const decltype(auto) table = getNativeTable();
+    decltype(auto) table = getNativeTable();
     size_t blockOffset = offset / blockSize;
 
     for (decltype(numParts) i{}; i < numParts; ++i)
@@ -184,7 +184,7 @@ const pnor_partition& Table::partition(size_t offset) const
 
 const pnor_partition& Table::partition(const std::string& name) const
 {
-    const decltype(auto) table = getNativeTable();
+    decltype(auto) table = getNativeTable();
 
     for (decltype(numParts) i{}; i < numParts; ++i)
     {
