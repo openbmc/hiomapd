@@ -8,7 +8,8 @@
 #include <numeric>
 #include <vector>
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "common.h"
 #include "vpnor/backend.h"
@@ -265,8 +266,7 @@ class ReasonedError : public std::exception
 {
   public:
     ReasonedError(const std::string&& what) : _what(what)
-    {
-    }
+    {}
     const char* what() const noexcept
     {
         return _what.c_str();
@@ -285,8 +285,7 @@ class TocEntryError : public ReasonedError
 {
   public:
     TocEntryError(const std::string&& reason) : ReasonedError(std::move(reason))
-    {
-    }
+    {}
 };
 
 /** @brief The exception thrown on finding a syntax error in the ToC entry
@@ -299,8 +298,7 @@ class MalformedTocEntry : public TocEntryError
   public:
     MalformedTocEntry(const std::string&& reason) :
         TocEntryError(std::move(reason))
-    {
-    }
+    {}
 };
 
 /** @brief The exception thrown on finding a semantic error in the ToC entry
@@ -313,16 +311,14 @@ class InvalidTocEntry : public TocEntryError
   public:
     InvalidTocEntry(const std::string&& reason) :
         TocEntryError(std::move(reason))
-    {
-    }
+    {}
 };
 
 class UnmappedOffset : public std::exception
 {
   public:
     UnmappedOffset(size_t base, size_t next) : base(base), next(next)
-    {
-    }
+    {}
 
     const size_t base;
     const size_t next;
@@ -333,8 +329,7 @@ class OutOfBoundsOffset : public ReasonedError
   public:
     OutOfBoundsOffset(const std::string&& reason) :
         ReasonedError(std::move(reason))
-    {
-    }
+    {}
 };
 
 class UnknownPartition : public ReasonedError
@@ -342,8 +337,7 @@ class UnknownPartition : public ReasonedError
   public:
     UnknownPartition(const std::string&& reason) :
         ReasonedError(std::move(reason))
-    {
-    }
+    {}
 };
 
 } // namespace virtual_pnor
