@@ -4,6 +4,11 @@ set -euo
 
 set -x
 
+if [ $# -ge 1 ]
+then
+    cd "$1"
+fi
+
 [ -f .clang-format ] && rm .clang-format
 
 # Use the provided clang-format, only define a version
