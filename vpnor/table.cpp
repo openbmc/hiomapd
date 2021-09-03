@@ -2,8 +2,7 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
-extern "C"
-{
+extern "C" {
 #include "backend.h"
 #include "common.h"
 #include "mboxd.h"
@@ -15,10 +14,9 @@ extern "C"
 #include <endian.h>
 #include <syslog.h>
 
-#include <phosphor-logging/elog-errors.hpp>
-
 #include <algorithm>
 #include <fstream>
+#include <phosphor-logging/elog-errors.hpp>
 #include <regex>
 
 namespace openpower
