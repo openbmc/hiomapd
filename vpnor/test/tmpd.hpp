@@ -12,7 +12,7 @@ extern "C" {
 
 #include <cassert>
 #include <cstring>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 
@@ -23,7 +23,7 @@ namespace virtual_pnor
 namespace test
 {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 class VpnorRoot
 {

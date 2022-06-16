@@ -10,7 +10,7 @@ namespace virtual_pnor
 namespace test
 {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 size_t VpnorRoot::write(const std::string& name, const void* data, size_t len)
 {

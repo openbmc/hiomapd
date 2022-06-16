@@ -12,7 +12,7 @@ extern "C" {
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <string>
 
 namespace openpower
@@ -20,7 +20,7 @@ namespace openpower
 namespace virtual_pnor
 {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 class Request
 {
@@ -88,7 +88,7 @@ class Request
      *
      *  Throws: std::filesystem_error, std::bad_alloc
      */
-    std::experimental::filesystem::path getPartitionFilePath(int flags);
+    std::filesystem::path getPartitionFilePath(int flags);
 
     struct backend* backend;
     const pnor_partition& partition;

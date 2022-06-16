@@ -27,7 +27,7 @@ namespace test = openpower::virtual_pnor::test;
 
 int main(void)
 {
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
 
     struct mbox_context _ctx, *ctx = &_ctx;
     uint8_t src[8];

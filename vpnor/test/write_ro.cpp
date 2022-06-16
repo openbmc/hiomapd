@@ -26,7 +26,7 @@ const std::string toc[] = {
 
 int main(void)
 {
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
     namespace test = openpower::virtual_pnor::test;
 
     struct mbox_context _ctx, *ctx = &_ctx;

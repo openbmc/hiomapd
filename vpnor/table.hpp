@@ -3,7 +3,7 @@
 #pragma once
 
 #include <cstring>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <memory>
 #include <numeric>
 #include <vector>
@@ -22,7 +22,7 @@ namespace openpower
 namespace virtual_pnor
 {
 
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 
 using PartitionTable = std::vector<uint8_t>;
 using checksum_t = uint32_t;

@@ -28,7 +28,7 @@ extern "C" {
 
 #include <cassert>
 #include <exception>
-#include <experimental/filesystem>
+#include <filesystem>
 #include <memory>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/log.hpp>
@@ -38,7 +38,7 @@ extern "C" {
 #include "vpnor/backend.h"
 
 namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
-namespace fs = std::experimental::filesystem;
+namespace fs = std::filesystem;
 namespace vpnor = openpower::virtual_pnor;
 
 static constexpr uint32_t VPNOR_ERASE_SIZE = 4 * 1024;
@@ -73,7 +73,7 @@ static int vpnor_init(struct backend* backend,
                       const vpnor_partition_paths* paths)
 {
     namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
     namespace vpnor = openpower::virtual_pnor;
 
     vpnor_data* priv = new vpnor_data;
@@ -130,7 +130,7 @@ int vpnor_copy_bootloader_partition(const struct backend* backend, void* buf,
     constexpr auto blPartitionName = "HBB";
 
     namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
     namespace vpnor = openpower::virtual_pnor;
 
     try

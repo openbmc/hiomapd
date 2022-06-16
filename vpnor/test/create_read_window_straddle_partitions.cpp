@@ -45,7 +45,7 @@ static const uint8_t response[] = {
 int main()
 {
     namespace test = openpower::virtual_pnor::test;
-    namespace fs = std::experimental::filesystem;
+    namespace fs = std::filesystem;
 
     struct mbox_context* ctx;
 
