@@ -21,7 +21,7 @@ AS_IF([test "$HAVE_UAPI_LINUX_LPC_CTRL_H" != ""],
 )
 
 # Checks for typedefs, structures, and compiler characteristics.
-AX_CXX_COMPILE_STDCXX(17, [noext], [mandatory])
+AX_CXX_COMPILE_STDCXX(20, [noext], [mandatory])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CFLAGS])
 AX_APPEND_COMPILE_FLAGS([-fpic -Wall], [CXXFLAGS])
 
