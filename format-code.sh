@@ -13,7 +13,7 @@ fi
 
 # Use the provided clang-format, only define a version
 # if we don't have one provided already
-export CLANG_FORMAT="${CLANG_FORMAT:-clang-format-13}"
+export CLANG_FORMAT="${CLANG_FORMAT:-clang-format-14}"
 
 # phosphor-mboxd is a fork of mboxbridge, the reference mbox daemon
 # implementation. mboxbridge is C written with the style of the Linux kernel.
@@ -28,7 +28,7 @@ export CLANG_FORMAT="${CLANG_FORMAT:-clang-format-13}"
 # the one .clang-format file, but *doesn't* make a distinction between C and
 # C++. So we need two files. It gets worse: the -style parameter doesn't take
 # the path to a configuration file as an argument, you instead specify the
-# literal 'file' and it goes looking for a .clang-format or _clang-format file. 
+# literal 'file' and it goes looking for a .clang-format or _clang-format file.
 # So now we need to symlink different files in place before calling
 # ${CLANG_FORMAT}. Everything is terrible.
 #
