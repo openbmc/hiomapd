@@ -17,7 +17,7 @@ fi
 case "${BOOTSTRAP_MODE}" in
     dev)
         AX_CODE_COVERAGE_PATH="$(aclocal --print-ac-dir)"/ax_code_coverage.m4
-        if [ ! -e ${AX_CODE_COVERAGE_PATH} ];
+        if [ ! -e "${AX_CODE_COVERAGE_PATH}" ];
         then
             echo "Failed to find AX_CODE_COVERAGE macro file at ${AX_CODE_COVERAGE_PATH}" 1>&2
             exit 1
@@ -34,15 +34,16 @@ case "${BOOTSTRAP_MODE}" in
         #
         # [1] https://www.apache.org/licenses/GPL-compatibility.html
 
-        cp ${AX_CODE_COVERAGE_PATH} m4/
+        cp "${AX_CODE_COVERAGE_PATH}" m4/
+        # shellcheck disable=SC2086
         sed -ri 's|(lcov_version_list=)"([ 0-9.]+)"$|\1"'${LCOV_VERSION}'"|' \
             m4/ax_code_coverage.m4
         ;;
     clean)
         test -f Makefile && make maintainer-clean
-        test -d linux && find linux -type d -empty | xargs -r rm -rf
+        test -d linux && find linux -type d -empty -exec rm -rf {} \;
         for file in ${AUTOCONF_FILES}; do
-            find -name "$file" | xargs -r rm -rf
+            find . -name "$file" -exec rm -rf {} \;
         done
         exit 0
         ;;
@@ -61,6 +62,7 @@ case "${BOOTSTRAP_MODE}" in
             "$@"
         ;;
     *)
+        # shellcheck disable=SC2016
         echo 'Run "./configure ${CONFIGURE_FLAGS} && make"'
         ;;
 esac
