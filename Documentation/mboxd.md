@@ -1,16 +1,15 @@
 Copyright 2017,2018 IBM
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
 
 ## Intro
 
@@ -20,7 +19,7 @@ repository.
 ## Files
 
 The main mailbox daemon is implemented in mboxd.c. This file uses helper
-functions from the various mboxd_*.c files.
+functions from the various mboxd\_\*.c files.
 
 ```
 dbus.c -    Contains the handlers for the D-Bus commands which the daemon can
@@ -81,9 +80,9 @@ SUSPEND_MAPS_MEM -> SUSPEND_MAPS_FLASH -  Transition not allowed, we
 
 ## Window Cache
 
-While the protocol describes that there is only one active window at a time,
-the daemon keeps a cache of previously accessed windows to avoid the need to
-reload them from flash should the host access them again in the future.
+While the protocol describes that there is only one active window at a time, the
+daemon keeps a cache of previously accessed windows to avoid the need to reload
+them from flash should the host access them again in the future.
 
 The reserved memory region is divided among a number of windows which make up
 the window cache. When the host requests a flash offset the cache is searched
@@ -92,8 +91,8 @@ it at the correct LPC offset for that windows location and the requested flash
 offset.
 
 If there is no window in the cache which contains the requested flash offset
-then we have to find one to load with the requested flash contents. If there
-are any windows which are empty then we choose those, otherwise, we choose one to
+then we have to find one to load with the requested flash contents. If there are
+any windows which are empty then we choose those, otherwise, we choose one to
 evict using a least recently used (LRU) scheme. The flash is then copied into
 this window and the host pointed at its location on the LPC bus.
 
@@ -119,9 +118,9 @@ The daemon is invoked on the command line with a few parameters:
 ```
 
 If any of the required parameters are missing or invalid an error will be
-printed and the daemon will terminate.
-If window-size and window-num aren't specified then the default is to have a
-single window which spans the entire reserved memory region.
+printed and the daemon will terminate. If window-size and window-num aren't
+specified then the default is to have a single window which spans the entire
+reserved memory region.
 
 ### Initialisation
 
@@ -157,8 +156,8 @@ command.
 
 #### Handling Signals
 
-The daemon blocks SIGINTs, SIGTERMs, and SIGHUPs and instead polls for them on
-a signal file descriptor.
+The daemon blocks SIGINTs, SIGTERMs, and SIGHUPs and instead polls for them on a
+signal file descriptor.
 
 When an event occurs on this file descriptor the signal received is determined
 and processed as follows:
@@ -176,6 +175,6 @@ The daemon can be terminated for multiple reasons; invalid command line, unable
 to initialise, received SIGINT or SIGTERM, or because it received the kill D-Bus
 command.
 
-On termination, the daemon clears the window cache and notifies the host that the
-active window has been closed, points the LPC bus mapping back to flash, clears
-the BMC_READY BMC event bit and frees all of its allocated resources.
+On termination, the daemon clears the window cache and notifies the host that
+the active window has been closed, points the LPC bus mapping back to flash,
+clears the BMC_READY BMC event bit and frees all of its allocated resources.
