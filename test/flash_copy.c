@@ -20,7 +20,7 @@
 
 static struct tmpf tmp;
 
-void cleanup(void)
+static void cleanup(void)
 {
 	tmpf_destroy(&tmp);
 }
