@@ -3,6 +3,7 @@
 #pragma once
 
 #include <limits.h>
+#include <string.h>
 
 struct mbox_context;
 struct vpnor_partition_table;

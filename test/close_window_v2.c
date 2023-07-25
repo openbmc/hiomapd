@@ -105,4 +105,4 @@ int main(void)
 	short_lifetime(ctx);
 
 	return 0;
-};
+}

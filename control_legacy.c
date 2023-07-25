@@ -41,8 +41,8 @@ struct mbox_dbus_msg {
  * Resp: NONE
  */
 static int control_legacy_ping(struct mbox_context *context,
-			   struct mbox_dbus_msg *req,
-			   struct mbox_dbus_msg *resp)
+			   struct mbox_dbus_msg *req __attribute__((unused)),
+			   struct mbox_dbus_msg *resp __attribute__((unused)))
 {
 	return control_ping(context);
 }
@@ -55,7 +55,7 @@ static int control_legacy_ping(struct mbox_context *context,
  * Resp[0]: Status Code
  */
 static int control_legacy_daemon_state(struct mbox_context *context,
-					  struct mbox_dbus_msg *req,
+					  struct mbox_dbus_msg *req __attribute__((unused)),
 					  struct mbox_dbus_msg *resp)
 {
 	resp->num_args = DAEMON_STATE_NUM_ARGS;
@@ -73,9 +73,10 @@ static int control_legacy_daemon_state(struct mbox_context *context,
  * Resp[0]: LPC Bus State Code
  */
 static int control_legacy_lpc_state(struct mbox_context *context,
-				       struct mbox_dbus_msg *req,
+				       struct mbox_dbus_msg *req __attribute__((unused)),
 				       struct mbox_dbus_msg *resp)
 {
+
 	resp->num_args = LPC_STATE_NUM_ARGS;
 	resp->args = calloc(resp->num_args, sizeof(*resp->args));
 	resp->args[0] = control_lpc_state(context);
@@ -92,8 +93,8 @@ static int control_legacy_lpc_state(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_reset(struct mbox_context *context,
-				   struct mbox_dbus_msg *req,
-				   struct mbox_dbus_msg *resp)
+				   struct mbox_dbus_msg *req __attribute__((unused)),
+				   struct mbox_dbus_msg *resp __attribute__((unused)))
 {
 	int rc;
 
@@ -117,8 +118,8 @@ static int control_legacy_reset(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_kill(struct mbox_context *context,
-				  struct mbox_dbus_msg *req,
-				  struct mbox_dbus_msg *resp)
+				  struct mbox_dbus_msg *req __attribute__((unused)),
+				  struct mbox_dbus_msg *resp __attribute__((unused)))
 {
 	return control_kill(context);
 }
@@ -134,8 +135,8 @@ static int control_legacy_kill(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_modified(struct mbox_context *context,
-				      struct mbox_dbus_msg *req,
-				      struct mbox_dbus_msg *resp)
+				      struct mbox_dbus_msg *req __attribute__((unused)),
+				      struct mbox_dbus_msg *resp __attribute__((unused)))
 {
 	return control_modified(context);
 }
@@ -150,8 +151,8 @@ static int control_legacy_modified(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_suspend(struct mbox_context *context,
-				     struct mbox_dbus_msg *req,
-				     struct mbox_dbus_msg *resp)
+				     struct mbox_dbus_msg *req __attribute__((unused)),
+				     struct mbox_dbus_msg *resp __attribute__((unused)))
 {
 	int rc;
 
@@ -173,7 +174,7 @@ static int control_legacy_suspend(struct mbox_context *context,
  */
 static int control_legacy_resume(struct mbox_context *context,
 				    struct mbox_dbus_msg *req,
-				    struct mbox_dbus_msg *resp)
+				    struct mbox_dbus_msg *resp __attribute__((unused)))
 {
 	int rc;
 
@@ -205,12 +206,13 @@ static const control_action dbus_handlers[NUM_DBUS_CMDS] = {
 };
 
 static int method_cmd(sd_bus_message *m, void *userdata,
-		      sd_bus_error *ret_error)
+		      sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_dbus_msg req = { 0 }, resp = { 0 };
 	struct mbox_context *context;
 	sd_bus_message *n;
-	int rc, i;
+	int rc;
+	size_t i;
 
 	context = (struct mbox_context *) userdata;
 	if (!context) {
@@ -238,7 +240,7 @@ static int method_cmd(sd_bus_message *m, void *userdata,
 	}
 	MSG_DBG("DBUS num_args: %u\n", (unsigned) req.num_args);
 	for (i = 0; i < req.num_args; i++) {
-		MSG_DBG("DBUS arg[%d]: %u\n", i, req.args[i]);
+		MSG_DBG("DBUS arg[%zd]: %u\n", i, req.args[i]);
 	}
 
 	/* Handle the command */
@@ -274,7 +276,7 @@ out:
 	MSG_DBG("DBUS response: %u\n", resp.cmd);
 	MSG_DBG("DBUS num_args: %u\n", (unsigned) resp.num_args);
 	for (i = 0; i < resp.num_args; i++) {
-		MSG_DBG("DBUS arg[%d]: %u\n", i, resp.args[i]);
+		MSG_DBG("DBUS arg[%zd]: %u\n", i, resp.args[i]);
 	}
 
 	rc = sd_bus_send(NULL, n, NULL); /* Send response */

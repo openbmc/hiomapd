@@ -31,6 +31,9 @@
 #include "mboxd.h"
 #include "mtd/backend.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 static int mtd_dev_init(struct backend *backend, void *data)
 {
 	const char *path = data;
@@ -121,8 +124,10 @@ static void mtd_dev_free(struct backend *backend)
 
 /* Flash Functions */
 
-int flash_validate(struct mbox_context *context, uint32_t offset,
-		   uint32_t size, bool ro)
+int flash_validate(struct mbox_context *context __attribute__((unused)),
+		   uint32_t offset __attribute__((unused)),
+		   uint32_t size __attribute__((unused)),
+		   bool ro __attribute__((unused)))
 {
 	/* Default behaviour is all accesses are valid */
 	return 0;
@@ -333,7 +338,7 @@ static int mtd_write(struct backend *backend, uint32_t offset, void *buf,
  * Return:      A value from enum backend_reset_mode, otherwise a negative
  *		error code
  */
-static int mtd_reset(struct backend *backend,
+static int mtd_reset(struct backend *backend __attribute__((unused)),
 		     void *buf __attribute__((unused)),
 		     uint32_t count __attribute__((unused)))
 {
@@ -370,3 +375,5 @@ int backend_probe_mtd(struct backend *master, const char *path)
 
 	return backend_init(master, &with, (void *)path);
 }
+
+#pragma GCC diagnostic pop

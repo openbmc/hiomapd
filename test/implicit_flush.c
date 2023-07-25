@@ -148,4 +148,4 @@ int main(void)
 	flush_on_create(ctx);
 
 	return 0;
-};
+}

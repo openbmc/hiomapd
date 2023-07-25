@@ -54,4 +54,4 @@ int main(void)
 	assert(rc == 0);
 
 	return rc;
-};
+}

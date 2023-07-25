@@ -255,7 +255,8 @@ static bool parse_cmdline(int argc, char **argv,
 			case '\0':
 				break;
 			case 'M':
-				context->backend.flash_size <<= 10;
+				context->backend.flash_size <<= 20;
+				break;
 			case 'K':
 				context->backend.flash_size <<= 10;
 				break;

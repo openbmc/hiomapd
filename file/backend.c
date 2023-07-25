@@ -35,6 +35,9 @@
 
 #define FILE_ERASE_SIZE (4 * 1024)
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 struct file_data {
 	int fd;
 };
@@ -281,3 +284,5 @@ int backend_probe_file(struct backend *master, const char *path)
 
 	return backend_init(master, &with, (void *)path);
 }
+
+#pragma GCC diagnostic pop

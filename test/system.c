@@ -11,8 +11,7 @@
 
 #include "linux/aspeed-lpc-ctrl.h"
 
-static struct aspeed_lpc_ctrl_mapping ctrl = {
-};
+static struct aspeed_lpc_ctrl_mapping ctrl = { .size = 0 };
 
 static struct mtd_info_user mtd = {
 	.type = MTD_NORFLASH,

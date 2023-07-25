@@ -41,7 +41,7 @@ int n_ioctls;
 #define MEM_SIZE 3
 #define ERASE_SIZE 1
 
-int ioctl(int fd, unsigned long request, ...)
+int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
 {
 	va_list ap;
 	struct erase_info_user *provided, *alloced;

@@ -11,7 +11,7 @@
 #include "protocol.h"
 #include "windows.h"
 
-int control_ping(struct mbox_context *context)
+int control_ping(struct mbox_context *context __attribute__((unused)))
 {
 	return 0;
 }
