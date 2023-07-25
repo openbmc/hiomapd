@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <mtd/mtd-abi.h>
 
@@ -269,13 +270,13 @@ int backend_probe_vpnor(struct backend *master,
 #else
 static inline struct backend backend_get_vpnor(void)
 {
-	struct backend be = { 0 };
+	struct backend be = { NULL, NULL, 0, 0, 0 };
 
 	return be;
 }
 
-static inline int backend_probe_vpnor(struct backend *master,
-				      const struct vpnor_partition_paths *paths)
+static inline int backend_probe_vpnor(struct backend *master __attribute__((unused)),
+				      const struct vpnor_partition_paths *paths __attribute__((unused)))
 {
 	return -ENOTSUP;
 }

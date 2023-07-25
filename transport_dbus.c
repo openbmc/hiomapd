@@ -71,7 +71,7 @@ static const struct transport_ops transport_dbus_ops = {
 };
 
 static int transport_dbus_reset(sd_bus_message *m, void *userdata,
-				     sd_bus_error *ret_error)
+				sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	sd_bus_message *n;
@@ -99,7 +99,7 @@ static int transport_dbus_reset(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
-					sd_bus_error *ret_error)
+				   sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_get_info io;
@@ -154,7 +154,7 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
-					 sd_bus_error *ret_error)
+					 sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_get_flash_info io;
@@ -193,7 +193,7 @@ static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
 static int transport_dbus_create_window(struct mbox_context *context,
 					bool ro,
 					sd_bus_message *m,
-					sd_bus_error *ret_error)
+					sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct protocol_create_window io;
 	sd_bus_message *n;
@@ -253,7 +253,7 @@ static int transport_dbus_create_write_window(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_close_window(sd_bus_message *m, void *userdata,
-				sd_bus_error *ret_error)
+				       sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_close io;
@@ -289,7 +289,7 @@ static int transport_dbus_close_window(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_mark_dirty(sd_bus_message *m, void *userdata,
-				     sd_bus_error *ret_error)
+				     sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_mark_dirty io;
@@ -324,7 +324,7 @@ static int transport_dbus_mark_dirty(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_write_flush(sd_bus_message *m, void *userdata,
-				      sd_bus_error *ret_error)
+				      sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	sd_bus_message *n;
@@ -352,7 +352,7 @@ static int transport_dbus_write_flush(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_ack(sd_bus_message *m, void *userdata,
-			      sd_bus_error *ret_error)
+			      sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_ack io;
@@ -387,7 +387,7 @@ static int transport_dbus_ack(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_erase(sd_bus_message *m, void *userdata,
-				sd_bus_error *ret_error)
+				sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_erase io;
@@ -421,13 +421,13 @@ static int transport_dbus_erase(sd_bus_message *m, void *userdata,
 	return rc;
 }
 
-static int transport_dbus_get_property(sd_bus *bus,
+static int transport_dbus_get_property(sd_bus *bus __attribute__((unused)),
 				       const char *path,
 				       const char *interface,
 				       const char *property,
 				       sd_bus_message *reply,
 				       void *userdata,
-				       sd_bus_error *ret_error)
+				       sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	bool value;

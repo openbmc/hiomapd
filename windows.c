@@ -31,6 +31,9 @@
 #include "windows.h"
 #include "backend.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 /* Initialisation Functions */
 
 /*
@@ -56,7 +59,7 @@ static void init_window_state(struct window_context *window, uint32_t size)
 static int init_window_mem(struct mbox_context *context)
 {
 	void *mem_location = context->mem;
-	int i;
+	size_t i;
 
 	/*
 	 * Carve up the reserved memory region and allocate it to each of the
@@ -67,7 +70,7 @@ static int init_window_mem(struct mbox_context *context)
 	 */
 	for (i = 0; i < context->windows.num; i++) {
 		uint32_t size = context->windows.window[i].size;
-		MSG_DBG("Window %d @ %p for size 0x%.8x\n", i,
+		MSG_DBG("Window %zd @ %p for size 0x%.8x\n", i,
 			mem_location, size);
 		context->windows.window[i].mem = mem_location;
 		mem_location += size;
@@ -90,7 +93,7 @@ static int init_window_mem(struct mbox_context *context)
  */
 int windows_init(struct mbox_context *context)
 {
-	int i;
+	size_t i;
 
 	/* Check if window size and number set - otherwise set to default */
 	if (!context->windows.default_size) {
@@ -126,7 +129,7 @@ int windows_init(struct mbox_context *context)
  */
 void windows_free(struct mbox_context *context)
 {
-	int i;
+	size_t i;
 
 	/* Check window cache has actually been allocated */
 	if (context->windows.window) {
@@ -339,7 +342,7 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 void windows_alloc_dirty_bytemap(struct mbox_context *context)
 {
 	struct window_context *cur;
-	int i;
+	size_t i;
 
 	for (i = 0; i < context->windows.num; i++) {
 		cur = &context->windows.window[i];
@@ -427,7 +430,7 @@ void window_reset(struct mbox_context *context, struct window_context *window)
 bool windows_reset_all(struct mbox_context *context)
 {
 	bool closed = context->current;
-	int i;
+	size_t i;
 
 	MSG_DBG("Resetting all windows\n");
 
@@ -456,7 +459,7 @@ struct window_context *windows_find_oldest(struct mbox_context *context)
 {
 	struct window_context *oldest = NULL, *cur;
 	uint32_t min_age = context->windows.max_age + 1;
-	int i;
+	size_t i;
 
 	for (i = 0; i < context->windows.num; i++) {
 		cur = &context->windows.window[i];
@@ -480,7 +483,7 @@ struct window_context *windows_find_largest(struct mbox_context *context)
 {
 	struct window_context *largest = NULL, *cur;
 	uint32_t max_size = 0;
-	int i;
+	size_t i;
 
 	for (i = 0; i < context->windows.num; i++) {
 		cur = &context->windows.window[i];
@@ -512,7 +515,7 @@ struct window_context *windows_search(struct mbox_context *context,
 				      uint32_t offset, bool exact)
 {
 	struct window_context *cur;
-	int i;
+	size_t i;
 
 	MSG_DBG("Searching for window which contains 0x%.8x %s\n",
 		offset, exact ? "exactly" : "");
@@ -662,3 +665,5 @@ int windows_create_map(struct mbox_context *context,
 
 	return 0;
 }
+
+#pragma GCC diagnostic pop

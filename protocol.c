@@ -14,6 +14,9 @@
 #include "protocol.h"
 #include "windows.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+#pragma GCC diagnostic ignored "-Wunused-result"
 
 #define BLOCK_SIZE_SHIFT_V1		12 /* 4K */
 
@@ -368,8 +371,9 @@ static int protocol_v1_mark_dirty(struct mbox_context *context,
 
 static int generic_flush(struct mbox_context *context)
 {
-	int rc, i, offset, count;
+	int rc, offset, count;
 	uint8_t prev;
+	size_t i;
 
 	offset = 0;
 	count = 0;
@@ -617,8 +621,8 @@ static int protocol_v2_erase(struct mbox_context *context,
 	return 0;
 }
 
-static int protocol_v2_flush(struct mbox_context *context,
-			     struct protocol_flush *io)
+static int protocol_v2_flush(struct mbox_context *context __attribute__((unused)),
+			     struct protocol_flush *io __attribute__((unused)))
 {
 	if (!(context->current && context->current_is_write)) {
 		MSG_ERR("Tried to call flush without open write window\n");
@@ -705,7 +709,7 @@ int protocol_init(struct mbox_context *context)
 	return 0;
 }
 
-void protocol_free(struct mbox_context *context)
+void protocol_free(struct mbox_context *context __attribute__((unused)))
 {
 	return;
 }
@@ -759,3 +763,5 @@ int protocol_reset(struct mbox_context *context)
 
 	return 0;
 }
+
+#pragma GCC diagnostic pop

@@ -30,6 +30,5 @@ void tmpf_destroy(struct tmpf *tmpf)
 	if (tmpf->fd)
 		close(tmpf->fd);
 
-	if (tmpf->path)
-		unlink(tmpf->path);
+	unlink(tmpf->path);
 }

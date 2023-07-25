@@ -37,7 +37,7 @@ char *get_dev_mtd(void)
 #define MEM_SIZE 3
 #define ERASE_SIZE 1
 
-int ioctl(int fd, unsigned long request, ...)
+int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
 {
 	va_list ap;
 
@@ -59,7 +59,7 @@ int main(void)
 {
 	struct mbox_context _context, *context = &_context;
 	struct backend *backend = &context->backend;
-	char src[MEM_SIZE];
+	uint8_t src[MEM_SIZE];
 	uint8_t *map;
 	int rc;
 

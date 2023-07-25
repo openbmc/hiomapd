@@ -519,7 +519,7 @@ static const struct backend_ops vpnor_ops = {
 
 struct backend backend_get_vpnor(void)
 {
-    struct backend be = {0};
+    struct backend be = {nullptr, nullptr, 0, 0, 0};
 
     be.ops = &vpnor_ops;
 

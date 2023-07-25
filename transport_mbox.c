@@ -30,6 +30,9 @@
 #include "windows.h"
 #include "lpc.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 struct errno_map {
 	int rc;
 	int mbox_errno;
@@ -128,7 +131,8 @@ static int transport_mbox_put_events(struct mbox_context *context,
 }
 
 static int transport_mbox_update_events(struct mbox_context *context,
-					uint8_t events, uint8_t mask)
+					uint8_t events __attribute__((unused)),
+					uint8_t mask)
 {
 	return transport_mbox_flush_events(context, context->bmc_events & mask);
 }
@@ -147,7 +151,8 @@ static const struct transport_ops transport_mbox_ops = {
  * using a virtual pnor.
  */
 static int mbox_handle_reset(struct mbox_context *context,
-			     union mbox_regs *req, struct mbox_msg *resp)
+			     union mbox_regs *req __attribute__((unused)),
+			     struct mbox_msg *resp __attribute__((unused)))
 {
 	return context->protocol->reset(context);
 }
@@ -218,7 +223,8 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
  * RESP[2:3]: Erase Size (number of blocks)
  */
 static int mbox_handle_flash_info(struct mbox_context *context,
-				  union mbox_regs *req, struct mbox_msg *resp)
+				  union mbox_regs *req __attribute__((unused)),
+				  struct mbox_msg *resp)
 {
 	struct protocol_get_flash_info io;
 	int rc;
@@ -357,7 +363,8 @@ static int mbox_handle_write_window(struct mbox_context *context,
  * ARGS[2:3]: Number to mark dirty (number of blocks)
  */
 static int mbox_handle_dirty_window(struct mbox_context *context,
-				    union mbox_regs *req, struct mbox_msg *resp)
+				    union mbox_regs *req,
+				    struct mbox_msg *resp __attribute__((unused)))
 {
 	struct protocol_mark_dirty io;
 
@@ -386,7 +393,8 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
  * ARGS[2:3]: Number to erase (number of blocks)
  */
 static int mbox_handle_erase_window(struct mbox_context *context,
-				    union mbox_regs *req, struct mbox_msg *resp)
+				    union mbox_regs *req,
+				    struct mbox_msg *resp __attribute__((unused)))
 {
 	struct protocol_erase io;
 
@@ -419,7 +427,8 @@ static int mbox_handle_erase_window(struct mbox_context *context,
  * NONE
  */
 static int mbox_handle_flush_window(struct mbox_context *context,
-				    union mbox_regs *req, struct mbox_msg *resp)
+				    union mbox_regs *req,
+				    struct mbox_msg *resp __attribute__((unused)))
 {
 	struct protocol_flush io = { 0 };
 
@@ -443,7 +452,8 @@ static int mbox_handle_flush_window(struct mbox_context *context,
  * ARGS[0]: FLAGS
  */
 static int mbox_handle_close_window(struct mbox_context *context,
-				    union mbox_regs *req, struct mbox_msg *resp)
+				    union mbox_regs *req,
+				    struct mbox_msg *resp __attribute__((unused)))
 {
 	struct protocol_close io = { 0 };
 
@@ -461,7 +471,7 @@ static int mbox_handle_close_window(struct mbox_context *context,
  * ARGS[0]: Bitmap of bits to ack (by clearing)
  */
 static int mbox_handle_ack(struct mbox_context *context, union mbox_regs *req,
-			   struct mbox_msg *resp)
+			   struct mbox_msg *resp __attribute__((unused)))
 {
 	struct protocol_ack io;
 
@@ -581,7 +591,7 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 	}
 	MSG_INFO("Writing MBOX response: %u\n", resp.response);
 	len = write(context->fds[MBOX_FD].fd, &resp, sizeof(resp));
-	if (len < sizeof(resp)) {
+	if (len < (ssize_t)sizeof(resp)) {
 		MSG_ERR("Didn't write the full response\n");
 		rc = -errno;
 	}
@@ -610,7 +620,7 @@ static int get_message(struct mbox_context *context, union mbox_regs *msg)
 	if (rc < 0) {
 		MSG_ERR("Couldn't read: %s\n", strerror(errno));
 		return -errno;
-	} else if (rc < sizeof(msg->raw)) {
+	} else if (rc < (ssize_t)sizeof(msg->raw)) {
 		MSG_ERR("Short read: %d expecting %zu\n", rc, sizeof(msg->raw));
 		return -1;
 	}
@@ -685,3 +695,5 @@ void transport_mbox_free(struct mbox_context *context)
 {
 	close(context->fds[MBOX_FD].fd);
 }
+
+#pragma GCC diagnostic pop

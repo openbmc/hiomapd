@@ -18,8 +18,8 @@ extern "C" {
 
 struct test_context
 {
-    uint8_t seq;
-    struct mbox_context* ctx;
+    uint8_t seq = 0;
+    struct mbox_context* ctx = nullptr;
 };
 
 // Configure the system and the paritions such that we eventually request a
@@ -60,7 +60,7 @@ int main()
 {
     namespace test = openpower::virtual_pnor::test;
 
-    struct test_context _tctx = {0}, *tctx = &_tctx;
+    test_context _tctx{}, *tctx = &_tctx;
     size_t len;
     size_t pos;
     int rc;

@@ -71,4 +71,4 @@ int main(void)
 	}
 
 	return !(rc == 1);
-};
+}

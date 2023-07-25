@@ -13,7 +13,7 @@
 typedef int (*control_action)(struct mbox_context *context);
 
 static int control_dbus_directive(sd_bus_message *m, void *userdata,
-					sd_bus_error *ret_error,
+					sd_bus_error *ret_error __attribute__((unused)),
 					control_action action)
 {
 	struct mbox_context *context;
@@ -22,7 +22,7 @@ static int control_dbus_directive(sd_bus_message *m, void *userdata,
 
 	if (!action) {
 		MSG_ERR("No action provided\n");
-		return -EINVAL; 
+		return -EINVAL;
 	}
 
 	context = (struct mbox_context *) userdata;
@@ -79,7 +79,7 @@ static int control_dbus_suspend(sd_bus_message *m, void *userdata,
 }
 
 static int control_dbus_resume(sd_bus_message *m, void *userdata,
-				     sd_bus_error *ret_error)
+			       sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context;
 	sd_bus_message *n;
@@ -112,7 +112,7 @@ static int control_dbus_resume(sd_bus_message *m, void *userdata,
 }
 
 static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
-				    sd_bus_error *ret_error)
+				    sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context;
 	struct backend backend;
@@ -197,10 +197,12 @@ static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
 	return rc;
 }
 
-static int control_dbus_get_u8(sd_bus *bus, const char *path,
-			       const char *interface, const char *property,
+static int control_dbus_get_u8(sd_bus *bus __attribute__((unused)),
+			       const char *path,
+			       const char *interface __attribute__((unused)),
+			       const char *property,
 			       sd_bus_message *reply, void *userdata,
-			       sd_bus_error *ret_error)
+			       sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	uint8_t value;
