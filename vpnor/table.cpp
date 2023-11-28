@@ -79,8 +79,13 @@ inline void Table::allocateMemory(const fs::path& tocFile)
 void Table::preparePartitions(const struct vpnor_data* priv)
 {
     const fs::path roDir(priv->paths.ro_loc);
+    const fs::path rwDir(priv->paths.rw_loc);
     const fs::path patchDir(priv->paths.patch_loc);
-    fs::path tocFile = roDir / PARTITION_TOC_FILE;
+    fs::path tocFile = rwDir / PARTITION_TOC_FILE;
+    if (!fs::exists(tocFile))
+    {
+        tocFile = roDir / PARTITION_TOC_FILE;
+    }
     allocateMemory(tocFile);
 
     std::ifstream file(tocFile.c_str());
@@ -134,7 +139,11 @@ void Table::preparePartitions(const struct vpnor_data* priv)
             }
         }
 
-        file = roDir / part.data.name;
+        file = rwDir / part.data.name;
+        if (!fs::exists(file))
+        {
+            file = roDir / part.data.name;
+        }
         if (!fs::exists(file))
         {
             std::stringstream err;
