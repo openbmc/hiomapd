@@ -22,6 +22,30 @@
       },
       "revId": "a41945e4e99bca1714af3e40cd7e217b33765012",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25fab12c_cbabfe28",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1000003
+      },
+      "writtenOn": "2023-11-28T21:09:05Z",
+      "side": 1,
+      "message": "Done. Yeah that makes sense, we do that for the patch directory like you mentioned.",
+      "parentUuid": "df360513_25d42789",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 57
+      },
+      "revId": "a41945e4e99bca1714af3e40cd7e217b33765012",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
