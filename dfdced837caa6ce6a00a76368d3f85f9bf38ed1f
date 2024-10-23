@@ -16,6 +16,40 @@
       "message": "The build failure is in different code and I think it is false negative. If I move `available` word up then it goes beyond 80 characters.",
       "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ddaeb94_e249e566",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000003
+      },
+      "writtenOn": "2024-10-23T19:20:28Z",
+      "side": 1,
+      "message": "Looks good, just not sure we should add the ability to handle a phosphor-logging error. Seems like a slippery slope where we\u0027d then need to add a catch on all catch flows that log an error. Adding Matt for feedback.",
+      "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "284dd9f0_7553c7bd",
+        "filename": "vpnor/backend.cpp",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1000003
+      },
+      "writtenOn": "2024-10-23T19:20:28Z",
+      "side": 1,
+      "message": "Theoretically we shouldn\u0027t need to handle errors from the commit() API since phosphor-logging is the app to log errors. If phosphor-logging is throwing an error when we\u0027re trying to create an error they should probably make a change to handle that.",
+      "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
