@@ -90,7 +90,7 @@ static int vpnor_init(struct backend* backend,
     }
     catch (vpnor::TocEntryError& e)
     {
-        MSG_ERR("%s\n", e.what());
+        MSG_ERR("vpnor init: %s\n", e.what());
         try
         {
             phosphor::logging::commit<err::InternalFailure>();
@@ -172,7 +172,7 @@ int vpnor_copy_bootloader_partition(const struct backend* backend, void* buf,
     }
     catch (vpnor::ReasonedError& e)
     {
-        MSG_ERR("%s\n", e.what());
+        MSG_ERR("vpnor part copy: %s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
         return -EIO;
     }
@@ -192,6 +192,7 @@ int vpnor_dev_init(struct backend* backend, void* data)
           fs::is_directory(fs::status(paths->rw_loc)) &&
           fs::is_directory(fs::status(paths->prsv_loc))))
     {
+        MSG_ERR("Couldn't find partition path\n");
         return -EINVAL;
     }
 
@@ -328,7 +329,7 @@ static int64_t vpnor_copy(struct backend* backend, uint32_t offset, void* mem,
     }
     catch (std::exception& e)
     {
-        MSG_ERR("%s\n", e.what());
+        MSG_ERR("vpnor copy: %s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
         rc = -EIO;
     }
@@ -385,12 +386,12 @@ static int vpnor_write(struct backend* backend, uint32_t offset, void* buf,
     }
     catch (const vpnor::OutOfBoundsOffset& e)
     {
-        MSG_ERR("%s\n", e.what());
+        MSG_ERR("vpnor write: %s\n", e.what());
         return -EINVAL;
     }
     catch (const std::exception& e)
     {
-        MSG_ERR("%s\n", e.what());
+        MSG_ERR("vpnor write exception: %s\n", e.what());
         phosphor::logging::commit<err::InternalFailure>();
         return -EIO;
     }
@@ -419,13 +420,15 @@ static int vpnor_validate(struct backend* backend, uint32_t offset,
         const pnor_partition& part = priv->vpnor->table->partition(offset);
         if (vpnor_partition_is_readonly(part))
         {
-            MSG_DBG("Try to write read only partition (part=%s, offset=0x%x)\n",
+            MSG_ERR("Try to write read only partition (part=%s, offset=0x%x)\n",
                     part.data.name, offset);
             return -EPERM;
         }
     }
     catch (const openpower::virtual_pnor::UnmappedOffset& e)
     {
+        MSG_ERR("Try to write unmapped area (offset=0x%lx)\n", e.base);
+
         /*
          * Writes to unmapped areas are not meaningful, so deny the request.
          * This removes the ability for a compromised host to abuse unused
@@ -496,6 +499,8 @@ static int vpnor_align_offset(struct backend* backend, uint32_t* offset,
     }
     catch (const openpower::virtual_pnor::UnmappedOffset& e)
     {
+        MSG_ERR("Aligned offset is unmapped area (offset=0x%lx)\n", e.base);
+
         /*
          * Writes to unmapped areas are not meaningful, so deny the request.
          * This removes the ability for a compromised host to abuse unused
