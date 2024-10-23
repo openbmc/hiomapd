@@ -50,6 +50,24 @@
       "message": "Theoretically we shouldn\u0027t need to handle errors from the commit() API since phosphor-logging is the app to log errors. If phosphor-logging is throwing an error when we\u0027re trying to create an error they should probably make a change to handle that.",
       "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b75a89e7_a5bc2275",
+        "filename": "vpnor/backend.cpp",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-10-23T19:23:27Z",
+      "side": 1,
+      "message": "We are doing same think in vpnor_init(). I have copied it from there. Please let me know.",
+      "parentUuid": "284dd9f0_7553c7bd",
+      "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
