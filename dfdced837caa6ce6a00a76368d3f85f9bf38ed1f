@@ -86,6 +86,24 @@
       "parentUuid": "284dd9f0_7553c7bd",
       "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5327350_788c9883",
+        "filename": "vpnor/backend.cpp",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1000008
+      },
+      "writtenOn": "2024-10-23T21:39:21Z",
+      "side": 1,
+      "message": "Is this the call that threw the exception in the lab?\n\nIt does make a D-Bus call under the covers, and most people do have try/catches around those, though usually not around commits.",
+      "parentUuid": "b75a89e7_a5bc2275",
+      "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
