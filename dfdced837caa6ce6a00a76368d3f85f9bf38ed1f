@@ -104,6 +104,24 @@
       "parentUuid": "b75a89e7_a5bc2275",
       "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8dac9bd_ee4a2e83",
+        "filename": "vpnor/backend.cpp",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-10-23T21:50:45Z",
+      "side": 1,
+      "message": "I have seen EIO error in the lab and it comes from few places and this is one of them.",
+      "parentUuid": "d5327350_788c9883",
+      "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
