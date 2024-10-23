@@ -303,8 +303,8 @@ for the necessity of issuing and responding to interrupts on each side.
 
 Assuming the registers are in a contiguous layout (this is not reflected in the
 hardware, but may be the abstraction presented by the associated kernel driver),
-the ABI is defined as follows, where the bytes in the range [2, 12] are
-available for command parameters and are defined on a per-command basis.
+the ABI is defined as follows, where the bytes in the range [2, 12] are available
+for command parameters and are defined on a per-command basis.
 
 ```
     0        7         15                    31
