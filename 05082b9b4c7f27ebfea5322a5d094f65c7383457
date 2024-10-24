@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "abf1f725_9c08255e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2024-10-24T15:17:20Z",
+      "side": 1,
+      "message": "This doesn\u0027t belong in your commit message.  You made changes between PS1 and PS3.  Those are not necessary to record for posterity.  You didn\u0027t actually fix a CI issue (from the perspective of what this commit does).",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 46
+      },
+      "revId": "05082b9b4c7f27ebfea5322a5d094f65c7383457",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "f442ec4a_7519754a",

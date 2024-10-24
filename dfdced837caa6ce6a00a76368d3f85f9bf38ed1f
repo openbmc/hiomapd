@@ -122,6 +122,24 @@
       "parentUuid": "d5327350_788c9883",
       "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "038951e2_e9a9887a",
+        "filename": "vpnor/backend.cpp",
+        "patchSetId": 1
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2024-10-24T15:17:20Z",
+      "side": 1,
+      "message": "We should not need to be wrapping commit calls with exception catches.  These functions _should_ be marked `noexcept`.  If this is an issue we need to fix it in phosphor-logging rather than propagating this everywhere.",
+      "parentUuid": "d8dac9bd_ee4a2e83",
+      "revId": "dfdced837caa6ce6a00a76368d3f85f9bf38ed1f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
