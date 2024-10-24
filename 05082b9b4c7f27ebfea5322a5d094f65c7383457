@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f442ec4a_7519754a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000009
+      },
+      "writtenOn": "2024-10-24T00:30:58Z",
+      "side": 1,
+      "message": "What kind of crash? Do they generate core files? If so, have you tried to debug with gdb?",
+      "revId": "05082b9b4c7f27ebfea5322a5d094f65c7383457",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    }
+  ]
+}
