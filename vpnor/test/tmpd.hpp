@@ -30,8 +30,7 @@ class VpnorRoot
   public:
     template <std::size_t N>
     VpnorRoot(struct backend* backend, const std::string (&toc)[N],
-              size_t blockSize) :
-        backend(backend)
+              size_t blockSize) : backend(backend)
     {
         char tmplt[] = "/tmp/vpnor_root.XXXXXX";
         char* tmpdir = mkdtemp(tmplt);
