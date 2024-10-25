@@ -19,7 +19,7 @@ enum verbose verbosity;
 void mbox_log_console(int p, const char *fmt, va_list args)
 {
 	struct timespec time;
-	FILE *s = (p < LOG_WARNING) ? stdout : stderr;
+	FILE *s = (p < LOG_WARNING) ? stderr : stdout;
 
 	clock_gettime(CLOCK_REALTIME, &time);
 
