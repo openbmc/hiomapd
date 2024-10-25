@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a674dde_73f03ee8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1000008
+      },
+      "writtenOn": "2024-10-25T20:11:26Z",
+      "side": 1,
+      "message": "nit: it\u0027s also a clang-format error being fixed, so maybe just say \u0027format errors\u0027",
+      "revId": "d224795dd9b8055f8a1e810fc66a2dbae9f01b87",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    }
+  ]
+}
