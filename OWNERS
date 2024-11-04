@@ -32,7 +32,7 @@
 # data within them will be kept sorted.
 
 owners:
-- andrew@codeconstruct.com.au
+- ninad@linux.ibm.com
 
 reviewers:
 - anoo@us.ibm.com
@@ -50,3 +50,6 @@ openbmc:
 - name: Deepak Kodihalli
   email: deepak.kodihalli.83@gmail.com
   discord: dkodihal
+- name: Ninad Palsule
+  email: ninad@linux.ibm.com
+  discord: ninadpalsule
