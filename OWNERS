@@ -33,10 +33,11 @@
 
 owners:
 - andrew@codeconstruct.com.au
+- anoo@us.ibm.com
 
 reviewers:
-- anoo@us.ibm.com
 - deepak.kodihalli.83@gmail.com
+- ninad@linux.ibm.com
 
 matchers:
 
@@ -50,3 +51,6 @@ openbmc:
 - name: Deepak Kodihalli
   email: deepak.kodihalli.83@gmail.com
   discord: dkodihal
+- name: Ninad Palsule
+  email: ninad@linux.ibm.com
+  discord: ninadpalsule
