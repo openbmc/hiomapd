@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5bc6915e_e1157489",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1000000
+      },
+      "writtenOn": "2024-11-04T15:41:46Z",
+      "side": 1,
+      "message": "Please rebase this at least at the end of the stack.  Right now you have no code even contributed to the repository, so it seems a bit of a stretch to make you an OWNER.\n\nI would suggest that we:\n\n1. Ask Andrew to remove himself if that is what he is interested in.  Likely Deepak should be removed as well since I don\u0027t think he has any further interest in this repository.\n\n2. Replace Adriana as the OWNER and add Ninad as a reviewer for a period of time (3-6 months).  After sufficient development and/or reviews have been done, Adriana can promote Ninad as an OWNER (and step down herself if she wants).",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 29
+      },
+      "revId": "a1d8981f5b96baa6ba4a7a0b161a435a9caaf025",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    }
+  ]
+}
