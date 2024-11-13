@@ -377,6 +377,7 @@ int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
 		return -EACCES;
 	}
 
+	assert(cur->dirty_bmap != NULL);
 	memset(cur->dirty_bmap + offset, val, size);
 	return 0;
 }
@@ -653,10 +654,15 @@ int windows_create_map(struct mbox_context *context,
 		}
 	}
 
-	/* Clear the bytemap of the window just loaded -> we know it's clean */
-	window_set_bytemap(context, cur, 0,
-			   cur->size >> context->backend.block_size_shift,
-			   WINDOW_CLEAN);
+	/*
+	 * Clear the bytemap of the window just loaded -> we know it's clean
+	 * Might not have been allocated yet.
+	 */
+	if (cur->dirty_bmap) {
+		window_set_bytemap(context, cur, 0,
+				cur->size >> context->backend.block_size_shift,
+				WINDOW_CLEAN);
+	}
 
 	/* Update so we know what's in the window */
 	cur->flash_offset = offset;
