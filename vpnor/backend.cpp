@@ -85,6 +85,9 @@ static int vpnor_init(struct backend* backend,
     try
     {
         priv->vpnor = new vpnor_partition_table;
+        // Table object may throw error hence initialize table pointer
+        // to null so that no one try to free the junk pointer.
+        priv->vpnor->table = NULL;
         priv->vpnor->table =
             new openpower::virtual_pnor::partition::Table(backend);
     }
@@ -259,9 +262,12 @@ static void vpnor_free(struct backend* backend)
     {
         if (priv->vpnor)
         {
-            delete priv->vpnor->table;
+	    if (priv->vpnor->table)
+            {
+                delete priv->vpnor->table;
+            }
+            delete priv->vpnor;
         }
-        delete priv->vpnor;
     }
     delete priv;
 }
