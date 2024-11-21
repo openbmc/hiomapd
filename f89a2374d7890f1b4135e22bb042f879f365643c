@@ -16,6 +16,24 @@
       "message": "Probably should add a test case as well?",
       "revId": "f89a2374d7890f1b4135e22bb042f879f365643c",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24918916_be122510",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-11-21T20:39:53Z",
+      "side": 1,
+      "message": "Andrew,\n\nThere is already a testcase for missing file in the TOC: https://github.com/openbmc/hiomapd/blob/master/vpnor/test/toc_missing_file.cpp\n\nThis is a case where we are not correctly initializing variable in case the Table() object throws exception. \n\nDid you get chance to look at the code changes?",
+      "parentUuid": "d6ea24da_12429dbc",
+      "revId": "f89a2374d7890f1b4135e22bb042f879f365643c",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
