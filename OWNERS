@@ -32,7 +32,6 @@
 # data within them will be kept sorted.
 
 owners:
-- andrew@codeconstruct.com.au
 - anoo@us.ibm.com
 
 reviewers:
