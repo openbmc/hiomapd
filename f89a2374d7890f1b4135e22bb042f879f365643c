@@ -34,6 +34,24 @@
       "parentUuid": "d6ea24da_12429dbc",
       "revId": "f89a2374d7890f1b4135e22bb042f879f365643c",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61949a9b_ca19f371",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000009
+      },
+      "writtenOn": "2024-11-22T00:18:23Z",
+      "side": 1,
+      "message": "I don\u0027t intend to maintain this software any more, so don\u0027t let my opinions hold up your efforts 😊\n\nBut regardless, I don\u0027t intend on looking at the change until there\u0027s a test case that captures the broken behaviour. From there I can establish whether the change to the implementation fixes the bug.",
+      "parentUuid": "24918916_be122510",
+      "revId": "f89a2374d7890f1b4135e22bb042f879f365643c",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
