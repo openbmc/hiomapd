@@ -16,6 +16,24 @@
       "message": "Not sure if you want to remove your contact info too or leave it here.",
       "revId": "12b304a18759f445f35611d86d72dc3b29229f80",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a3dc014_0e0d0965",
+        "filename": "OWNERS",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1000009
+      },
+      "writtenOn": "2024-12-04T04:16:35Z",
+      "side": 1,
+      "message": "Happy to leave it in for historical purposes. I might be able to answer obscure questions if someone bothers to look me up 😊",
+      "parentUuid": "ab38a4ee_e91f37cd",
+      "revId": "12b304a18759f445f35611d86d72dc3b29229f80",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
