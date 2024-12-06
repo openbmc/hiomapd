@@ -88,6 +88,24 @@
       "parentUuid": "8ddf3014_6b29e929",
       "revId": "f89a2374d7890f1b4135e22bb042f879f365643c",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c870d71_fec20ebd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-12-06T23:56:20Z",
+      "side": 1,
+      "message": "Added the test case.",
+      "parentUuid": "ddbe423f_315abf14",
+      "revId": "f89a2374d7890f1b4135e22bb042f879f365643c",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
