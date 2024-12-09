@@ -106,6 +106,24 @@
       "parentUuid": "823ba8a8_21af5975",
       "revId": "6ff2dac9332f7bc466c2fa90639926e9db79088f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae8321cd_06c5ce65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-12-09T17:04:51Z",
+      "side": 1,
+      "message": "ok, On rainier system I am hitting SEGV when I run this command.\n\nbusctl call xyz.openbmc_project.Hiomapd /xyz/openbmc_project/Hiomapd xyz.openbmc_project.Hiomapd.Protocol.V2 CreateReadWindow qq 0 1\n\nThere is already testcase to create read window so not sure why it is working in CI and not on real system.\n\nhttps://github.com/openbmc/hiomapd/blob/master/test/create_read_window_v2.c",
+      "parentUuid": "4c6eb1d2_08183729",
+      "revId": "6ff2dac9332f7bc466c2fa90639926e9db79088f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
