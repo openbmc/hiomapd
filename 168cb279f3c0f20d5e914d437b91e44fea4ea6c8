@@ -16,6 +16,24 @@
       "message": "There\u0027s no need to check for non-null:\n\nhttps://en.cppreference.com/w/cpp/language/delete",
       "revId": "168cb279f3c0f20d5e914d437b91e44fea4ea6c8",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b4fa458_697c7f47",
+        "filename": "vpnor/backend.cpp",
+        "patchSetId": 7
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-12-11T14:19:31Z",
+      "side": 1,
+      "message": "ok, Removed the check.",
+      "parentUuid": "746b5202_35f71f46",
+      "revId": "168cb279f3c0f20d5e914d437b91e44fea4ea6c8",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
