@@ -160,6 +160,24 @@
       "parentUuid": "57fb0373_40959012",
       "revId": "6ff2dac9332f7bc466c2fa90639926e9db79088f",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2089188_bc0bd6e0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-12-11T20:40:31Z",
+      "side": 1,
+      "message": "ok, I did further investigation.\n\n# If I call CreateReadWindow before calling GetInfo I see the crash.\n++ busctl call xyz.openbmc_project.Hiomapd /xyz/openbmc_project/Hiomapd xyz.openbmc_project.Hiomapd.Protocol.V2 CreateReadWindow qq 0 1\nCall failed: Remote peer disconnected\n\n# I call GetInfo first then I don\u0027t see the call because GetInfo calls windows_alloc_dirty_bytemap() hence we don\u0027t see the issue.\n++ busctl call xyz.openbmc_project.Hiomapd /xyz/openbmc_project/Hiomapd xyz.openbmc_project.Hiomapd.Protocol GetInfo y 2\nyyq 2 12 8\n++ busctl call xyz.openbmc_project.Hiomapd /xyz/openbmc_project/Hiomapd xyz.openbmc_project.Hiomapd.Protocol.V2 CreateReadWindow qq 0 1\nqqq 49152 2 0\n\n# I tried to write testcase without GetInfo call and it failed saying that GetInfo must be called first.\n[ 1733949109.098396932] Received MBOX request:\n[ 1733949109.098399329] MBOX cmd: 4\n[ 1733949109.098401119] MBOX seq: 1\n[ 1733949109.098402377] MBOX arg[0]: 0x00\n[ 1733949109.098403889] MBOX arg[1]: 0x00\n[ 1733949109.098405217] MBOX arg[2]: 0x01\n[ 1733949109.098406523] MBOX arg[3]: 0x00\n[ 1733949109.098407795] MBOX arg[4]: 0x00\n[ 1733949109.098409057] MBOX arg[5]: 0x00\n[ 1733949109.098410324] MBOX arg[6]: 0x00\n[ 1733949109.098411604] MBOX arg[7]: 0x00\n[ 1733949109.098412853] MBOX arg[8]: 0x00\n[ 1733949109.098414103] MBOX arg[9]: 0x00\n[ 1733949109.098415368] MBOX arg[10]: 0x00\n[ 1733949109.098416717] Received MBOX command: 4\n[ 1733949109.098418244] Must call GET_MBOX_INFO before 4\n[ 1733949109.098427057] Translating errno 71: Protocol error\n\nIn check_req_valid() we make sure that map is already allocated.\n        if (!(context-\u003estate \u0026 MAPS_MEM)) {\n                if (cmd !\u003d MBOX_C_RESET_STATE \u0026\u0026 cmd !\u003d MBOX_C_GET_MBOX_INFO\n                                              \u0026\u0026 cmd !\u003d MBOX_C_ACK) {\n                        MSG_ERR(\"Must call GET_MBOX_INFO before %d\\n\", cmd);\n                        return -EPROTO;\n                }\n        }",
+      "parentUuid": "99c916d6_ffd40d1b",
+      "revId": "6ff2dac9332f7bc466c2fa90639926e9db79088f",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
