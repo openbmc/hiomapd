@@ -69,6 +69,24 @@
       "parentUuid": "c7f8f2af_239329df",
       "revId": "ced971f60f0183361b8131997089d5e734cde6ee",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8cdb28f6_05862add",
+        "filename": "windows.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 658,
+      "author": {
+        "id": 1000009
+      },
+      "writtenOn": "2024-12-12T04:35:47Z",
+      "side": 1,
+      "message": "\u003e  We do not go through the protocol space. \n\nNot sure what you mean?\n\n```\n#4  0x004231b0 in protocol_v1_create_window (context\u003dcontext@entry\u003d0x2324598,\n    io\u003dio@entry\u003d0x7efd59b8) at /usr/src/debug/mboxd/1.0+git/protocol.c:311\n#5  0x004234b4 in protocol_v2_create_window (context\u003d0x2324598, io\u003d0x7efd59b8)\n    at /usr/src/debug/mboxd/1.0+git/protocol.c:568\n```",
+      "parentUuid": "d9632460_4634d398",
+      "revId": "ced971f60f0183361b8131997089d5e734cde6ee",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
