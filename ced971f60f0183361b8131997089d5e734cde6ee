@@ -51,6 +51,24 @@
       "message": "Can you unpack how you reached case? Have you read through [the protocol spec](https://github.com/openbmc/hiomapd/blob/master/Documentation/protocol.md), particularly the section on the [protocol flow](https://github.com/openbmc/hiomapd/blob/master/Documentation/protocol.md#protocol-flow)?\n\nI mean, we should defend against an incorrect sequence causing a crash, but what component is it that\u0027s not following the protocol? Is that being fixed?\n\nThe bytemap is almost unconditionally created in the `GET_INFO` handlers:\n\n- https://github.com/openbmc/hiomapd/blob/master/protocol.c#L124\n- https://github.com/openbmc/hiomapd/blob/master/protocol.c#L539",
       "revId": "ced971f60f0183361b8131997089d5e734cde6ee",
       "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9632460_4634d398",
+        "filename": "windows.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 658,
+      "author": {
+        "id": 1001634
+      },
+      "writtenOn": "2024-12-12T04:33:59Z",
+      "side": 1,
+      "message": "This is how we reached to the create window. We do not go through the protocol space.  \n```\nProgram terminated with signal SIGSEGV, Segmentation fault.\n#0  __GI_memset () at ../sysdeps/arm/memset.S:57\n\nwarning: 57\t../sysdeps/arm/memset.S: No such file or directory\n#0  __GI_memset () at ../sysdeps/arm/memset.S:57\n#1  0x00424bec in memset (__len\u003d\u003coptimized out\u003e, __ch\u003d248, \n    __dest\u003d\u003coptimized out\u003e) at /usr/include/bits/string_fortified.h:59\n#2  window_set_bytemap (context\u003d\u003coptimized out\u003e, cur\u003d0x232e2f8, offset\u003d0, \n    size\u003d\u003coptimized out\u003e, val\u003d0 \u0027\\000\u0027)\n    at /usr/src/debug/mboxd/1.0+git/windows.c:380\n#3  0x00425054 in windows_create_map (context\u003dcontext@entry\u003d0x2324598, \n    this_window\u003dthis_window@entry\u003d0x23245f8, offset\u003d\u003coptimized out\u003e, \n    offset@entry\u003d0, exact\u003d\u003coptimized out\u003e)\n    at /usr/src/debug/mboxd/1.0+git/windows.c:657\n#4  0x004231b0 in protocol_v1_create_window (context\u003dcontext@entry\u003d0x2324598, \n    io\u003dio@entry\u003d0x7efd59b8) at /usr/src/debug/mboxd/1.0+git/protocol.c:311\n#5  0x004234b4 in protocol_v2_create_window (context\u003d0x2324598, io\u003d0x7efd59b8)\n    at /usr/src/debug/mboxd/1.0+git/protocol.c:568\n--Type \u003cRET\u003e for more, q to quit, c to continue without paging--\n#6  0x0042418c in transport_dbus_create_window (context\u003d0x2324598, ro\u003dtrue, m\u003d0x232c408, ret_error\u003d\u003coptimized out\u003e) at /usr/src/debug/mboxd/1.0+git/transport_dbus.c:214\n#7  0x76f03968 in method_callbacks_run (found_object\u003d0x0, require_fallback\u003dfalse, c\u003d0x23301a0, m\u003d0x7efd5ad4, bus\u003d0x232e7e8)\n    at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/bus-objects.c:406\n#8  object_find_and_run (bus\u003d0x232e7e8, m\u003d0x7efd5ad4, p\u003d0x441dbc \"qq\", require_fallback\u003dfalse, found_object\u003d0x7efd5ad4)\n    at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/bus-objects.c:1319\n#9  0x76f1dba4 in bus_process_object (m\u003d0x232c408, bus\u003d\u003coptimized out\u003e) at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/bus-objects.c:1439\n#10 process_message (m\u003d0x232c408, bus\u003d\u003coptimized out\u003e) at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/sd-bus.c:3007\n#11 process_running (ret\u003d0x0, bus\u003d\u003coptimized out\u003e) at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/sd-bus.c:3049\n#12 bus_process_internal (bus\u003d\u003coptimized out\u003e, ret\u003dret@entry\u003d0x0) at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/sd-bus.c:3277\n#13 0x76f1e0f0 in sd_bus_process (bus\u003d\u003coptimized out\u003e, ret\u003dret@entry\u003d0x0) at /usr/src/debug/systemd/255.4/src/libsystemd/sd-bus/sd-bus.c:3304\n#14 0x004207c0 in poll_loop (context\u003d0x2324598) at /usr/src/debug/mboxd/1.0+git/mboxd.c:167\n#15 main (argc\u003d\u003coptimized out\u003e, argv\u003d\u003coptimized out\u003e) at /usr/src/debug/mboxd/1.0+git/mboxd.c:454\n```",
+      "parentUuid": "c7f8f2af_239329df",
+      "revId": "ced971f60f0183361b8131997089d5e734cde6ee",
+      "serverId": "adbd0a64-1f21-4d83-b585-671fe73cb6e4"
     }
   ]
 }
