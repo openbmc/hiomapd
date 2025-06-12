@@ -8,7 +8,7 @@ For historical reasons, source and generated binaries may refer to 'mbox' or
 'the mailbox interface' in contexts that aren't completely sensible. It's
 unfortunate, but it's our current reality.
 
-# Building
+## Building
 
 The build system is a standard autotools setup. `bootstrap.sh` runs all the jobs
 necessary to initialise autotools.
@@ -21,11 +21,11 @@ some autotools clunkiness even if it is disabled mboxd will still be linked with
 If you are hacking on the reference implementation it's recommended to run
 `bootstrap.sh` with the `dev` argument:
 
-```
-$ ./bootstrap.sh dev
-$ ./configure
-$ make
-$ make check
+```shell
+./bootstrap.sh dev
+./configure
+make
+make check
 ```
 
 This will turn on several of the compiler's sanitizers to help find bad memory
@@ -33,11 +33,11 @@ management and undefined behaviour in the code via the test suites.
 
 Otherwise, build with:
 
-```
-$ ./bootstrap.sh
-$ ./configure
-$ make
-$ make check
+```shell
+./bootstrap.sh
+./configure
+make
+make check
 ```
 
 Through the virtual PNOR feature the daemon's role as a flash abstraction can be
@@ -46,16 +46,16 @@ unnecessary for a number of platforms, and so the feature can be disabled at
 `configure` time. If you do not have a C++ compiler for your target, set
 `CXX=cc`.
 
-```
-$ ./bootstrap.sh
-$ ./configure CXX=cc --disable-virtual-pnor
-$ make
-$ make check
+```shell
+./bootstrap.sh
+./configure CXX=cc --disable-virtual-pnor
+make
+make check
 ```
 
-# Coding Style Guide
+## Coding Style Guide
 
-## Preamble
+### Preamble
 
 For not particularly good reasons the codebase is a mix of C and C++. This is an
 ugly split: message logging and error handling can be vastly different inside
@@ -71,7 +71,7 @@ interfaces provided.
 
 So:
 
-## Rules
+### Rules
 
 1. Message logging MUST be done to stdout or stderr, and MUST NOT be done
    directly via journal APIs or wrappers of the journal APIs.
@@ -99,7 +99,7 @@ So:
    Note: This section specifically targets the use of phosphor-logging's
    `log<T>()`. It does not prevent the use of `elog<T>()`.
 
-# License and Copyright
+## License and Copyright
 
 Copyright 2017 IBM
 
@@ -107,7 +107,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 this file except in compliance with the License. You may obtain a copy of the
 License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+<http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software distributed
 under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR

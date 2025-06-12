@@ -1,10 +1,12 @@
+# mboxd
+
 Copyright 2017,2018 IBM
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 this file except in compliance with the License. You may obtain a copy of the
 License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+<http://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software distributed
 under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -21,7 +23,7 @@ repository.
 The main mailbox daemon is implemented in mboxd.c. This file uses helper
 functions from the various mboxd\_\*.c files.
 
-```
+```text
 dbus.c -    Contains the handlers for the D-Bus commands which the daemon can
                   receive.
 flash.c -   Contains the functions for performing flash access including
@@ -37,7 +39,7 @@ windows.c - Contains the functions for managing the window cache.
 
 The daemon is a state machine with 5 valid states:
 
-```
+```text
 UNINITIALISED -         The daemon is still in the initialisation phase and
                         will not respond
 ACTIVE_MAPS_FLASH -     The daemon is polling for incoming commands, is not
@@ -61,7 +63,7 @@ flash.
 
 ### State Transitions
 
-```
+```text
 UNINITIALISED -> ACTIVE_MAPS_FLASH -      Uninitiated: Occurs when the daemon is
                                           finished initialising.
 ACTIVE_MAPS_FLASH -> SUSPEND_MAPS_FLASH - Suspend command received over
@@ -105,7 +107,7 @@ cache as their contents may no longer accurately reflect those of the flash.
 
 The daemon is invoked on the command line with a few parameters:
 
-```
+```text
 (*) - required
 (#) - optional but recommended
 (~) - optional
@@ -162,7 +164,7 @@ signal file descriptor.
 When an event occurs on this file descriptor the signal received is determined
 and processed as follows:
 
-```
+```text
 SIGINT -  Terminate the daemon
 SIGTERM - Terminate the daemon
 SIGHUP -  Clear the window cache and point the LPC bus mapping back to

@@ -25,18 +25,18 @@ Currently, the virtual PNOR implementation requires that:
 
 ## Implementation Behavioural Properties
 
-1.  The FFS ToC defines the set of valid access ranges in terms of partitions
-2.  The read-only property of partitions is enforced
-3.  The ToC is considered read-only
-4.  Read access to valid ranges must be granted
-5.  Write access to valid ranges may be granted
-6.  Access ranges that are valid may map into a backing file associated with the
-    partition
-7.  A read of a valid access range that maps into the backing file will render
-    the data held in the backing file at the appropriate offset
-8.  A read of a valid access range that does not map into the backing file will
-    appear erased
-9.  A read of an invalid access range will appear erased
+1. The FFS ToC defines the set of valid access ranges in terms of partitions
+2. The read-only property of partitions is enforced
+3. The ToC is considered read-only
+4. Read access to valid ranges must be granted
+5. Write access to valid ranges may be granted
+6. Access ranges that are valid may map into a backing file associated with the
+   partition
+7. A read of a valid access range that maps into the backing file will render
+   the data held in the backing file at the appropriate offset
+8. A read of a valid access range that does not map into the backing file will
+   appear erased
+9. A read of an invalid access range will appear erased
 10. A write to a valid access range that maps into the backing file will update
     the data in the file at the appropriate offset
 11. A write to a valid access range that does not map into the backing file will
