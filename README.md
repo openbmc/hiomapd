@@ -80,7 +80,6 @@ So:
 
    We have two scenarios where we care about output, with the important
    restriction that the method must be consistent between C and C++:
-
    1. Running in-context on an OpenBMC-based system
    2. Running the test suite
 
