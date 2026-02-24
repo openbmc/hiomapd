@@ -273,7 +273,7 @@ static void vpnor_free(struct backend* backend)
  * vpnor_copy() - Copy data from the virtual pnor into a provided buffer
  * @context:    The backend context pointer
  * @offset:     The pnor offset to copy from (bytes)
- * @mem:        The buffer to copy into (must be of atleast 'size' bytes)
+ * @mem:        The buffer to copy into (must be of at least 'size' bytes)
  * @size:       The number of bytes to copy
  * Return:      Number of bytes copied on success, otherwise negative error
  *              code. vpnor_copy will copy at most 'size' bytes, but it may
@@ -343,7 +343,7 @@ static int64_t vpnor_copy(struct backend* backend, uint32_t offset, void* mem,
  * vpnor_write() - Write to the virtual pnor from a provided buffer
  * @context: The backend context pointer
  * @offset:  The flash offset to write to (bytes)
- * @buf:     The buffer to write from (must be of atleast size)
+ * @buf:     The buffer to write from (must be of at least size)
  * @size:    The number of bytes to write
  *
  * Return:  0 on success otherwise negative error code

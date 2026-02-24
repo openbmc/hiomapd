@@ -20,7 +20,7 @@
 #define NUM_DBUS_CMDS          (DBUS_C_LPC_STATE + 1)
 
 /* Return Values (Legacy interface) */
-#define DBUS_SUCCESS           0x00 /* Command Succeded */
+#define DBUS_SUCCESS           0x00 /* Command Succeeded */
 #define E_DBUS_INTERNAL        0x01 /* Internal DBUS Error */
 #define E_DBUS_INVAL           0x02 /* Invalid Command */
 #define E_DBUS_REJECTED        0x03 /* Daemon Rejected Request */

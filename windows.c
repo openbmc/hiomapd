@@ -86,7 +86,7 @@ static int init_window_mem(struct mbox_context *context)
 	return 0;
 }
 /*
- * windows_init() - Initalise the window cache
+ * windows_init() - Initialise the window cache
  * @context:    The mbox context pointer
  *
  * Return:      0 on success otherwise negative
@@ -254,7 +254,7 @@ int window_flush_v1(struct mbox_context *context,
 			goto out;
 		}
 	} else {
-		/* Write from the current window - it's atleast that big */
+		/* Write from the current window - it's at least that big */
 		rc = backend_write(&context->backend, high_mem.flash_offset,
 				   context->current->mem + offset_bytes +
 				   count_bytes, high_mem.size);

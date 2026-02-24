@@ -56,7 +56,7 @@ struct backend_ops {
 	 * copy() - Copy data from the flash device into a provided buffer
 	 * @context:	The mbox context pointer
 	 * @offset:	The flash offset to copy from (bytes)
-	 * @mem:	The buffer to copy into (must be of atleast 'size' bytes)
+	 * @mem:	The buffer to copy into (must be of at least 'size' bytes)
 	 * @size:	The number of bytes to copy
 	 * Return:	Number of bytes copied on success, otherwise negative error
 	 *		code. flash_copy will copy at most 'size' bytes, but it may
@@ -94,7 +94,7 @@ struct backend_ops {
 	 * write() - Write the flash from a provided buffer
 	 * @context:	The backend context pointer
 	 * @offset:	The flash offset to write to (bytes)
-	 * @buf:	The buffer to write from (must be of atleast size)
+	 * @buf:	The buffer to write from (must be of at least size)
 	 * @size:	The number of bytes to write
 	 *
 	 * Return:	0 on success otherwise negative error code
@@ -245,7 +245,7 @@ static inline int backend_align_offset(struct backend *backend, uint32_t *offset
 		 * It would be nice to align the offsets which we map to window
 		 * size, this will help prevent overlap which would be an
 		 * inefficient use of our reserved memory area (we would like
-		 * to "cache" as much of the acutal flash as possible in
+		 * to "cache" as much of the actual flash as possible in
 		 * memory). If we're protocol V1 however we must ensure the
 		 * offset requested is exactly mapped.
 		 */

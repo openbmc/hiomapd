@@ -44,7 +44,7 @@ int n_ioctls;
 int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
 {
 	va_list ap;
-	struct erase_info_user *provided, *alloced;
+	struct erase_info_user *provided, *allocated;
 
 	if (!(request == MEMERASE || request == MEMGETINFO)) {
 		printf("Uh-oh: ioctl() called with request 0x%08lx\n", request);
@@ -69,10 +69,10 @@ int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
 
 		n_ioctls++;
 
-		alloced = realloc(recorded, n_ioctls * sizeof(*recorded));
-		if (!alloced)
+		allocated = realloc(recorded, n_ioctls * sizeof(*recorded));
+		if (!allocated)
 			return -1;
-		recorded = alloced;
+		recorded = allocated;
 
 		memcpy(&recorded[n_ioctls - 1], provided, sizeof(*provided));
 

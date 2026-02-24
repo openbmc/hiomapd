@@ -22,7 +22,7 @@ static const uint8_t response[] = {
 
 /*
  * Suggested timeout is based on a milliseconds-per-MB constant. Thus to
- * get a non-zero value we need a window of size atleast 1MB.
+ * get a non-zero value we need a window of size at least 1MB.
  */
 #define MEM_SIZE	1 << 20
 #define ERASE_SIZE	1

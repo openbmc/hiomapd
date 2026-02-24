@@ -248,7 +248,7 @@ static bool parse_cmdline(int argc, char **argv,
 		case 'f':
 			context->backend.flash_size = strtol(optarg, &endptr, 10);
 			if (optarg == endptr) {
-				fprintf(stderr, "Unparseable flash size\n");
+				fprintf(stderr, "Unparsable flash size\n");
 				return false;
 			}
 			switch (*endptr) {
@@ -273,7 +273,7 @@ static bool parse_cmdline(int argc, char **argv,
 			context->windows.num = strtol(argv[optind], &endptr,
 						      10);
 			if (optarg == endptr || *endptr != '\0') {
-				fprintf(stderr, "Unparseable window num\n");
+				fprintf(stderr, "Unparsable window num\n");
 				return false;
 			}
 			break;
@@ -283,7 +283,7 @@ static bool parse_cmdline(int argc, char **argv,
 			context->windows.default_size <<= 20; /* Given in MB */
 			if (optarg == endptr || (*endptr != '\0' &&
 						 *endptr != 'M')) {
-				fprintf(stderr, "Unparseable window size\n");
+				fprintf(stderr, "Unparsable window size\n");
 				return false;
 			}
 			if (!is_power_of_2(context->windows.default_size)) {

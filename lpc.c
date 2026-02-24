@@ -102,7 +102,7 @@ int lpc_map_flash(struct mbox_context *context)
 {
 	struct aspeed_lpc_ctrl_mapping map = {
 		.window_type = ASPEED_LPC_CTRL_WINDOW_FLASH,
-		.window_id = 0, /* Theres only one */
+		.window_id = 0, /* There's only one */
 		.flags = 0,
 		/*
 		 * The mask is because the top nibble is the host LPC FW space,

@@ -115,7 +115,7 @@ static int protocol_v1_get_info(struct mbox_context *context,
 	/* Record the negotiated version for the response */
 	io->resp.api_version = rc;
 
-	/* Now do all required intialisation for v1 */
+	/* Now do all required initialisation for v1 */
 	context->backend.block_size_shift = BLOCK_SIZE_SHIFT_V1;
 	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
 		 1 << context->backend.block_size_shift, context->backend.block_size_shift);
@@ -533,7 +533,7 @@ static int protocol_v2_get_info(struct mbox_context *context,
 	/* Record the negotiated version for the response */
 	io->resp.api_version = rc;
 
-	/* Now do all required intialisation for v2 */
+	/* Now do all required initialisation for v2 */
 
 	/* Knowing blocksize we can allocate the window dirty_bytemap */
 	windows_alloc_dirty_bytemap(context);

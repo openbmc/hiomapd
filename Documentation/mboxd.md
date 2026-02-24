@@ -126,7 +126,7 @@ reserved memory region.
 
 ### Initialisation
 
-After the command line has been parsed the daemon will initalise its various
+After the command line has been parsed the daemon will initialise its various
 interfaces. If any of these initialisations fail it will print an error and the
 daemon will terminate.
 
