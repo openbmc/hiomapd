@@ -32,18 +32,14 @@
 # data within them will be kept sorted.
 
 owners:
-- anoo@us.ibm.com
+- ninad@linux.ibm.com
 
 reviewers:
 - deepak.kodihalli.83@gmail.com
-- ninad@linux.ibm.com
 
 matchers:
 
 openbmc:
-- name: Adriana Kobylak
-  email: anoo@us.ibm.com
-  discord: anoo
 - name: Andrew Jeffery
   email: andrew@codeconstruct.com.au
   discord: arj
