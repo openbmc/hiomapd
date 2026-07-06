@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
+
+/* Define kernel types for userspace before any includes */
+#ifndef __KERNEL__
+#define u64 uint64_t
+#endif
+
 #include "config.h"
 
 #include <errno.h>
