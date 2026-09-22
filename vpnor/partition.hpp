@@ -46,7 +46,7 @@ class Request
     Request(const Request&) = delete;
     Request& operator=(const Request&) = delete;
     Request(Request&&) = default;
-    Request& operator=(Request&&) = default;
+    Request& operator=(Request&&) = delete;
     ~Request() = default;
 
     ssize_t read(void* dst, size_t len);
