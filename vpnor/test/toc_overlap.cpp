@@ -16,7 +16,6 @@ extern "C" {
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 static constexpr auto ERASE_SIZE = BLOCK_SIZE;
-static constexpr auto PNOR_SIZE = 64 * 1024 * 1024;
 static constexpr auto MEM_SIZE = 32 * 1024 * 1024;
 static constexpr auto N_WINDOWS = 1;
 static constexpr auto WINDOW_SIZE = BLOCK_SIZE * 2;
