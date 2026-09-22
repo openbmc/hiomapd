@@ -253,26 +253,6 @@ static int mbox_handle_flash_info(struct mbox_context *context,
 	return 0;
 }
 
-/*
- * get_lpc_addr_shifted() - Get lpc address of the current window
- * @context:		The mbox context pointer
- *
- * Return:	The lpc address to access that offset shifted by block size
- */
-static inline uint16_t get_lpc_addr_shifted(struct mbox_context *context)
-{
-	uint32_t lpc_addr, mem_offset;
-
-	/* Offset of the current window in the reserved memory region */
-	mem_offset = context->current->mem - context->mem;
-	/* Total LPC Address */
-	lpc_addr = context->lpc_base + mem_offset;
-
-	MSG_DBG("LPC address of current window: 0x%.8x\n", lpc_addr);
-
-	return lpc_addr >> context->backend.block_size_shift;
-}
-
 static int mbox_handle_create_window(struct mbox_context *context, bool ro,
 			      union mbox_regs *req, struct mbox_msg *resp)
 {
