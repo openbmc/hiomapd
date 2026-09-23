@@ -3,16 +3,17 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
+#include "vpnor/backend.h"
+
 #include "vpnor/test/tmpd.hpp"
 
 #include <cassert>
-
-#include "vpnor/backend.h"
 
 const std::string toc[] = {
     "partition01=HBB,00001000,00002000,80,ECC,READWRITE",

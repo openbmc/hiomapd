@@ -2,7 +2,8 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "common.h"
 #include "mboxd.h"
