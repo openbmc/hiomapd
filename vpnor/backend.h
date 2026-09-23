@@ -8,12 +8,11 @@
 struct mbox_context;
 struct vpnor_partition_table;
 
-struct vpnor_partition_paths
-{
-    char ro_loc[PATH_MAX];
-    char rw_loc[PATH_MAX];
-    char prsv_loc[PATH_MAX];
-    char patch_loc[PATH_MAX];
+struct vpnor_partition_paths {
+	char ro_loc[PATH_MAX];
+	char rw_loc[PATH_MAX];
+	char prsv_loc[PATH_MAX];
+	char patch_loc[PATH_MAX];
 };
 
 struct vpnor_data {
@@ -36,7 +35,7 @@ void vpnor_default_paths(struct vpnor_partition_paths *paths);
 #else
 static inline void vpnor_default_paths(struct vpnor_partition_paths *paths)
 {
-    memset(paths, 0, sizeof(*paths));
+	memset(paths, 0, sizeof(*paths));
 }
 #endif
 

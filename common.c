@@ -3,8 +3,8 @@
 #define _GNU_SOURCE
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <syslog.h>
@@ -31,8 +31,7 @@ void mbox_log_console(int p, const char *fmt, va_list args)
 		fflush(s);
 }
 
-__attribute__((format(printf, 2, 3)))
-void mbox_log(int p, const char *fmt, ...)
+__attribute__((format(printf, 2, 3))) void mbox_log(int p, const char *fmt, ...)
 {
 	static bool warned = false;
 	va_list args;
@@ -73,4 +72,3 @@ void put_u32(uint8_t *ptr, uint32_t val)
 	val = htole32(val);
 	memcpy(ptr, &val, sizeof(val));
 }
-

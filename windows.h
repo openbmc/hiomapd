@@ -6,24 +6,24 @@
 
 #include <stdbool.h>
 
-#define WINDOWS_NO_FLUSH	false
-#define WINDOWS_WITH_FLUSH	true
+#define WINDOWS_NO_FLUSH   false
+#define WINDOWS_WITH_FLUSH true
 
 struct mbox_context;
 
 /* Window Dirty/Erase bytemap masks */
-#define WINDOW_CLEAN			0x00
-#define WINDOW_DIRTY			0x01
-#define WINDOW_ERASED			0x02
+#define WINDOW_CLEAN  0x00
+#define WINDOW_DIRTY  0x01
+#define WINDOW_ERASED 0x02
 
-#define FLASH_OFFSET_UNINIT	0xFFFFFFFF
+#define FLASH_OFFSET_UNINIT 0xFFFFFFFF
 
 struct window_context {
-	void *mem;			/* Portion of Reserved Memory Region */
-	uint32_t flash_offset;		/* Flash area the window maps (bytes) */
-	uint32_t size;			/* Window Size (bytes) power-of-2 */
-	uint8_t *dirty_bmap;		/* Bytemap of the dirty/erased state */
-	uint32_t age;			/* Used for LRU eviction scheme */
+	void *mem;	       /* Portion of Reserved Memory Region */
+	uint32_t flash_offset; /* Flash area the window maps (bytes) */
+	uint32_t size;	       /* Window Size (bytes) power-of-2 */
+	uint8_t *dirty_bmap;   /* Bytemap of the dirty/erased state */
+	uint32_t age;	       /* Used for LRU eviction scheme */
 };
 
 struct window_list {
@@ -37,10 +37,10 @@ struct window_list {
 int windows_init(struct mbox_context *context);
 void windows_free(struct mbox_context *context);
 /* Write From Window Functions */
-int window_flush_v1(struct mbox_context *context,
-			 uint32_t offset_bytes, uint32_t count_bytes);
-int window_flush(struct mbox_context *context, uint32_t offset,
-		      uint32_t count, uint8_t type);
+int window_flush_v1(struct mbox_context *context, uint32_t offset_bytes,
+		    uint32_t count_bytes);
+int window_flush(struct mbox_context *context, uint32_t offset, uint32_t count,
+		 uint8_t type);
 /* Window Management Functions */
 void windows_alloc_dirty_bytemap(struct mbox_context *context);
 int window_set_bytemap(struct mbox_context *context, struct window_context *cur,
@@ -53,7 +53,7 @@ struct window_context *windows_find_largest(struct mbox_context *context);
 struct window_context *windows_search(struct mbox_context *context,
 				      uint32_t offset, bool exact);
 int windows_create_map(struct mbox_context *context,
-		      struct window_context **this_window,
-		      uint32_t offset, bool exact);
+		       struct window_context **this_window, uint32_t offset,
+		       bool exact);
 
 #endif /* WINDOWS_H */

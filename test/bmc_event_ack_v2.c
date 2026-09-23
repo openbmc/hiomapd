@@ -3,8 +3,8 @@
 
 #include <assert.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "mboxd.h"
@@ -16,22 +16,20 @@
 
 #define FLAGS 0xc3
 
-static const uint8_t get_info[] = {
-	0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-};
+static const uint8_t get_info[] = { 0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
+				    0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				    0x00, 0x00, 0x00, 0x00 };
 
-static const uint8_t command[] = {
-	0x09, 0xaa, FLAGS, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, FLAGS
-};
+static const uint8_t command[] = { 0x09, 0xaa, FLAGS, 0x00, 0x00, 0x00,
+				   0x00, 0x00, 0x00,  0x00, 0x00, 0x00,
+				   0x00, 0x00, 0x00,  FLAGS };
 
 uint8_t data[3] = { 0xaa, 0x55, 0xaa };
 
-#define MEM_SIZE	3
-#define ERASE_SIZE	1
-#define N_WINDOWS	1
-#define WINDOW_SIZE	1
+#define MEM_SIZE    3
+#define ERASE_SIZE  1
+#define N_WINDOWS   1
+#define WINDOW_SIZE 1
 
 int main(void)
 {
@@ -59,7 +57,7 @@ int main(void)
 	assert(rc == 0);
 
 	map = mmap(NULL, details.st_size, PROT_READ, MAP_PRIVATE,
-			ctx->fds[MBOX_FD].fd, 0);
+		   ctx->fds[MBOX_FD].fd, 0);
 	assert(map != MAP_FAILED);
 
 	assert(details.st_size >= 16);

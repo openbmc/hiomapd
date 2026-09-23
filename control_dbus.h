@@ -19,6 +19,7 @@ int control_kill(struct mbox_context *context);
 int control_modified(struct mbox_context *context);
 int control_suspend(struct mbox_context *context);
 int control_resume(struct mbox_context *context, bool modified);
-int control_set_backend(struct mbox_context *context, struct backend *backend, void *data);
+int control_set_backend(struct mbox_context *context, struct backend *backend,
+			void *data);
 
 #endif
