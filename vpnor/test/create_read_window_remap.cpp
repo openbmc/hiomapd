@@ -3,10 +3,13 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 }
+
+#include "vpnor/backend.h"
 
 #include "vpnor/test/tmpd.hpp"
 
@@ -15,8 +18,6 @@ extern "C" {
 #include <filesystem>
 #include <fstream>
 #include <vector>
-
-#include "vpnor/backend.h"
 
 static const auto BLOCK_SIZE = 4096;
 static const auto ERASE_SIZE = BLOCK_SIZE;

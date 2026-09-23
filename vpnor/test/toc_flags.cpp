@@ -3,12 +3,12 @@
 
 #include "config.h"
 
+#include "common.h"
+#include "vpnor/ffs.h"
+
 #include "vpnor/table.hpp"
 
 #include <cassert>
-
-#include "common.h"
-#include "vpnor/ffs.h"
 
 static constexpr auto BLOCK_SIZE = 4 * 1024;
 static constexpr auto DATA_MASK = ((1 << 24) - 1);

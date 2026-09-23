@@ -3,7 +3,8 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "mboxd.h"
 }

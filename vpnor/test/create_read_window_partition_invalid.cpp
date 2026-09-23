@@ -3,17 +3,18 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 }
+
+#include "vpnor/backend.h"
 
 #include "vpnor/test/tmpd.hpp"
 
 #include <cassert>
 #include <cstring>
-
-#include "vpnor/backend.h"
 
 const std::string toc[] = {
     "partition01=HBB,00002000,00003000,80,ECC,READONLY",
@@ -30,9 +31,9 @@ static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00};
 
 /* Request access below the specified partition */
-static const uint8_t create_read_window[] = {0x04, 0x01, 0x01, 0x00, 0x01, 0x00,
-                                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                             0x00, 0x00, 0x00, 0x00};
+static const uint8_t create_read_window[] = {
+    0x04, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 int main()
 {
