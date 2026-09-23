@@ -47,7 +47,7 @@ static int mbox_create_read_window(struct test_context *tctx, size_t offset,
     return mbox_command_dispatch(tctx->ctx, regs.raw, sizeof(regs.raw));
 }
 
-int main()
+int main(void)
 {
     struct test_context _tctx = {0}, *tctx = &_tctx;
     size_t len;
