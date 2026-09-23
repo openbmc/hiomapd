@@ -20,6 +20,19 @@ enum verbose {
 
 extern enum verbose verbosity;
 
+/* The MSG_* macros below rely on the GNU ", ##__VA_ARGS__" extension so
+ * they can be called with or without extra arguments.  Clang diagnoses
+ * the token-pasting as -Wgnu-zero-variadic-macro-arguments (an error
+ * under -Werror at meson warning_level=3), so silence it around the
+ * definitions.  The push/pop keeps the suppression scoped to this
+ * header; GCC does not know the clang-specific warning name, hence the
+ * __clang__ guard.
+ */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 /* Error Messages */
 #define MSG_ERR(f_, ...)						\
 do {									\
@@ -41,6 +54,10 @@ do { 									\
 		mbox_log(LOG_DEBUG, f_, ##__VA_ARGS__);			\
 	}								\
 } while(0)
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 extern void (*mbox_vlog)(int p, const char *fmt, va_list args);
 

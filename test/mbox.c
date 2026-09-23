@@ -315,8 +315,18 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 
 	assert(test.flash.fd > 2);
 
-	/* Sanity check */
+	/* Sanity check.  The ccan container_of helper uses typeof, which
+	 * clang flags as -Wlanguage-extension-token under -Wpedantic;
+	 * silence it just for this expansion (GCC is unaffected).
+	 */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wlanguage-extension-token"
+#endif
 	arg = container_of(context, struct mbox_test_context, context);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 	assert(&test == arg);
 	assert(len <= test.context.backend.flash_size);
 
