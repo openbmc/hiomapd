@@ -2,7 +2,8 @@
 // Copyright (C) 2018 IBM Corp.
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "test/mbox.h"
 #include "test/system.h"
@@ -34,9 +35,9 @@ static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00};
 
 /* Request access to the ToC base for one block */
-static const uint8_t create_read_window[] = {0x04, 0x01, 0x00, 0x00, 0x01, 0x00,
-                                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                             0x00, 0x00, 0x00, 0x00};
+static const uint8_t create_read_window[] = {
+    0x04, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 /* Expect a response containing the ToC in one block */
 static const uint8_t response[] = {

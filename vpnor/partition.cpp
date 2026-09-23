@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
-extern "C" {
+extern "C"
+{
 #include "mboxd.h"
 }
 
 #include "config.h"
+
+#include "common.h"
+#include "vpnor/backend.h"
 
 #include "vpnor/partition.hpp"
 #include "vpnor/table.hpp"
@@ -20,15 +24,13 @@ extern "C" {
 #include <syslog.h>
 #include <unistd.h>
 
-#include <exception>
-#include <iostream>
 #include <phosphor-logging/elog-errors.hpp>
 #include <phosphor-logging/log.hpp>
+
+#include <exception>
+#include <iostream>
 #include <stdexcept>
 #include <string>
-
-#include "common.h"
-#include "vpnor/backend.h"
 
 namespace openpower
 {

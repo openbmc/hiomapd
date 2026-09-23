@@ -2,7 +2,8 @@
 /* Copyright (C) 2018 IBM Corp. */
 #pragma once
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "vpnor/backend.h"
 };
@@ -41,8 +42,7 @@ class Request
                                         ->vpnor->table->partition(offset)),
         base(partition.data.base << backend->block_size_shift),
         offset(offset - base)
-    {
-    }
+    {}
     Request(const Request&) = delete;
     Request& operator=(const Request&) = delete;
     Request(Request&&) = default;

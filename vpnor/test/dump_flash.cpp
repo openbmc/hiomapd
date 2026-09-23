@@ -3,18 +3,19 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 #include "transport_mbox.h"
 }
 
+#include "vpnor/backend.h"
+
 #include "vpnor/test/tmpd.hpp"
 
 #include <cassert>
 #include <cstring>
-
-#include "vpnor/backend.h"
 
 struct test_context
 {

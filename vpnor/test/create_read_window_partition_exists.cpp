@@ -3,10 +3,13 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 }
+
+#include "vpnor/backend.h"
 
 #include "vpnor/test/tmpd.hpp"
 
@@ -15,8 +18,6 @@ extern "C" {
 #include <filesystem>
 #include <fstream>
 #include <vector>
-
-#include "vpnor/backend.h"
 
 // A read window assumes that the toc is located at offset 0,
 // so create dummy partition at arbitrary offset 0x1000.
@@ -37,9 +38,9 @@ static const uint8_t get_info[] = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00,
                                    0x00, 0x00, 0x00, 0x00};
 
 // offset 0x100 and size 6
-static const uint8_t create_read_window[] = {0x04, 0x01, 0x01, 0x00, 0x01, 0x00,
-                                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                                             0x00, 0x00, 0x00, 0x00};
+static const uint8_t create_read_window[] = {
+    0x04, 0x01, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 static const uint8_t response[] = {0x04, 0x01, 0xfe, 0xff, 0x01, 0x00, 0x01,
                                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01};

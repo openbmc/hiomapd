@@ -3,16 +3,17 @@
 
 #include "config.h"
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 }
 
+#include "vpnor/backend.h"
+
 #include "vpnor/test/tmpd.hpp"
 
 #include <cassert>
-
-#include "vpnor/backend.h"
 
 static constexpr auto BLOCK_SIZE = 0x1000;
 static constexpr auto ERASE_SIZE = BLOCK_SIZE;

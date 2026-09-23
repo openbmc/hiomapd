@@ -7,7 +7,8 @@
 #include <cassert>
 #include <cstring>
 
-extern "C" {
+extern "C"
+{
 #include "test/mbox.h"
 #include "test/system.h"
 }
