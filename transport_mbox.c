@@ -6,29 +6,29 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
-#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
-#include <inttypes.h>
 
-#include "mboxd.h"
 #include "common.h"
+#include "lpc.h"
+#include "mboxd.h"
 #include "transport_mbox.h"
 #include "windows.h"
-#include "lpc.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-arith"
@@ -39,29 +39,19 @@ struct errno_map {
 };
 
 static const struct errno_map errno_map_v1[] = {
-	{ 0, MBOX_R_SUCCESS },
-	{ EACCES, MBOX_R_PARAM_ERROR },
-	{ EBADMSG, MBOX_R_PARAM_ERROR },
-	{ EBUSY, MBOX_R_SYSTEM_ERROR },
-	{ EINVAL, MBOX_R_PARAM_ERROR },
-	{ ENOTSUP, MBOX_R_PARAM_ERROR },
-	{ EPERM, MBOX_R_PARAM_ERROR },
-	{ EPROTO, MBOX_R_PARAM_ERROR },
-	{ ETIMEDOUT, MBOX_R_TIMEOUT },
-	{ -1, MBOX_R_SYSTEM_ERROR },
+	{ 0, MBOX_R_SUCCESS },		 { EACCES, MBOX_R_PARAM_ERROR },
+	{ EBADMSG, MBOX_R_PARAM_ERROR }, { EBUSY, MBOX_R_SYSTEM_ERROR },
+	{ EINVAL, MBOX_R_PARAM_ERROR },	 { ENOTSUP, MBOX_R_PARAM_ERROR },
+	{ EPERM, MBOX_R_PARAM_ERROR },	 { EPROTO, MBOX_R_PARAM_ERROR },
+	{ ETIMEDOUT, MBOX_R_TIMEOUT },	 { -1, MBOX_R_SYSTEM_ERROR },
 };
 
 static const struct errno_map errno_map_v2[] = {
-	{ 0, MBOX_R_SUCCESS },
-	{ EACCES, MBOX_R_WINDOW_ERROR },
-	{ EBADMSG, MBOX_R_SEQ_ERROR },
-	{ EBUSY, MBOX_R_BUSY },
-	{ EINVAL, MBOX_R_PARAM_ERROR },
-	{ ENOTSUP, MBOX_R_PARAM_ERROR },
-	{ EPERM, MBOX_R_WINDOW_ERROR },
-	{ EPROTO, MBOX_R_PARAM_ERROR },
-	{ ETIMEDOUT, MBOX_R_TIMEOUT },
-	{ -1, MBOX_R_SYSTEM_ERROR },
+	{ 0, MBOX_R_SUCCESS },		{ EACCES, MBOX_R_WINDOW_ERROR },
+	{ EBADMSG, MBOX_R_SEQ_ERROR },	{ EBUSY, MBOX_R_BUSY },
+	{ EINVAL, MBOX_R_PARAM_ERROR }, { ENOTSUP, MBOX_R_PARAM_ERROR },
+	{ EPERM, MBOX_R_WINDOW_ERROR }, { EPROTO, MBOX_R_PARAM_ERROR },
+	{ ETIMEDOUT, MBOX_R_TIMEOUT },	{ -1, MBOX_R_SYSTEM_ERROR },
 };
 
 static const struct errno_map *errno_maps[] = {
@@ -70,14 +60,13 @@ static const struct errno_map *errno_maps[] = {
 	[2] = errno_map_v2,
 };
 
-static inline int mbox_xlate_errno(struct mbox_context *context,
-					     int rc)
+static inline int mbox_xlate_errno(struct mbox_context *context, int rc)
 {
 	const struct errno_map *entry;
 
 	rc = -rc;
 	MSG_DBG("Translating errno %d: %s\n", rc, strerror(rc));
-	for(entry = errno_maps[context->version]; entry->rc != -1; entry++) {
+	for (entry = errno_maps[context->version]; entry->rc != -1; entry++) {
 		if (rc == entry->rc) {
 			return entry->mbox_errno;
 		}
@@ -93,7 +82,8 @@ static inline int mbox_xlate_errno(struct mbox_context *context,
  *
  * Return:	0 on success otherwise negative error code
  */
-static int transport_mbox_flush_events(struct mbox_context *context, uint8_t events)
+static int transport_mbox_flush_events(struct mbox_context *context,
+				       uint8_t events)
 {
 	int rc;
 
@@ -101,7 +91,7 @@ static int transport_mbox_flush_events(struct mbox_context *context, uint8_t eve
 	rc = lseek(context->fds[MBOX_FD].fd, MBOX_BMC_EVENT, SEEK_SET);
 	if (rc != MBOX_BMC_EVENT) {
 		MSG_ERR("Couldn't lseek mbox to byte %d: %s\n", MBOX_BMC_EVENT,
-				strerror(errno));
+			strerror(errno));
 		return -errno;
 	}
 
@@ -109,7 +99,7 @@ static int transport_mbox_flush_events(struct mbox_context *context, uint8_t eve
 	rc = write(context->fds[MBOX_FD].fd, &events, 1);
 	if (rc != 1) {
 		MSG_ERR("Couldn't write to BMC status reg: %s\n",
-				strerror(errno));
+			strerror(errno));
 		return -errno;
 	}
 
@@ -117,15 +107,14 @@ static int transport_mbox_flush_events(struct mbox_context *context, uint8_t eve
 	rc = lseek(context->fds[MBOX_FD].fd, 0, SEEK_SET);
 	if (rc) {
 		MSG_ERR("Couldn't reset MBOX offset to zero: %s\n",
-				strerror(errno));
+			strerror(errno));
 		return -errno;
 	}
 
 	return 0;
 }
 
-static int transport_mbox_put_events(struct mbox_context *context,
-					uint8_t mask)
+static int transport_mbox_put_events(struct mbox_context *context, uint8_t mask)
 {
 	return transport_mbox_flush_events(context, context->bmc_events & mask);
 }
@@ -183,9 +172,8 @@ static int mbox_handle_mbox_info(struct mbox_context *context,
 				 union mbox_regs *req, struct mbox_msg *resp)
 {
 	uint8_t mbox_api_version = req->msg.args[0];
-	struct protocol_get_info io = {
-		.req = { .api_version = mbox_api_version }
-	};
+	struct protocol_get_info io = { .req = { .api_version =
+							 mbox_api_version } };
 	int rc;
 
 	rc = context->protocol->get_info(context, &io);
@@ -254,7 +242,8 @@ static int mbox_handle_flash_info(struct mbox_context *context,
 }
 
 static int mbox_handle_create_window(struct mbox_context *context, bool ro,
-			      union mbox_regs *req, struct mbox_msg *resp)
+				     union mbox_regs *req,
+				     struct mbox_msg *resp)
 {
 	struct protocol_create_window io;
 	int rc;
@@ -344,7 +333,8 @@ static int mbox_handle_write_window(struct mbox_context *context,
  */
 static int mbox_handle_dirty_window(struct mbox_context *context,
 				    union mbox_regs *req,
-				    struct mbox_msg *resp __attribute__((unused)))
+				    struct mbox_msg *resp
+				    __attribute__((unused)))
 {
 	struct protocol_mark_dirty io;
 
@@ -374,7 +364,8 @@ static int mbox_handle_dirty_window(struct mbox_context *context,
  */
 static int mbox_handle_erase_window(struct mbox_context *context,
 				    union mbox_regs *req,
-				    struct mbox_msg *resp __attribute__((unused)))
+				    struct mbox_msg *resp
+				    __attribute__((unused)))
 {
 	struct protocol_erase io;
 
@@ -408,7 +399,8 @@ static int mbox_handle_erase_window(struct mbox_context *context,
  */
 static int mbox_handle_flush_window(struct mbox_context *context,
 				    union mbox_regs *req,
-				    struct mbox_msg *resp __attribute__((unused)))
+				    struct mbox_msg *resp
+				    __attribute__((unused)))
 {
 	struct protocol_flush io = { 0 };
 
@@ -433,7 +425,8 @@ static int mbox_handle_flush_window(struct mbox_context *context,
  */
 static int mbox_handle_close_window(struct mbox_context *context,
 				    union mbox_regs *req,
-				    struct mbox_msg *resp __attribute__((unused)))
+				    struct mbox_msg *resp
+				    __attribute__((unused)))
 {
 	struct protocol_close io = { 0 };
 
@@ -500,8 +493,8 @@ static int check_req_valid(struct mbox_context *context, union mbox_regs *req)
 	}
 
 	if (!(context->state & MAPS_MEM)) {
-		if (cmd != MBOX_C_RESET_STATE && cmd != MBOX_C_GET_MBOX_INFO
-					      && cmd != MBOX_C_ACK) {
+		if (cmd != MBOX_C_RESET_STATE && cmd != MBOX_C_GET_MBOX_INFO &&
+		    cmd != MBOX_C_ACK) {
 			MSG_ERR("Must call GET_MBOX_INFO before %d\n", cmd);
 			return -EPROTO;
 		}
@@ -514,16 +507,11 @@ typedef int (*mboxd_mbox_handler)(struct mbox_context *, union mbox_regs *,
 				  struct mbox_msg *);
 
 static const mboxd_mbox_handler transport_mbox_handlers[] = {
-	mbox_handle_reset,
-	mbox_handle_mbox_info,
-	mbox_handle_flash_info,
-	mbox_handle_read_window,
-	mbox_handle_close_window,
-	mbox_handle_write_window,
-	mbox_handle_dirty_window,
-	mbox_handle_flush_window,
-	mbox_handle_ack,
-	mbox_handle_erase_window
+	mbox_handle_reset,	  mbox_handle_mbox_info,
+	mbox_handle_flash_info,	  mbox_handle_read_window,
+	mbox_handle_close_window, mbox_handle_write_window,
+	mbox_handle_dirty_window, mbox_handle_flush_window,
+	mbox_handle_ack,	  mbox_handle_erase_window
 };
 
 /*
@@ -536,12 +524,10 @@ static const mboxd_mbox_handler transport_mbox_handlers[] = {
 static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 {
 	const struct transport_ops *old_transport = context->transport;
-	struct mbox_msg resp = {
-		.command = req->msg.command,
-		.seq = req->msg.seq,
-		.args = { 0 },
-		.response = MBOX_R_SUCCESS
-	};
+	struct mbox_msg resp = { .command = req->msg.command,
+				 .seq = req->msg.seq,
+				 .args = { 0 },
+				 .response = MBOX_R_SUCCESS };
 	int rc = 0, len, i;
 
 	MSG_INFO("Received MBOX command: %u\n", req->msg.command);
@@ -577,7 +563,7 @@ static int handle_mbox_req(struct mbox_context *context, union mbox_regs *req)
 	}
 
 	if (context->transport != old_transport &&
-			context->transport == &transport_mbox_ops) {
+	    context->transport == &transport_mbox_ops) {
 		/* A bit messy, but we need the correct event mask */
 		protocol_events_set(context, context->bmc_events);
 	}
@@ -644,8 +630,8 @@ int __transport_mbox_init(struct mbox_context *context, const char *path,
 	/* Open MBOX Device */
 	fd = open(path, O_RDWR | O_NONBLOCK);
 	if (fd < 0) {
-		MSG_INFO("Couldn't open %s with flags O_RDWR: %s\n",
-			path, strerror(errno));
+		MSG_INFO("Couldn't open %s with flags O_RDWR: %s\n", path,
+			 strerror(errno));
 		return -errno;
 	}
 	MSG_DBG("Opened mbox dev: %s\n", path);

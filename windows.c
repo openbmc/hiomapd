@@ -6,30 +6,30 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <limits.h>
+#include <mtd/mtd-abi.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
-#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
-#include <inttypes.h>
-#include <mtd/mtd-abi.h>
 
-#include "mboxd.h"
+#include "backend.h"
 #include "common.h"
+#include "mboxd.h"
 #include "transport_mbox.h"
 #include "windows.h"
-#include "backend.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpointer-arith"
@@ -70,8 +70,8 @@ static int init_window_mem(struct mbox_context *context)
 	 */
 	for (i = 0; i < context->windows.num; i++) {
 		uint32_t size = context->windows.window[i].size;
-		MSG_DBG("Window %zd @ %p for size 0x%.8x\n", i,
-			mem_location, size);
+		MSG_DBG("Window %zd @ %p for size 0x%.8x\n", i, mem_location,
+			size);
 		context->windows.window[i].mem = mem_location;
 		mem_location += size;
 		if (mem_location > (context->mem + context->mem_size)) {
@@ -103,13 +103,13 @@ int windows_init(struct mbox_context *context)
 	MSG_INFO("Window size: 0x%.8x\n", context->windows.default_size);
 	if (!context->windows.num) {
 		/* Use the entire reserved memory region by default */
-		context->windows.num = context->mem_size /
-				       context->windows.default_size;
+		context->windows.num =
+			context->mem_size / context->windows.default_size;
 	}
 	MSG_INFO("Number of windows: %d\n", context->windows.num);
 
-	context->windows.window = calloc(context->windows.num,
-					 sizeof(*context->windows.window));
+	context->windows.window =
+		calloc(context->windows.num, sizeof(*context->windows.window));
 	if (!context->windows.window) {
 		MSG_ERR("Memory allocation failed\n");
 		return -1;
@@ -157,8 +157,8 @@ void windows_free(struct mbox_context *context)
  *
  * Return:	0 on success otherwise negative error code
  */
-int window_flush_v1(struct mbox_context *context,
-			 uint32_t offset_bytes, uint32_t count_bytes)
+int window_flush_v1(struct mbox_context *context, uint32_t offset_bytes,
+		    uint32_t count_bytes)
 {
 	int rc;
 	uint32_t flash_offset;
@@ -175,8 +175,8 @@ int window_flush_v1(struct mbox_context *context,
 	 * high_mem.size = size from end of where we're writing to next erase
 	 * 		   boundary
 	 */
-	low_mem.flash_offset = align_down(flash_offset,
-					  1 << context->backend.erase_size_shift);
+	low_mem.flash_offset = align_down(
+		flash_offset, 1 << context->backend.erase_size_shift);
 	low_mem.size = flash_offset - low_mem.flash_offset;
 	high_mem.flash_offset = flash_offset + count_bytes;
 	high_mem.size = align_up(high_mem.flash_offset,
@@ -222,7 +222,7 @@ int window_flush_v1(struct mbox_context *context,
 	 */
 	rc = backend_erase(&context->backend, low_mem.flash_offset,
 			   (high_mem.flash_offset - low_mem.flash_offset) +
-			   high_mem.size);
+				   high_mem.size);
 	if (rc < 0) {
 		MSG_ERR("Couldn't erase flash\n");
 		goto out;
@@ -238,7 +238,7 @@ int window_flush_v1(struct mbox_context *context,
 		}
 	}
 	rc = backend_write(&context->backend, flash_offset,
-			 context->current->mem + offset_bytes, count_bytes);
+			   context->current->mem + offset_bytes, count_bytes);
 	if (rc < 0) {
 		goto out;
 	}
@@ -257,7 +257,8 @@ int window_flush_v1(struct mbox_context *context,
 		/* Write from the current window - it's at least that big */
 		rc = backend_write(&context->backend, high_mem.flash_offset,
 				   context->current->mem + offset_bytes +
-				   count_bytes, high_mem.size);
+					   count_bytes,
+				   high_mem.size);
 		if (rc < 0) {
 			goto out;
 		}
@@ -278,11 +279,12 @@ out:
  *
  * Return:	0 on success otherwise negative error code
  */
-int window_flush(struct mbox_context *context, uint32_t offset,
-		      uint32_t count, uint8_t type)
+int window_flush(struct mbox_context *context, uint32_t offset, uint32_t count,
+		 uint8_t type)
 {
 	int rc;
-	uint32_t flash_offset, count_bytes = count << context->backend.block_size_shift;
+	uint32_t flash_offset,
+		count_bytes = count << context->backend.block_size_shift;
 	uint32_t offset_bytes = offset << context->backend.block_size_shift;
 
 	switch (type) {
@@ -302,9 +304,9 @@ int window_flush(struct mbox_context *context, uint32_t offset,
 		 * correctly without losing data.
 		 */
 		if (context->backend.erase_size_shift !=
-				context->backend.block_size_shift) {
+		    context->backend.block_size_shift) {
 			return window_flush_v1(context, offset_bytes,
-						    count_bytes);
+					       count_bytes);
 		}
 		flash_offset = context->current->flash_offset + offset_bytes;
 
@@ -415,7 +417,8 @@ void window_reset(struct mbox_context *context, struct window_context *window)
 	window->size = context->windows.default_size;
 	if (window->dirty_bmap) { /* Might not have been allocated */
 		window_set_bytemap(context, window, 0,
-				   window->size >> context->backend.block_size_shift,
+				   window->size >>
+					   context->backend.block_size_shift,
 				   WINDOW_CLEAN);
 	}
 	window->age = 0;
@@ -517,8 +520,8 @@ struct window_context *windows_search(struct mbox_context *context,
 	struct window_context *cur;
 	size_t i;
 
-	MSG_DBG("Searching for window which contains 0x%.8x %s\n",
-		offset, exact ? "exactly" : "");
+	MSG_DBG("Searching for window which contains 0x%.8x %s\n", offset,
+		exact ? "exactly" : "");
 	for (i = 0; i < context->windows.num; i++) {
 		cur = &context->windows.window[i];
 		if (cur->flash_offset == FLASH_OFFSET_UNINIT) {
@@ -543,7 +546,8 @@ struct window_context *windows_search(struct mbox_context *context,
 }
 
 /*
- * windows_create_map() - Create a window mapping which maps the requested offset
+ * windows_create_map() - Create a window mapping which maps the requested
+ * offset
  * @context:		The mbox context pointer
  * @this_window:	A pointer to update to the "new" window
  * @offset:		Absolute flash offset to create a mapping for (bytes)
@@ -558,8 +562,8 @@ struct window_context *windows_search(struct mbox_context *context,
  * Return:	0 on success otherwise negative error code
  */
 int windows_create_map(struct mbox_context *context,
-		      struct window_context **this_window, uint32_t offset,
-		      bool exact)
+		       struct window_context **this_window, uint32_t offset,
+		       bool exact)
 {
 	struct window_context *cur = NULL;
 	int rc;
@@ -577,11 +581,12 @@ int windows_create_map(struct mbox_context *context,
 		window_reset(context, cur);
 	}
 
-	/* Adjust the offset for alignment by the backend. It will help prevent the
-	 * overlap.
+	/* Adjust the offset for alignment by the backend. It will help prevent
+	 * the overlap.
 	 */
 	if (!exact) {
-		if (backend_align_offset(&(context->backend), &offset, cur->size)) {
+		if (backend_align_offset(&(context->backend), &offset,
+					 cur->size)) {
 			MSG_ERR("Can't adjust the offset by backend\n");
 		}
 	}
@@ -601,8 +606,9 @@ int windows_create_map(struct mbox_context *context,
 		 * this.
 		 */
 		if (context->version == API_VERSION_1) {
-			cur->size = align_down(context->backend.flash_size - offset,
-					       1 << context->backend.block_size_shift);
+			cur->size = align_down(
+				context->backend.flash_size - offset,
+				1 << context->backend.block_size_shift);
 		} else {
 			/*
 			 * Allow requests to exceed the flash size, but limit
@@ -642,7 +648,8 @@ int windows_create_map(struct mbox_context *context,
 
 		MSG_DBG("Checking for window overlap\n");
 
-		for (i = offset; i < (offset + cur->size); i += (cur->size - 1)) {
+		for (i = offset; i < (offset + cur->size);
+		     i += (cur->size - 1)) {
 			struct window_context *tmp = NULL;
 			do {
 				tmp = windows_search(context, i, false);

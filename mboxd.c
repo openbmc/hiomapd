@@ -6,39 +6,40 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
-#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/signalfd.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
-#include <sys/signalfd.h>
+#include <syslog.h>
+#include <systemd/sd-bus.h>
 #include <time.h>
 #include <unistd.h>
-#include <inttypes.h>
-#include <systemd/sd-bus.h>
 
-#include "config.h"
-#include "mboxd.h"
-#include "common.h"
-#include "dbus.h"
-#include "control_dbus.h"
 #include "backend.h"
+#include "common.h"
+#include "config.h"
+#include "control_dbus.h"
+#include "dbus.h"
 #include "lpc.h"
+#include "mboxd.h"
 #include "transport_dbus.h"
-#include "windows.h"
 #include "vpnor/backend.h"
+#include "windows.h"
 
-const char* USAGE =
-	"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | --syslog]\n"
+const char *USAGE =
+	"\nUsage: %s [-V | --version] [-h | --help] [-v[v] | --verbose] [-s | "
+	"--syslog]\n"
 	"\t\t[-n | --window-num <num>]\n"
 	"\t\t[-w | --window-size <size>M]\n"
 	"\t\t-f | --flash <size>[K|M]\n"
@@ -91,7 +92,7 @@ static int dbus_init(struct mbox_context *context,
 
 	rc = sd_bus_request_name(context->bus, MBOX_DBUS_NAME,
 				 SD_BUS_NAME_ALLOW_REPLACEMENT |
-				 SD_BUS_NAME_REPLACE_EXISTING);
+					 SD_BUS_NAME_REPLACE_EXISTING);
 	if (rc < 0) {
 		MSG_ERR("Failed to request DBus name: %s\n", strerror(-rc));
 		return rc;
@@ -128,7 +129,7 @@ static int poll_loop(struct mbox_context *context)
 	while (1) {
 		rc = poll(context->fds, POLL_FDS, -1);
 
-		if (rc < 0) { /* Error */
+		if (rc < 0) {  /* Error */
 			MSG_ERR("Error from poll(): %s\n", strerror(errno));
 			break; /* This should mean we clean up nicely */
 		}
@@ -137,7 +138,7 @@ static int poll_loop(struct mbox_context *context)
 		if (context->fds[SIG_FD].revents & POLLIN) { /* Signal */
 			struct signalfd_siginfo info = { 0 };
 
-			rc = read(context->fds[SIG_FD].fd, (void *) &info,
+			rc = read(context->fds[SIG_FD].fd, (void *)&info,
 				  sizeof(info));
 			if (rc != sizeof(info)) {
 				MSG_ERR("Error reading signal event: %s\n",
@@ -169,7 +170,7 @@ static int poll_loop(struct mbox_context *context)
 			}
 			if (rc < 0) {
 				MSG_ERR("Error handling DBUS event: %s\n",
-						strerror(-rc));
+					strerror(-rc));
 			}
 		}
 		if (context->terminate) {
@@ -216,23 +217,22 @@ static void usage(const char *name)
 	printf(USAGE, name);
 }
 
-static bool parse_cmdline(int argc, char **argv,
-			  struct mbox_context *context)
+static bool parse_cmdline(int argc, char **argv, struct mbox_context *context)
 {
 	char *endptr;
 	int opt;
 
 	static const struct option long_options[] = {
-		{ "flash",		required_argument,	0, 'f' },
-		{ "backend",		required_argument,	0, 'b' },
-		{ "window-size",	optional_argument,	0, 'w' },
-		{ "window-num",		optional_argument,	0, 'n' },
-		{ "verbose",		no_argument,		0, 'v' },
-		{ "syslog",		no_argument,		0, 's' },
-		{ "trace",		optional_argument,	0, 't' },
-		{ "version",		no_argument,		0, 'V' },
-		{ "help",		no_argument,		0, 'h' },
-		{ 0,			0,			0, 0   }
+		{ "flash", required_argument, 0, 'f' },
+		{ "backend", required_argument, 0, 'b' },
+		{ "window-size", optional_argument, 0, 'w' },
+		{ "window-num", optional_argument, 0, 'n' },
+		{ "verbose", no_argument, 0, 'v' },
+		{ "syslog", no_argument, 0, 's' },
+		{ "trace", optional_argument, 0, 't' },
+		{ "version", no_argument, 0, 'V' },
+		{ "help", no_argument, 0, 'h' },
+		{ 0, 0, 0, 0 }
 	};
 
 	verbosity = MBOX_LOG_NONE;
@@ -240,13 +240,14 @@ static bool parse_cmdline(int argc, char **argv,
 
 	context->current = NULL; /* No current window */
 
-	while ((opt = getopt_long(argc, argv, "f:b:w::n::vst::Vh", long_options, NULL))
-			!= -1) {
+	while ((opt = getopt_long(argc, argv, "f:b:w::n::vst::Vh", long_options,
+				  NULL)) != -1) {
 		switch (opt) {
 		case 0:
 			break;
 		case 'f':
-			context->backend.flash_size = strtol(optarg, &endptr, 10);
+			context->backend.flash_size =
+				strtol(optarg, &endptr, 10);
 			if (optarg == endptr) {
 				fprintf(stderr, "Unparsable flash size\n");
 				return false;
@@ -270,19 +271,19 @@ static bool parse_cmdline(int argc, char **argv,
 			context->source = optarg;
 			break;
 		case 'n':
-			context->windows.num = strtol(argv[optind], &endptr,
-						      10);
+			context->windows.num =
+				strtol(argv[optind], &endptr, 10);
 			if (optarg == endptr || *endptr != '\0') {
 				fprintf(stderr, "Unparsable window num\n");
 				return false;
 			}
 			break;
 		case 'w':
-			context->windows.default_size = strtol(argv[optind],
-							       &endptr, 10);
+			context->windows.default_size =
+				strtol(argv[optind], &endptr, 10);
 			context->windows.default_size <<= 20; /* Given in MB */
-			if (optarg == endptr || (*endptr != '\0' &&
-						 *endptr != 'M')) {
+			if (optarg == endptr ||
+			    (*endptr != '\0' && *endptr != 'M')) {
 				fprintf(stderr, "Unparsable window size\n");
 				return false;
 			}
@@ -306,7 +307,7 @@ static bool parse_cmdline(int argc, char **argv,
 			exit(0);
 		case 't':
 			context->blktracefd = open(argv[optind],
-						   O_CREAT|O_TRUNC|O_WRONLY,
+						   O_CREAT | O_TRUNC | O_WRONLY,
 						   0666);
 			printf("Recording blktrace output to %s\n",
 			       argv[optind]);
@@ -330,8 +331,8 @@ static bool parse_cmdline(int argc, char **argv,
 	MSG_INFO("Flash size: 0x%.8x\n", context->backend.flash_size);
 
 	if (verbosity) {
-		MSG_INFO("%s logging\n", verbosity == MBOX_LOG_DEBUG ? "Debug" :
-					"Verbose");
+		MSG_INFO("%s logging\n",
+			 verbosity == MBOX_LOG_DEBUG ? "Debug" : "Verbose");
 	}
 
 	return true;
@@ -348,7 +349,7 @@ static int mboxd_backend_init(struct mbox_context *context)
 		vpnor_default_paths(&paths);
 
 		rc = backend_probe_vpnor(&context->backend, &paths);
-		if(rc < 0)
+		if (rc < 0)
 			rc = backend_probe_mtd(&context->backend, NULL);
 
 		return rc;

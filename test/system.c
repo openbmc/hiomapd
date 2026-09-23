@@ -36,8 +36,7 @@ int ioctl(int fd, unsigned long request, ...)
 	va_list ap;
 
 	switch (request) {
-	case MEMGETINFO:
-	{
+	case MEMGETINFO: {
 		struct mtd_info_user *info;
 
 		va_start(ap, request);
@@ -46,8 +45,7 @@ int ioctl(int fd, unsigned long request, ...)
 		va_end(ap);
 		break;
 	}
-	case MEMERASE:
-	{
+	case MEMERASE: {
 		struct erase_info_user *info;
 		uint8_t *map;
 
@@ -67,8 +65,7 @@ int ioctl(int fd, unsigned long request, ...)
 		va_end(ap);
 		break;
 	}
-	case ASPEED_LPC_CTRL_IOCTL_GET_SIZE:
-	{
+	case ASPEED_LPC_CTRL_IOCTL_GET_SIZE: {
 		struct aspeed_lpc_ctrl_mapping *info;
 
 		va_start(ap, request);
@@ -80,7 +77,8 @@ int ioctl(int fd, unsigned long request, ...)
 	case ASPEED_LPC_CTRL_IOCTL_MAP:
 		break;
 	default:
-		printf("ioctl() called with unhandled request 0x%08lx\n", request);
+		printf("ioctl() called with unhandled request 0x%08lx\n",
+		       request);
 		rc = -1;
 		break;
 	}
