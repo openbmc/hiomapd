@@ -18,8 +18,8 @@ int control_ping(struct mbox_context *context __attribute__((unused)))
 
 int control_daemon_state(struct mbox_context *context)
 {
-	return (context->state & STATE_SUSPENDED) ?
-		DAEMON_STATE_SUSPENDED : DAEMON_STATE_ACTIVE;
+	return (context->state & STATE_SUSPENDED) ? DAEMON_STATE_SUSPENDED :
+						    DAEMON_STATE_ACTIVE;
 }
 
 int control_lpc_state(struct mbox_context *context)
@@ -142,6 +142,6 @@ int control_set_backend(struct mbox_context *context, struct backend *backend,
 	if (rc < 0)
 		return rc;
 
-	return protocol_events_set(context,
-			BMC_EVENT_DAEMON_READY | BMC_EVENT_PROTOCOL_RESET);
+	return protocol_events_set(context, BMC_EVENT_DAEMON_READY |
+						    BMC_EVENT_PROTOCOL_RESET);
 }

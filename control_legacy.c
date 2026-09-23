@@ -4,33 +4,33 @@
 #include <stdlib.h>
 
 #include "common.h"
-#include "dbus.h"
 #include "control_dbus.h"
+#include "dbus.h"
 #include "mboxd.h"
 
 /* Command IDs (Legacy interface) */
-#define DBUS_C_PING            0x00
-#define DBUS_C_DAEMON_STATE    0x01
-#define DBUS_C_RESET           0x02
-#define DBUS_C_SUSPEND         0x03
-#define DBUS_C_RESUME          0x04
-#define DBUS_C_MODIFIED        0x05
-#define DBUS_C_KILL            0x06
-#define DBUS_C_LPC_STATE       0x07
-#define NUM_DBUS_CMDS          (DBUS_C_LPC_STATE + 1)
+#define DBUS_C_PING	    0x00
+#define DBUS_C_DAEMON_STATE 0x01
+#define DBUS_C_RESET	    0x02
+#define DBUS_C_SUSPEND	    0x03
+#define DBUS_C_RESUME	    0x04
+#define DBUS_C_MODIFIED	    0x05
+#define DBUS_C_KILL	    0x06
+#define DBUS_C_LPC_STATE    0x07
+#define NUM_DBUS_CMDS	    (DBUS_C_LPC_STATE + 1)
 
 /* Return Values (Legacy interface) */
-#define DBUS_SUCCESS           0x00 /* Command Succeeded */
-#define E_DBUS_INTERNAL        0x01 /* Internal DBUS Error */
-#define E_DBUS_INVAL           0x02 /* Invalid Command */
-#define E_DBUS_REJECTED        0x03 /* Daemon Rejected Request */
-#define E_DBUS_HARDWARE        0x04 /* BMC Hardware Error */
-#define E_DBUS_NO_MEM          0x05 /* Failed Memory Allocation */
+#define DBUS_SUCCESS	0x00 /* Command Succeeded */
+#define E_DBUS_INTERNAL 0x01 /* Internal DBUS Error */
+#define E_DBUS_INVAL	0x02 /* Invalid Command */
+#define E_DBUS_REJECTED 0x03 /* Daemon Rejected Request */
+#define E_DBUS_HARDWARE 0x04 /* BMC Hardware Error */
+#define E_DBUS_NO_MEM	0x05 /* Failed Memory Allocation */
 
 struct mbox_dbus_msg {
-       uint8_t cmd;
-       size_t num_args;
-       uint8_t *args;
+	uint8_t cmd;
+	size_t num_args;
+	uint8_t *args;
 };
 
 /*
@@ -41,8 +41,10 @@ struct mbox_dbus_msg {
  * Resp: NONE
  */
 static int control_legacy_ping(struct mbox_context *context,
-			   struct mbox_dbus_msg *req __attribute__((unused)),
-			   struct mbox_dbus_msg *resp __attribute__((unused)))
+			       struct mbox_dbus_msg *req
+			       __attribute__((unused)),
+			       struct mbox_dbus_msg *resp
+			       __attribute__((unused)))
 {
 	return control_ping(context);
 }
@@ -55,8 +57,9 @@ static int control_legacy_ping(struct mbox_context *context,
  * Resp[0]: Status Code
  */
 static int control_legacy_daemon_state(struct mbox_context *context,
-					  struct mbox_dbus_msg *req __attribute__((unused)),
-					  struct mbox_dbus_msg *resp)
+				       struct mbox_dbus_msg *req
+				       __attribute__((unused)),
+				       struct mbox_dbus_msg *resp)
 {
 	resp->num_args = DAEMON_STATE_NUM_ARGS;
 	resp->args = calloc(resp->num_args, sizeof(*resp->args));
@@ -73,10 +76,10 @@ static int control_legacy_daemon_state(struct mbox_context *context,
  * Resp[0]: LPC Bus State Code
  */
 static int control_legacy_lpc_state(struct mbox_context *context,
-				       struct mbox_dbus_msg *req __attribute__((unused)),
-				       struct mbox_dbus_msg *resp)
+				    struct mbox_dbus_msg *req
+				    __attribute__((unused)),
+				    struct mbox_dbus_msg *resp)
 {
-
 	resp->num_args = LPC_STATE_NUM_ARGS;
 	resp->args = calloc(resp->num_args, sizeof(*resp->args));
 	resp->args[0] = control_lpc_state(context);
@@ -93,8 +96,10 @@ static int control_legacy_lpc_state(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_reset(struct mbox_context *context,
-				   struct mbox_dbus_msg *req __attribute__((unused)),
-				   struct mbox_dbus_msg *resp __attribute__((unused)))
+				struct mbox_dbus_msg *req
+				__attribute__((unused)),
+				struct mbox_dbus_msg *resp
+				__attribute__((unused)))
 {
 	int rc;
 
@@ -118,8 +123,10 @@ static int control_legacy_reset(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_kill(struct mbox_context *context,
-				  struct mbox_dbus_msg *req __attribute__((unused)),
-				  struct mbox_dbus_msg *resp __attribute__((unused)))
+			       struct mbox_dbus_msg *req
+			       __attribute__((unused)),
+			       struct mbox_dbus_msg *resp
+			       __attribute__((unused)))
 {
 	return control_kill(context);
 }
@@ -135,8 +142,10 @@ static int control_legacy_kill(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_modified(struct mbox_context *context,
-				      struct mbox_dbus_msg *req __attribute__((unused)),
-				      struct mbox_dbus_msg *resp __attribute__((unused)))
+				   struct mbox_dbus_msg *req
+				   __attribute__((unused)),
+				   struct mbox_dbus_msg *resp
+				   __attribute__((unused)))
 {
 	return control_modified(context);
 }
@@ -151,8 +160,10 @@ static int control_legacy_modified(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_suspend(struct mbox_context *context,
-				     struct mbox_dbus_msg *req __attribute__((unused)),
-				     struct mbox_dbus_msg *resp __attribute__((unused)))
+				  struct mbox_dbus_msg *req
+				  __attribute__((unused)),
+				  struct mbox_dbus_msg *resp
+				  __attribute__((unused)))
 {
 	int rc;
 
@@ -173,8 +184,9 @@ static int control_legacy_suspend(struct mbox_context *context,
  * Resp: NONE
  */
 static int control_legacy_resume(struct mbox_context *context,
-				    struct mbox_dbus_msg *req,
-				    struct mbox_dbus_msg *resp __attribute__((unused)))
+				 struct mbox_dbus_msg *req,
+				 struct mbox_dbus_msg *resp
+				 __attribute__((unused)))
 {
 	int rc;
 
@@ -192,17 +204,13 @@ static int control_legacy_resume(struct mbox_context *context,
 }
 
 typedef int (*control_action)(struct mbox_context *context,
-				 struct mbox_dbus_msg *req,
-				 struct mbox_dbus_msg *resp);
+			      struct mbox_dbus_msg *req,
+			      struct mbox_dbus_msg *resp);
 static const control_action dbus_handlers[NUM_DBUS_CMDS] = {
-	control_legacy_ping,
-	control_legacy_daemon_state,
-	control_legacy_reset,
-	control_legacy_suspend,
-	control_legacy_resume,
-	control_legacy_modified,
-	control_legacy_kill,
-	control_legacy_lpc_state
+	control_legacy_ping,   control_legacy_daemon_state,
+	control_legacy_reset,  control_legacy_suspend,
+	control_legacy_resume, control_legacy_modified,
+	control_legacy_kill,   control_legacy_lpc_state
 };
 
 static int method_cmd(sd_bus_message *m, void *userdata,
@@ -214,7 +222,7 @@ static int method_cmd(sd_bus_message *m, void *userdata,
 	int rc;
 	size_t i;
 
-	context = (struct mbox_context *) userdata;
+	context = (struct mbox_context *)userdata;
 	if (!context) {
 		MSG_ERR("DBUS Internal Error\n");
 		rc = -E_DBUS_INTERNAL;
@@ -231,14 +239,14 @@ static int method_cmd(sd_bus_message *m, void *userdata,
 	MSG_DBG("DBUS request: %u\n", req.cmd);
 
 	/* Read the args */
-	rc = sd_bus_message_read_array(m, 'y', (const void **) &req.args,
+	rc = sd_bus_message_read_array(m, 'y', (const void **)&req.args,
 				       &req.num_args);
 	if (rc < 0) {
 		MSG_ERR("DBUS error reading message: %s\n", strerror(-rc));
 		rc = -E_DBUS_INTERNAL;
 		goto out;
 	}
-	MSG_DBG("DBUS num_args: %u\n", (unsigned) req.num_args);
+	MSG_DBG("DBUS num_args: %u\n", (unsigned)req.num_args);
 	for (i = 0; i < req.num_args; i++) {
 		MSG_DBG("DBUS arg[%zd]: %u\n", i, req.args[i]);
 	}
@@ -274,7 +282,7 @@ out:
 	}
 
 	MSG_DBG("DBUS response: %u\n", resp.cmd);
-	MSG_DBG("DBUS num_args: %u\n", (unsigned) resp.num_args);
+	MSG_DBG("DBUS num_args: %u\n", (unsigned)resp.num_args);
 	for (i = 0; i < resp.num_args; i++) {
 		MSG_DBG("DBUS arg[%zd]: %u\n", i, resp.args[i]);
 	}
@@ -310,8 +318,8 @@ int control_legacy_init(struct mbox_context *context)
 	}
 
 	return sd_bus_request_name(context->bus, MBOX_DBUS_LEGACY_NAME,
-				 SD_BUS_NAME_ALLOW_REPLACEMENT |
-				 SD_BUS_NAME_REPLACE_EXISTING);
+				   SD_BUS_NAME_ALLOW_REPLACEMENT |
+					   SD_BUS_NAME_REPLACE_EXISTING);
 }
 
 void control_legacy_free(struct mbox_context *context __attribute__((unused)))

@@ -5,13 +5,13 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include "backend.h"
 #include "common.h"
 #include "mboxd.h"
-#include "backend.h"
 
 #include "test/system.h"
 #include "test/tmpf.h"
@@ -27,7 +27,7 @@ void cleanup(void)
 
 int main(void)
 {
-	struct mbox_context context = {0};
+	struct mbox_context context = { 0 };
 	ssize_t processed;
 	int rand_fd;
 	char *src;

@@ -13,7 +13,6 @@
  * The flash structures used here have been borrowed from
  * https://github.com/open-power/hostboot/blob/master/src/usr/pnor/ffs.h */
 
-
 /* The maximum length of a partition's name */
 #define PARTITION_NAME_MAX 15
 
@@ -37,31 +36,31 @@
  * verifying these flags match the expected functionality (taking into account
  * changes in endianness).
  *
- * [1] https://github.com/open-power/hostboot/blob/9acfce99596f12dcc60952f8506a77e542609cbf/src/usr/pnor/common/ffs_hb.H#L81
+ * [1]
+ * https://github.com/open-power/hostboot/blob/9acfce99596f12dcc60952f8506a77e542609cbf/src/usr/pnor/common/ffs_hb.H#L81
  */
-#define PARTITION_USER_WORDS 16
-#define PARTITION_ECC_PROTECTED 0x8000
-#define PARTITION_PRESERVED 0x00800000
-#define PARTITION_READONLY 0x00400000
-#define PARTITION_REPROVISION 0x00100000
-#define PARTITION_VOLATILE 0x00080000
-#define PARTITION_CLEARECC 0x00040000
-#define PARTITION_VERSION_CHECK_SHA512 0x80000000
+#define PARTITION_USER_WORDS		      16
+#define PARTITION_ECC_PROTECTED		      0x8000
+#define PARTITION_PRESERVED		      0x00800000
+#define PARTITION_READONLY		      0x00400000
+#define PARTITION_REPROVISION		      0x00100000
+#define PARTITION_VOLATILE		      0x00080000
+#define PARTITION_CLEARECC		      0x00040000
+#define PARTITION_VERSION_CHECK_SHA512	      0x80000000
 #define PARTITION_VERSION_CHECK_SHA512_PER_EC 0x40000000
 
 /* Partition flags */
 enum partition_flags {
-    PARTITION_FLAGS_PROTECTED = 0x0001,
-    PARTITION_FLAGS_U_BOOT_ENV = 0x0002
+	PARTITION_FLAGS_PROTECTED = 0x0001,
+	PARTITION_FLAGS_U_BOOT_ENV = 0x0002
 };
 
 /* Type of image contained within partition */
 enum partition_type {
-    PARTITION_TYPE_DATA = 1,
-    PARTITION_TYPE_LOGICAL = 2,
-    PARTITION_TYPE_PARTITION = 3
+	PARTITION_TYPE_DATA = 1,
+	PARTITION_TYPE_LOGICAL = 2,
+	PARTITION_TYPE_PARTITION = 3
 };
-
 
 /**
  * struct pnor_partition
@@ -83,23 +82,22 @@ enum partition_type {
  *              in this structure
  */
 struct pnor_partition {
-    struct {
-        char         name[PARTITION_NAME_MAX + 1];
-        uint32_t     base;
-        uint32_t     size;
-        uint32_t     pid;
-        uint32_t     id;
-        uint32_t     type;
-        uint32_t     flags;
-        uint32_t     actual;
-        uint32_t     resvd[4];
-        struct
-        {
-            uint32_t data[PARTITION_USER_WORDS];
-        } user;
-    } __attribute__ ((packed)) data;
-    uint32_t     checksum;
-} __attribute__ ((packed));
+	struct {
+		char name[PARTITION_NAME_MAX + 1];
+		uint32_t base;
+		uint32_t size;
+		uint32_t pid;
+		uint32_t id;
+		uint32_t type;
+		uint32_t flags;
+		uint32_t actual;
+		uint32_t resvd[4];
+		struct {
+			uint32_t data[PARTITION_USER_WORDS];
+		} user;
+	} __attribute__((packed)) data;
+	uint32_t checksum;
+} __attribute__((packed));
 
 /**
  * struct pnor_partition_table
@@ -121,16 +119,16 @@ struct pnor_partition {
  * @partitions:     Array of struct pnor_partition
  */
 struct pnor_partition_table {
-    struct {
-        uint32_t         magic;
-        uint32_t         version;
-        uint32_t         size;
-        uint32_t         entry_size;
-        uint32_t         entry_count;
-        uint32_t         block_size;
-        uint32_t         block_count;
-        uint32_t         resvd[4];
-    } __attribute__ ((packed)) data;
-    uint32_t         checksum;
-    struct pnor_partition partitions[];
-} __attribute__ ((packed));
+	struct {
+		uint32_t magic;
+		uint32_t version;
+		uint32_t size;
+		uint32_t entry_size;
+		uint32_t entry_count;
+		uint32_t block_size;
+		uint32_t block_count;
+		uint32_t resvd[4];
+	} __attribute__((packed)) data;
+	uint32_t checksum;
+	struct pnor_partition partitions[];
+} __attribute__((packed));

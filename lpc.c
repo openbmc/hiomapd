@@ -6,31 +6,31 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
-#include <signal.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/timerfd.h>
 #include <sys/types.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
-#include <inttypes.h>
 
-#include "mboxd.h"
+#include "backend.h"
 #include "common.h"
 #include "lpc.h"
-#include "backend.h"
+#include "mboxd.h"
 #include <linux/aspeed-lpc-ctrl.h>
 
-#define LPC_CTRL_PATH		"/dev/aspeed-lpc-ctrl"
+#define LPC_CTRL_PATH "/dev/aspeed-lpc-ctrl"
 
 int __lpc_dev_init(struct mbox_context *context, const char *path)
 {
@@ -48,8 +48,8 @@ int __lpc_dev_init(struct mbox_context *context, const char *path)
 	MSG_DBG("Opening %s\n", path);
 	fd = open(path, O_RDWR | O_SYNC);
 	if (fd < 0) {
-		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n",
-			path, strerror(errno));
+		MSG_ERR("Couldn't open %s with flags O_RDWR: %s\n", path,
+			strerror(errno));
 		return -errno;
 	}
 
@@ -70,7 +70,7 @@ int __lpc_dev_init(struct mbox_context *context, const char *path)
 	/* mmap the Reserved Memory Region */
 	MSG_DBG("Mapping in 0x%.8x bytes of %s\n", context->mem_size, path);
 	context->mem = mmap(NULL, context->mem_size, PROT_READ | PROT_WRITE,
-				MAP_SHARED, fd, 0);
+			    MAP_SHARED, fd, 0);
 	if (context->mem == MAP_FAILED) {
 		MSG_ERR("Failed to map %s: %s\n", path, strerror(errno));
 		return -errno;
@@ -105,9 +105,9 @@ int lpc_map_flash(struct mbox_context *context)
 		.window_id = 0, /* There's only one */
 		.flags = 0,
 		/*
-		 * The mask is because the top nibble is the host LPC FW space,
-		 * we want space 0.
-		 */
+	     * The mask is because the top nibble is the host LPC FW space,
+	     * we want space 0.
+	     */
 		.addr = 0x0FFFFFFF & -context->backend.flash_size,
 		.offset = 0,
 		.size = context->backend.flash_size
@@ -124,10 +124,10 @@ int lpc_map_flash(struct mbox_context *context)
 
 	MSG_INFO("Pointing HOST LPC bus at the flash\n");
 	MSG_INFO("Assuming %dMB of flash: HOST LPC 0x%08x\n",
-		context->backend.flash_size >> 20, map.addr);
+		 context->backend.flash_size >> 20, map.addr);
 
-	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP, &map)
-			== -1) {
+	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP,
+		  &map) == -1) {
 		MSG_ERR("Failed to point the LPC BUS at the actual flash: %s\n",
 			strerror(errno));
 		return -errno;
@@ -164,7 +164,7 @@ int lpc_map_memory(struct mbox_context *context)
 	}
 
 	MSG_INFO("Pointing HOST LPC bus at memory region %p of size 0x%.8x\n",
-			context->mem, context->mem_size);
+		 context->mem, context->mem_size);
 	MSG_INFO("LPC address 0x%.8x\n", map.addr);
 
 	if (ioctl(context->fds[LPC_CTRL_FD].fd, ASPEED_LPC_CTRL_IOCTL_MAP,

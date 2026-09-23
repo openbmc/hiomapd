@@ -7,16 +7,16 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <mtd/mtd-abi.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <mtd/mtd-abi.h>
 
-#define FLASH_DIRTY	0x00
-#define FLASH_ERASED	0x01
+#define FLASH_DIRTY  0x00
+#define FLASH_ERASED 0x01
 
 /* Estimate as to how long (milliseconds) it takes to access a MB from flash */
-#define FLASH_ACCESS_MS_PER_MB		8000
+#define FLASH_ACCESS_MS_PER_MB 8000
 
 enum backend_reset_mode { reset_lpc_flash, reset_lpc_memory };
 
@@ -44,22 +44,23 @@ struct backend_ops {
 	 * @data:	Additional backend-implementation-specifc data
 	 * Return:	Zero on success, otherwise negative error
 	 */
-	int 	(*init)(struct backend *backend, void *data);
+	int (*init)(struct backend *backend, void *data);
 
 	/*
 	 * free() - Main teardown function for backing device
 	 * @context:	The backend context pointer
 	 */
-	void 	(*free)(struct backend *backend);
+	void (*free)(struct backend *backend);
 
 	/*
 	 * copy() - Copy data from the flash device into a provided buffer
 	 * @context:	The mbox context pointer
 	 * @offset:	The flash offset to copy from (bytes)
-	 * @mem:	The buffer to copy into (must be of at least 'size' bytes)
+	 * @mem:	The buffer to copy into (must be of at least 'size'
+	 * bytes)
 	 * @size:	The number of bytes to copy
-	 * Return:	Number of bytes copied on success, otherwise negative error
-	 *		code. flash_copy will copy at most 'size' bytes, but it may
+	 * Return:	Number of bytes copied on success, otherwise negative
+	 * error code. flash_copy will copy at most 'size' bytes, but it may
 	 *		copy less.
 	 */
 	int64_t (*copy)(struct backend *backend, uint32_t offset, void *mem,
@@ -72,13 +73,14 @@ struct backend_ops {
 	 * @count:	Number of bytes to set
 	 * @val:	Value to set the bytemap to
 	 *
-	 * The flash bytemap only tracks the erased status at the erase block level so
-	 * this will update the erased state for an (or many) erase blocks
+	 * The flash bytemap only tracks the erased status at the erase block
+	 * level so this will update the erased state for an (or many) erase
+	 * blocks
 	 *
 	 * Return:	0 if success otherwise negative error code
 	 */
-	 int 	(*set_bytemap)(struct backend *backend, uint32_t offset,
-			       uint32_t count, uint8_t val);
+	int (*set_bytemap)(struct backend *backend, uint32_t offset,
+			   uint32_t count, uint8_t val);
 
 	/*
 	 * erase() - Erase the flash
@@ -88,8 +90,7 @@ struct backend_ops {
 	 *
 	 * Return:	0 on success otherwise negative error code
 	 */
-	int 	(*erase)(struct backend *backend, uint32_t offset,
-			 uint32_t count);
+	int (*erase)(struct backend *backend, uint32_t offset, uint32_t count);
 	/*
 	 * write() - Write the flash from a provided buffer
 	 * @context:	The backend context pointer
@@ -99,8 +100,8 @@ struct backend_ops {
 	 *
 	 * Return:	0 on success otherwise negative error code
 	 */
-	int 	(*write)(struct backend *backend, uint32_t offset, void *buf,
-			 uint32_t count);
+	int (*write)(struct backend *backend, uint32_t offset, void *buf,
+		     uint32_t count);
 
 	/*
 	 * validate() - Validates a requested window
@@ -112,8 +113,8 @@ struct backend_ops {
 	 *
 	 * Return:	0 on valid otherwise negative error code
 	 */
-	int 	(*validate)(struct backend *backend,
-			    uint32_t offset, uint32_t size, bool ro);
+	int (*validate)(struct backend *backend, uint32_t offset, uint32_t size,
+			bool ro);
 
 	/*
 	 * reset() - Ready the reserved memory for host startup
@@ -123,7 +124,7 @@ struct backend_ops {
 	 *
 	 * Return:      0 on success otherwise negative error code
 	 */
-	int	(*reset)(struct backend *backend, void *buf, uint32_t count);
+	int (*reset)(struct backend *backend, void *buf, uint32_t count);
 
 	/*
 	 * align_offset() - Align the offset to avoid overlap
@@ -133,8 +134,8 @@ struct backend_ops {
 	 *
 	 * Return:      0 on success otherwise negative error code
 	 */
-	int	(*align_offset)(struct backend *backend, uint32_t *offset,
-				uint32_t window_size);
+	int (*align_offset)(struct backend *backend, uint32_t *offset,
+			    uint32_t window_size);
 };
 
 /* Make this better */
@@ -176,18 +177,16 @@ static inline void backend_free(struct backend *backend)
 		backend->ops->free(backend);
 }
 
-static inline int64_t backend_copy(struct backend *backend,
-				   uint32_t offset, void *mem, uint32_t size)
+static inline int64_t backend_copy(struct backend *backend, uint32_t offset,
+				   void *mem, uint32_t size)
 {
 	assert(backend);
 	assert(backend->ops->copy);
 	return backend->ops->copy(backend, offset, mem, size);
-
 }
 
-static inline int backend_set_bytemap(struct backend *backend,
-				      uint32_t offset, uint32_t count,
-				      uint8_t val)
+static inline int backend_set_bytemap(struct backend *backend, uint32_t offset,
+				      uint32_t count, uint8_t val)
 {
 	assert(backend);
 
@@ -215,8 +214,8 @@ static inline int backend_write(struct backend *backend, uint32_t offset,
 	return backend->ops->write(backend, offset, buf, count);
 }
 
-static inline int backend_validate(struct backend *backend,
-				   uint32_t offset, uint32_t size, bool ro)
+static inline int backend_validate(struct backend *backend, uint32_t offset,
+				   uint32_t size, bool ro)
 {
 	assert(backend);
 
@@ -234,13 +233,13 @@ static inline int backend_reset(struct backend *backend, void *buf,
 	return backend->ops->reset(backend, buf, count);
 }
 
-
-static inline int backend_align_offset(struct backend *backend, uint32_t *offset, uint32_t window_size)
+static inline int backend_align_offset(struct backend *backend,
+				       uint32_t *offset, uint32_t window_size)
 {
 	assert(backend);
-	if (backend->ops->align_offset){
-		return  backend->ops->align_offset(backend, offset, window_size);
-	}else{
+	if (backend->ops->align_offset) {
+		return backend->ops->align_offset(backend, offset, window_size);
+	} else {
 		/*
 		 * It would be nice to align the offsets which we map to window
 		 * size, this will help prevent overlap which would be an
@@ -266,7 +265,7 @@ struct vpnor_partition_paths;
 struct backend backend_get_vpnor(void);
 
 int backend_probe_vpnor(struct backend *master,
-                        const struct vpnor_partition_paths *paths);
+			const struct vpnor_partition_paths *paths);
 #else
 static inline struct backend backend_get_vpnor(void)
 {
@@ -275,8 +274,10 @@ static inline struct backend backend_get_vpnor(void)
 	return be;
 }
 
-static inline int backend_probe_vpnor(struct backend *master __attribute__((unused)),
-				      const struct vpnor_partition_paths *paths __attribute__((unused)))
+static inline int backend_probe_vpnor(struct backend *master
+				      __attribute__((unused)),
+				      const struct vpnor_partition_paths *paths
+				      __attribute__((unused)))
 {
 	return -ENOTSUP;
 }
