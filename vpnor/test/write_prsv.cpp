@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (C) 2018 IBM Corp.
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "common.h"
 #include "mboxd.h"

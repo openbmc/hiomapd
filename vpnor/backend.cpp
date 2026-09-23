@@ -13,7 +13,8 @@
 
 #include <algorithm>
 
-extern "C" {
+extern "C"
+{
 #include "backend.h"
 #include "common.h"
 #include "lpc.h"
@@ -22,20 +23,21 @@ extern "C" {
 #include "vpnor/backend.h"
 }
 
+#include "vpnor/backend.h"
+
 #include "vpnor/partition.hpp"
 #include "vpnor/table.hpp"
 #include "xyz/openbmc_project/Common/error.hpp"
+
+#include <phosphor-logging/elog-errors.hpp>
+#include <phosphor-logging/log.hpp>
 
 #include <cassert>
 #include <exception>
 #include <filesystem>
 #include <memory>
-#include <phosphor-logging/elog-errors.hpp>
-#include <phosphor-logging/log.hpp>
 #include <stdexcept>
 #include <string>
-
-#include "vpnor/backend.h"
 
 namespace err = sdbusplus::xyz::openbmc_project::Common::Error;
 namespace fs = std::filesystem;
