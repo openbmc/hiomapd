@@ -63,7 +63,7 @@ int main(void)
     fs::path patch = root.patch() / "TEST1";
     assert(UPDATE_SIZE == fs::file_size(patch));
     fd = open(patch.c_str(), O_RDONLY);
-    map = mmap(NULL, UPDATE_SIZE, PROT_READ, MAP_SHARED, fd, 0);
+    map = mmap(nullptr, UPDATE_SIZE, PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
     rc = memcmp(update.data(), map, update.size());
     assert(rc == 0);

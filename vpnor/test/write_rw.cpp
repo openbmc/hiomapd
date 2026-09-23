@@ -51,7 +51,7 @@ int main(void)
     rc = backend_write(&ctx->backend, 0x1000, src, sizeof(src));
     assert(rc == 0);
     fd = open((root.rw() / "TEST1").c_str(), O_RDONLY);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
+    map = mmap(nullptr, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
@@ -87,7 +87,7 @@ int main(void)
 
     /* Check that RW file is unmodified after the bad write */
     fd = open((root.rw() / "TEST1").c_str(), O_RDONLY);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
+    map = mmap(nullptr, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);

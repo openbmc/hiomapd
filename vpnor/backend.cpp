@@ -87,7 +87,7 @@ static int vpnor_init(struct backend* backend,
         priv->vpnor = new vpnor_partition_table;
         // Table object may throw error hence initialize table pointer
         // to null so that no one try to free the junk pointer.
-        priv->vpnor->table = NULL;
+        priv->vpnor->table = nullptr;
         priv->vpnor->table =
             new openpower::virtual_pnor::partition::Table(backend);
     }
@@ -187,7 +187,7 @@ int vpnor_dev_init(struct backend* backend, void* data)
 {
     vpnor_partition_paths* paths = (vpnor_partition_paths*)data;
     struct mtd_info_user mtd_info;
-    const char* filename = NULL;
+    const char* filename = nullptr;
     int fd;
     int rc = 0;
 
@@ -517,8 +517,8 @@ static const struct backend_ops vpnor_ops = {
     .init = vpnor_dev_init,
     .free = vpnor_free,
     .copy = vpnor_copy,
-    .set_bytemap = NULL,
-    .erase = NULL,
+    .set_bytemap = nullptr,
+    .erase = nullptr,
     .write = vpnor_write,
     .validate = vpnor_validate,
     .reset = vpnor_reset,

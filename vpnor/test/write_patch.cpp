@@ -62,7 +62,7 @@ int main(void)
 
     /* Check that RW file is unmodified after the patch write */
     fd = open((root.rw() / "TEST1").c_str(), O_RDONLY);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
+    map = mmap(nullptr, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
     rc = memcmp(data, map, sizeof(src));
     assert(rc == 0);
@@ -71,7 +71,7 @@ int main(void)
 
     /* Check that PATCH is modified with the new data */
     fd = open(patch.c_str(), O_RDONLY);
-    map = mmap(NULL, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
+    map = mmap(nullptr, sizeof(src), PROT_READ, MAP_SHARED, fd, 0);
     assert(map != MAP_FAILED);
     rc = memcmp(src, map, sizeof(src));
     assert(rc == 0);
