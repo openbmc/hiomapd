@@ -13,7 +13,7 @@ fi
 
 # Use the provided clang-format, only define a version
 # if we don't have one provided already
-export CLANG_FORMAT="${CLANG_FORMAT:-clang-format-14}"
+export CLANG_FORMAT="${CLANG_FORMAT:-clang-format-21}"
 
 # phosphor-mboxd is a fork of mboxbridge, the reference mbox daemon
 # implementation. mboxbridge is C written with the style of the Linux kernel.
@@ -32,10 +32,10 @@ export CLANG_FORMAT="${CLANG_FORMAT:-clang-format-14}"
 # So now we need to symlink different files in place before calling
 # ${CLANG_FORMAT}. Everything is terrible.
 #
-# ln -sf .clang-format-c .clang-format
-# git ls-files | grep '\.[ch]$' | xargs "${CLANG_FORMAT}" -i -style=file
+ln -sf .clang-format-c .clang-format
+git ls-files | grep '\.[ch]$' | xargs "${CLANG_FORMAT}" -i -style=file
+rm .clang-format
 
 ln -sf .clang-format-c++ .clang-format
 git ls-files | grep '\.[ch]pp$' | xargs "${CLANG_FORMAT}" -i -style=file
-
 rm .clang-format

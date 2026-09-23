@@ -7,9 +7,9 @@
 #include <assert.h>
 #include <linux/blktrace_api.h>
 #include <mtd/mtd-abi.h>
-#include <systemd/sd-bus.h>
 #include <poll.h>
 #include <stdbool.h>
+#include <systemd/sd-bus.h>
 
 #include "backend.h"
 #include "protocol.h"
@@ -18,44 +18,42 @@
 #include "windows.h"
 
 enum api_version {
-	API_VERSION_INVAL	= 0,
-	API_VERSION_1		= 1,
-	API_VERSION_2		= 2
+	API_VERSION_INVAL = 0,
+	API_VERSION_1 = 1,
+	API_VERSION_2 = 2
 };
 
-#define API_MIN_VERSION			API_VERSION_1
-#define API_MAX_VERSION			API_VERSION_2
+#define API_MIN_VERSION API_VERSION_1
+#define API_MAX_VERSION API_VERSION_2
 
-#define THIS_NAME			"Mailbox Daemon"
+#define THIS_NAME "Mailbox Daemon"
 
 /* Argument Flags */
-#define FLAGS_NONE			0x00
-#define FLAGS_SHORT_LIFETIME		0x01
+#define FLAGS_NONE	     0x00
+#define FLAGS_SHORT_LIFETIME 0x01
 
 /* BMC Event Notification */
-#define BMC_EVENT_PROTOCOL_RESET	0x01
-#define BMC_EVENT_WINDOW_RESET		0x02
-#define BMC_EVENT_ACK_MASK		(BMC_EVENT_PROTOCOL_RESET | \
-					BMC_EVENT_WINDOW_RESET)
-#define BMC_EVENT_FLASH_CTRL_LOST	0x40
-#define BMC_EVENT_DAEMON_READY		0x80
-#define BMC_EVENT_V1_MASK		BMC_EVENT_PROTOCOL_RESET
-#define BMC_EVENT_V2_MASK		(BMC_EVENT_PROTOCOL_RESET | \
-					BMC_EVENT_WINDOW_RESET | \
-					BMC_EVENT_FLASH_CTRL_LOST | \
-					BMC_EVENT_DAEMON_READY)
+#define BMC_EVENT_PROTOCOL_RESET  0x01
+#define BMC_EVENT_WINDOW_RESET	  0x02
+#define BMC_EVENT_ACK_MASK	  (BMC_EVENT_PROTOCOL_RESET | BMC_EVENT_WINDOW_RESET)
+#define BMC_EVENT_FLASH_CTRL_LOST 0x40
+#define BMC_EVENT_DAEMON_READY	  0x80
+#define BMC_EVENT_V1_MASK	  BMC_EVENT_PROTOCOL_RESET
+#define BMC_EVENT_V2_MASK                                                      \
+	(BMC_EVENT_PROTOCOL_RESET | BMC_EVENT_WINDOW_RESET |                   \
+	 BMC_EVENT_FLASH_CTRL_LOST | BMC_EVENT_DAEMON_READY)
 
 /* Put polled file descriptors first */
-#define DBUS_FD			0
-#define MBOX_FD			1
-#define SIG_FD			2
-#define POLL_FDS		3 /* Number of FDs we poll on */
-#define LPC_CTRL_FD		3
-#define TOTAL_FDS		4
+#define DBUS_FD	    0
+#define MBOX_FD	    1
+#define SIG_FD	    2
+#define POLL_FDS    3 /* Number of FDs we poll on */
+#define LPC_CTRL_FD 3
+#define TOTAL_FDS   4
 
-#define MAPS_FLASH		(1 << 0)
-#define MAPS_MEM		(1 << 1)
-#define STATE_SUSPENDED		(1 << 7)
+#define MAPS_FLASH	(1 << 0)
+#define MAPS_MEM	(1 << 1)
+#define STATE_SUSPENDED (1 << 7)
 
 enum mbox_state {
 	/* Still Initing */
@@ -79,7 +77,7 @@ struct mbox_context {
 	/* Commandline parameters */
 	const char *source;
 
-/* System State */
+	/* System State */
 	enum mbox_state state;
 	struct pollfd fds[TOTAL_FDS];
 	sd_bus *bus;
@@ -87,7 +85,7 @@ struct mbox_context {
 	uint8_t bmc_events;
 	uint8_t prev_seq;
 
-/* Window State */
+	/* Window State */
 	/* The window list struct containing all current "windows" */
 	struct window_list windows;
 	/* The window the host is currently pointed at */
@@ -95,7 +93,7 @@ struct mbox_context {
 	/* Is the current window a write one */
 	bool current_is_write;
 
-/* Memory & Flash State */
+	/* Memory & Flash State */
 	/* Reserved Memory Region */
 	void *mem;
 	/* Reserved Mem Size (bytes) */

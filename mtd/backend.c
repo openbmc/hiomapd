@@ -25,8 +25,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "common.h"
 #include "backend.h"
+#include "common.h"
 #include "lpc.h"
 #include "mboxd.h"
 #include "mtd/backend.h"
@@ -88,19 +88,18 @@ static int mtd_dev_init(struct backend *backend, void *data)
 		 * the test environment), log an error. As a consequence, this
 		 * error is expected in the test case output.
 		 */
-		MSG_ERR(
-		    "Flash size MUST be supplied on the commandline. However, "
-		    "continuing by assuming flash is %u bytes\n",
-		    priv->mtd_info.size);
+		MSG_ERR("Flash size MUST be supplied on the commandline. However, "
+			"continuing by assuming flash is %u bytes\n",
+			priv->mtd_info.size);
 		backend->flash_size = priv->mtd_info.size;
 	}
 
 	/* We know the erase size so we can allocate the flash_erased bytemap */
 	backend->erase_size_shift = log_2(priv->mtd_info.erasesize);
 	backend->block_size_shift = backend->erase_size_shift;
-	priv->flash_bmap = calloc(backend->flash_size
-			>> backend->erase_size_shift,
-		   sizeof(*priv->flash_bmap));
+	priv->flash_bmap =
+		calloc(backend->flash_size >> backend->erase_size_shift,
+		       sizeof(*priv->flash_bmap));
 	MSG_DBG("Flash erase size: 0x%.8x\n", priv->mtd_info.erasesize);
 
 	backend->priv = priv;
@@ -171,10 +170,9 @@ static int mtd_set_bytemap(struct backend *backend, uint32_t offset,
 
 	MSG_DBG("Set flash bytemap @ 0x%.8x for 0x%.8x to %s\n", offset, count,
 		val ? "ERASED" : "DIRTY");
-	memset(priv->flash_bmap + (offset >> backend->erase_size_shift),
-	       val,
+	memset(priv->flash_bmap + (offset >> backend->erase_size_shift), val,
 	       align_up(count, 1 << backend->erase_size_shift) >>
-		   backend->erase_size_shift);
+		       backend->erase_size_shift);
 
 	return 0;
 }
@@ -191,7 +189,7 @@ static int mtd_erase(struct backend *backend, uint32_t offset, uint32_t count)
 {
 	const uint32_t erase_size = 1 << backend->erase_size_shift;
 	struct mtd_data *priv = backend->priv;
-	struct erase_info_user erase_info = {0};
+	struct erase_info_user erase_info = { 0 };
 	int rc;
 
 	MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n", offset, count);
@@ -259,8 +257,8 @@ static int mtd_erase(struct backend *backend, uint32_t offset, uint32_t count)
  *		code. mtd_copy will copy at most 'size' bytes, but it may
  *		copy less.
  */
-static int64_t mtd_copy(struct backend *backend, uint32_t offset,
-			  void *mem, uint32_t size)
+static int64_t mtd_copy(struct backend *backend, uint32_t offset, void *mem,
+			uint32_t size)
 {
 	struct mtd_data *priv = backend->priv;
 	int32_t size_read;
@@ -275,8 +273,7 @@ static int64_t mtd_copy(struct backend *backend, uint32_t offset,
 	}
 
 	do {
-		size_read = read(priv->fd, mem,
-				 min_u32(CHUNKSIZE, size));
+		size_read = read(priv->fd, mem, min_u32(CHUNKSIZE, size));
 		if (size_read < 0) {
 			MSG_ERR("Couldn't copy mtd into ram: %s\n",
 				strerror(errno));
@@ -300,7 +297,7 @@ static int64_t mtd_copy(struct backend *backend, uint32_t offset,
  * Return:	0 on success otherwise negative error code
  */
 static int mtd_write(struct backend *backend, uint32_t offset, void *buf,
-		       uint32_t count)
+		     uint32_t count)
 {
 	struct mtd_data *priv = backend->priv;
 	uint32_t buf_offset = 0;
@@ -359,7 +356,7 @@ static const struct backend_ops mtd_ops = {
 
 struct backend backend_get_mtd(void)
 {
-	struct backend be = {0};
+	struct backend be = { 0 };
 
 	be.ops = &mtd_ops;
 

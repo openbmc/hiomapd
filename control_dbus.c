@@ -6,15 +6,16 @@
 #include <systemd/sd-bus.h>
 
 #include "common.h"
-#include "dbus.h"
 #include "control_dbus.h"
+#include "dbus.h"
 #include "mboxd.h"
 
 typedef int (*control_action)(struct mbox_context *context);
 
 static int control_dbus_directive(sd_bus_message *m, void *userdata,
-					sd_bus_error *ret_error __attribute__((unused)),
-					control_action action)
+				  sd_bus_error *ret_error
+				  __attribute__((unused)),
+				  control_action action)
 {
 	struct mbox_context *context;
 	sd_bus_message *n;
@@ -25,7 +26,7 @@ static int control_dbus_directive(sd_bus_message *m, void *userdata,
 		return -EINVAL;
 	}
 
-	context = (struct mbox_context *) userdata;
+	context = (struct mbox_context *)userdata;
 	if (!context) {
 		MSG_ERR("DBUS Internal Error\n");
 		return -EINVAL;
@@ -49,31 +50,31 @@ static int control_dbus_directive(sd_bus_message *m, void *userdata,
 }
 
 static int control_dbus_ping(sd_bus_message *m, void *userdata,
-				   sd_bus_error *ret_error)
+			     sd_bus_error *ret_error)
 {
 	return control_dbus_directive(m, userdata, ret_error, control_ping);
 }
 
 static int control_dbus_reset(sd_bus_message *m, void *userdata,
-				    sd_bus_error *ret_error)
+			      sd_bus_error *ret_error)
 {
 	return control_dbus_directive(m, userdata, ret_error, control_reset);
 }
 
 static int control_dbus_kill(sd_bus_message *m, void *userdata,
-				   sd_bus_error *ret_error)
+			     sd_bus_error *ret_error)
 {
 	return control_dbus_directive(m, userdata, ret_error, control_kill);
 }
 
 static int control_dbus_modified(sd_bus_message *m, void *userdata,
-				       sd_bus_error *ret_error)
+				 sd_bus_error *ret_error)
 {
 	return control_dbus_directive(m, userdata, ret_error, control_modified);
 }
 
 static int control_dbus_suspend(sd_bus_message *m, void *userdata,
-				      sd_bus_error *ret_error)
+				sd_bus_error *ret_error)
 {
 	return control_dbus_directive(m, userdata, ret_error, control_suspend);
 }
@@ -86,7 +87,7 @@ static int control_dbus_resume(sd_bus_message *m, void *userdata,
 	bool modified;
 	int rc;
 
-	context = (struct mbox_context *) userdata;
+	context = (struct mbox_context *)userdata;
 	if (!context) {
 		MSG_ERR("DBUS Internal Error\n");
 		return -EINVAL;
@@ -112,7 +113,8 @@ static int control_dbus_resume(sd_bus_message *m, void *userdata,
 }
 
 static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
-				    sd_bus_error *ret_error __attribute__((unused)))
+				    sd_bus_error *ret_error
+				    __attribute__((unused)))
 {
 	struct mbox_context *context;
 	struct backend backend;
@@ -120,7 +122,7 @@ static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
 	const char *name;
 	int rc;
 
-	context = (struct mbox_context *) userdata;
+	context = (struct mbox_context *)userdata;
 	if (!context) {
 		MSG_ERR("DBUS Internal Error\n");
 		return -EINVAL;
@@ -200,8 +202,8 @@ static int control_dbus_set_backend(sd_bus_message *m, void *userdata,
 static int control_dbus_get_u8(sd_bus *bus __attribute__((unused)),
 			       const char *path,
 			       const char *interface __attribute__((unused)),
-			       const char *property,
-			       sd_bus_message *reply, void *userdata,
+			       const char *property, sd_bus_message *reply,
+			       void *userdata,
 			       sd_bus_error *ret_error __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
@@ -238,18 +240,17 @@ static const sd_bus_vtable mboxd_vtable[] = {
 	SD_BUS_METHOD("SetBackend", "sas", NULL, &control_dbus_set_backend,
 		      SD_BUS_VTABLE_UNPRIVILEGED),
 	SD_BUS_PROPERTY("DaemonState", "y", &control_dbus_get_u8, 0,
-		        SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_PROPERTY("LpcState", "y", &control_dbus_get_u8, 0,
-		        SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_VTABLE_END
 };
 
 int control_dbus_init(struct mbox_context *context)
 {
-	return sd_bus_add_object_vtable(context->bus, NULL,
-					MBOX_DBUS_OBJECT,
-					MBOX_DBUS_CONTROL_IFACE,
-					mboxd_vtable, context);
+	return sd_bus_add_object_vtable(context->bus, NULL, MBOX_DBUS_OBJECT,
+					MBOX_DBUS_CONTROL_IFACE, mboxd_vtable,
+					context);
 }
 
 #define __unused __attribute__((unused))

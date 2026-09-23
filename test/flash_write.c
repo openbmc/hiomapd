@@ -10,9 +10,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "backend.h"
 #include "common.h"
 #include "mboxd.h"
-#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -34,7 +34,7 @@ char *get_dev_mtd(void)
 	return tmp->path;
 }
 
-#define MEM_SIZE 3
+#define MEM_SIZE   3
 #define ERASE_SIZE 1
 
 int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
@@ -59,7 +59,7 @@ int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
 
 int main(void)
 {
-	struct mbox_context _context = {0}, *context = &_context;
+	struct mbox_context _context = { 0 }, *context = &_context;
 	struct backend *backend = &context->backend;
 	uint8_t src[MEM_SIZE];
 	uint8_t *map;

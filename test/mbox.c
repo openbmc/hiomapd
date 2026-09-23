@@ -10,14 +10,14 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
-#include "config.h"
-#include "mboxd.h"
 #include "backend.h"
+#include "config.h"
 #include "lpc.h"
+#include "mboxd.h"
 #include "transport_mbox.h"
 #include "windows.h"
 
@@ -58,7 +58,7 @@ void dump_buf(const void *buf, size_t len)
  */
 
 /* Macros for handling the pipe/file discrepancy */
-#define RESPONSE_OFFSET	16
+#define RESPONSE_OFFSET 16
 #define RESPONSE_SIZE	14
 
 int mbox_cmp(struct mbox_context *context, const uint8_t *expected, size_t len)
@@ -110,7 +110,7 @@ void mbox_rspcpy(struct mbox_context *context, struct mbox_msg *msg)
 }
 
 int mbox_command_write(struct mbox_context *context, const uint8_t *command,
-		size_t len)
+		       size_t len)
 {
 	size_t remaining;
 	int rc;
@@ -138,7 +138,7 @@ out:
 }
 
 int mbox_command_dispatch(struct mbox_context *context, const uint8_t *command,
-		size_t len)
+			  size_t len)
 {
 	uint8_t status;
 	int rc;
@@ -239,10 +239,10 @@ struct mbox_context *mbox_create_frontend_context(int n_windows, size_t len)
 	assert(rc == 0);
 
 	/*
-	 * We need to call __transport_mbox_init() to initialise the handler table.
-	 * However, afterwards we need to discard the fd of the clearly useless
-	 * /dev/null and replace it with our own fd for mbox device emulation
-	 * by the test framework.
+	 * We need to call __transport_mbox_init() to initialise the handler
+	 * table. However, afterwards we need to discard the fd of the clearly
+	 * useless /dev/null and replace it with our own fd for mbox device
+	 * emulation by the test framework.
 	 */
 	__transport_mbox_init(&test.context, "/dev/null", &ops);
 	test.context.transport = ops;
@@ -289,26 +289,23 @@ struct mbox_context *mbox_create_test_context(int n_windows, size_t len)
 }
 
 /* From ccan's container_of module, CC0 license */
-#define container_of(member_ptr, containing_type, member)		\
-	 ((containing_type *)						\
-	  ((char *)(member_ptr)						\
-	   - container_off(containing_type, member))			\
-	  + check_types_match(*(member_ptr), ((containing_type *)0)->member))
+#define container_of(member_ptr, containing_type, member)                      \
+	((containing_type *)((char *)(member_ptr) -                            \
+			     container_off(containing_type, member)) +         \
+	 check_types_match(*(member_ptr), ((containing_type *)0)->member))
 
 /* From ccan's container_of module, CC0 license */
-#define container_off(containing_type, member)	\
-		offsetof(containing_type, member)
+#define container_off(containing_type, member) offsetof(containing_type, member)
 
 /* From ccan's check_type module, CC0 license */
-#define check_type(expr, type)			\
-	((typeof(expr) *)0 != (type *)0)
+#define check_type(expr, type) ((typeof(expr) *)0 != (type *)0)
 
 /* From ccan's check_type module, CC0 license */
-#define check_types_match(expr1, expr2)		\
+#define check_types_match(expr1, expr2)                                        \
 	((typeof(expr1) *)0 != (typeof(expr2) *)0)
 
 int mbox_set_mtd_data(struct mbox_context *context, const void *data,
-		size_t len)
+		      size_t len)
 {
 	struct mbox_test_context *arg;
 	void *map;
@@ -330,8 +327,8 @@ int mbox_set_mtd_data(struct mbox_context *context, const void *data,
 	assert(&test == arg);
 	assert(len <= test.context.backend.flash_size);
 
-	map = mmap(NULL, test.context.backend.flash_size,
-		   PROT_WRITE, MAP_SHARED, test.flash.fd, 0);
+	map = mmap(NULL, test.context.backend.flash_size, PROT_WRITE,
+		   MAP_SHARED, test.flash.fd, 0);
 	assert(map != MAP_FAILED);
 	memcpy(map, data, len);
 	munmap(map, test.context.backend.flash_size);

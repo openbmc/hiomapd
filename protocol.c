@@ -24,7 +24,7 @@
 #pragma GCC diagnostic ignored "-Wpointer-arith"
 #pragma GCC diagnostic ignored "-Wunused-result"
 
-#define BLOCK_SIZE_SHIFT_V1		12 /* 4K */
+#define BLOCK_SIZE_SHIFT_V1 12 /* 4K */
 
 static inline uint8_t protocol_get_bmc_event_mask(struct mbox_context *context)
 {
@@ -124,15 +124,16 @@ static int protocol_v1_get_info(struct mbox_context *context,
 	/* Now do all required initialisation for v1 */
 	context->backend.block_size_shift = BLOCK_SIZE_SHIFT_V1;
 	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
-		 1 << context->backend.block_size_shift, context->backend.block_size_shift);
+		 1 << context->backend.block_size_shift,
+		 context->backend.block_size_shift);
 
 	/* Knowing blocksize we can allocate the window dirty_bytemap */
 	windows_alloc_dirty_bytemap(context);
 
-	io->resp.v1.read_window_size =
-		context->windows.default_size >> context->backend.block_size_shift;
-	io->resp.v1.write_window_size =
-		context->windows.default_size >> context->backend.block_size_shift;
+	io->resp.v1.read_window_size = context->windows.default_size >>
+				       context->backend.block_size_shift;
+	io->resp.v1.write_window_size = context->windows.default_size >>
+					context->backend.block_size_shift;
 
 	return lpc_map_memory(context);
 }
@@ -314,11 +315,11 @@ static int protocol_v1_create_window(struct mbox_context *context,
 
 	if (!context->current) { /* No existing window */
 		MSG_DBG("No existing window which maps that flash offset\n");
-		rc = windows_create_map(context, &context->current,
-				       offset,
-				       context->version == API_VERSION_1);
+		rc = windows_create_map(context, &context->current, offset,
+					context->version == API_VERSION_1);
 		if (rc < 0) { /* Unable to map offset */
-			MSG_ERR("Couldn't create window mapping for offset 0x%.8x\n",
+			MSG_ERR("Couldn't create window mapping for offset "
+				"0x%.8x\n",
 				offset);
 			return rc;
 		}
@@ -354,8 +355,8 @@ static int protocol_v1_mark_dirty(struct mbox_context *context,
 	if (off > offset) { /* Underflow - before current window */
 		MSG_ERR("Tried to mark dirty before start of window\n");
 		MSG_ERR("requested offset: 0x%x window start: 0x%x\n",
-				offset << context->backend.block_size_shift,
-				context->current->flash_offset);
+			offset << context->backend.block_size_shift,
+			context->current->flash_offset);
 		return -EINVAL;
 	}
 	offset = off;
@@ -385,17 +386,19 @@ static int generic_flush(struct mbox_context *context)
 	count = 0;
 	prev = WINDOW_CLEAN;
 
-	MSG_INFO("Flush window @ %p for size 0x%.8x which maps flash @ 0x%.8x\n",
-		 context->current->mem, context->current->size,
-		 context->current->flash_offset);
+	MSG_INFO(
+		"Flush window @ %p for size 0x%.8x which maps flash @ 0x%.8x\n",
+		context->current->mem, context->current->size,
+		context->current->flash_offset);
 
 	/*
 	 * We look for streaks of the same type and keep a count, when the type
 	 * (dirty/erased) changes we perform the required action on the backing
 	 * store and update the current streak-type
 	 */
-	for (i = 0; i < (context->current->size >> context->backend.block_size_shift);
-			i++) {
+	for (i = 0;
+	     i < (context->current->size >> context->backend.block_size_shift);
+	     i++) {
 		uint8_t cur = context->current->dirty_bmap[i];
 		if (cur != WINDOW_CLEAN) {
 			if (cur == prev) { /* Same as previous block, incrmnt */
@@ -404,8 +407,7 @@ static int generic_flush(struct mbox_context *context)
 				offset = i;
 				count++;
 			} else { /* Change in streak type */
-				rc = window_flush(context, offset, count,
-						       prev);
+				rc = window_flush(context, offset, count, prev);
 				if (rc < 0) {
 					return rc;
 				}
@@ -414,8 +416,7 @@ static int generic_flush(struct mbox_context *context)
 			}
 		} else {
 			if (prev != WINDOW_CLEAN) { /* End of a streak */
-				rc = window_flush(context, offset, count,
-						       prev);
+				rc = window_flush(context, offset, count, prev);
 				if (rc < 0) {
 					return rc;
 				}
@@ -436,7 +437,7 @@ static int generic_flush(struct mbox_context *context)
 	/* Clear the dirty bytemap since we have written back all changes */
 	return window_set_bytemap(context, context->current, 0,
 				  context->current->size >>
-				  context->backend.block_size_shift,
+					  context->backend.block_size_shift,
 				  WINDOW_CLEAN);
 }
 
@@ -546,7 +547,8 @@ static int protocol_v2_get_info(struct mbox_context *context,
 
 	io->resp.v2.block_size_shift = context->backend.block_size_shift;
 	MSG_INFO("Block Size: 0x%.8x (shift: %u)\n",
-		 1 << context->backend.block_size_shift, context->backend.block_size_shift);
+		 1 << context->backend.block_size_shift,
+		 context->backend.block_size_shift);
 
 	io->resp.v2.timeout = get_suggested_timeout(context);
 
@@ -558,8 +560,8 @@ static int protocol_v2_get_flash_info(struct mbox_context *context,
 {
 	struct backend *backend = &context->backend;
 
-	io->resp.v2.flash_size =
-		backend->flash_size >> backend->block_size_shift;
+	io->resp.v2.flash_size = backend->flash_size >>
+				 backend->block_size_shift;
 	io->resp.v2.erase_size =
 		((1 << backend->erase_size_shift) >> backend->block_size_shift);
 
@@ -575,9 +577,10 @@ static int protocol_v2_create_window(struct mbox_context *context,
 	if (rc < 0)
 		return rc;
 
-	io->resp.size = context->current->size >> context->backend.block_size_shift;
+	io->resp.size = context->current->size >>
+			context->backend.block_size_shift;
 	io->resp.offset = context->current->flash_offset >>
-					context->backend.block_size_shift;
+			  context->backend.block_size_shift;
 
 	return 0;
 }
@@ -627,7 +630,8 @@ static int protocol_v2_erase(struct mbox_context *context,
 	return 0;
 }
 
-static int protocol_v2_flush(struct mbox_context *context __attribute__((unused)),
+static int protocol_v2_flush(struct mbox_context *context
+			     __attribute__((unused)),
 			     struct protocol_flush *io __attribute__((unused)))
 {
 	if (!(context->current && context->current_is_write)) {
@@ -700,8 +704,8 @@ static int protocol_negotiate_version(struct mbox_context *context,
 	if (requested < API_MIN_VERSION)
 		return -EINVAL;
 
-	context->version = (requested > API_MAX_VERSION) ?
-				API_MAX_VERSION : requested;
+	context->version = (requested > API_MAX_VERSION) ? API_MAX_VERSION :
+							   requested;
 
 	context->protocol = protocol_ops_map[context->version];
 
@@ -760,10 +764,11 @@ int protocol_reset(struct mbox_context *context)
 		return rc;
 	}
 
-	rc = protocol_events_set(context,
-			BMC_EVENT_DAEMON_READY | BMC_EVENT_PROTOCOL_RESET);
+	rc = protocol_events_set(context, BMC_EVENT_DAEMON_READY |
+						  BMC_EVENT_PROTOCOL_RESET);
 	if (rc < 0) {
-		MSG_ERR("Failed to set daemon ready state, daemon remains not ready\n");
+		MSG_ERR("Failed to set daemon ready state, daemon remains not "
+			"ready\n");
 		return rc;
 	}
 

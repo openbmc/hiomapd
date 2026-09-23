@@ -3,17 +3,17 @@
 
 #include <assert.h>
 #include <stdarg.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <linux/types.h>
 
+#include "backend.h"
 #include "common.h"
 #include "mboxd.h"
-#include "backend.h"
 
 #include "test/tmpf.h"
 
@@ -38,7 +38,7 @@ char *get_dev_mtd(void)
 struct erase_info_user *recorded;
 int n_ioctls;
 
-#define MEM_SIZE 3
+#define MEM_SIZE   3
 #define ERASE_SIZE 1
 
 int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
@@ -52,8 +52,7 @@ int ioctl(int fd __attribute__((unused)), unsigned long request, ...)
 	}
 
 	switch (request) {
-	case MEMGETINFO:
-	{
+	case MEMGETINFO: {
 		struct mtd_info_user *info;
 
 		va_start(ap, request);
@@ -92,13 +91,13 @@ void dump_ioctls(void)
 	printf("n_ioctls: %d\n", n_ioctls);
 
 	for (i = 0; i < n_ioctls; i++)
-		printf("%d: start: %d, length %d\n",
-				i, recorded[i].start, recorded[i].length);
+		printf("%d: start: %d, length %d\n", i, recorded[i].start,
+		       recorded[i].length);
 }
 
 int main(void)
 {
-	struct mbox_context context = {0};
+	struct mbox_context context = { 0 };
 	struct backend *backend;
 	char data[MEM_SIZE];
 	int rc;

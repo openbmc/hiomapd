@@ -37,15 +37,13 @@ static int transport_dbus_property_update(struct mbox_context *context,
 		props[i++] = "ProtocolReset";
 	}
 
-	rc = sd_bus_emit_properties_changed_strv(context->bus,
-						 MBOX_DBUS_OBJECT,
+	rc = sd_bus_emit_properties_changed_strv(context->bus, MBOX_DBUS_OBJECT,
 						 /* FIXME: Hard-coding v2 */
 						 MBOX_DBUS_PROTOCOL_IFACE_V2,
 						 props);
 
 	return (rc < 0) ? rc : 0;
 }
-
 
 static int transport_dbus_put_events(struct mbox_context *context, uint8_t mask)
 {
@@ -99,7 +97,8 @@ static int transport_dbus_reset(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
-				   sd_bus_error *ret_error __attribute__((unused)))
+				   sd_bus_error *ret_error
+				   __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_get_info io;
@@ -139,8 +138,7 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	rc = sd_bus_message_append(n, "yyq",
-				   io.resp.api_version,
+	rc = sd_bus_message_append(n, "yyq", io.resp.api_version,
 				   io.resp.v2.block_size_shift,
 				   io.resp.v2.timeout);
 	if (rc < 0) {
@@ -154,7 +152,8 @@ static int transport_dbus_get_info(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
-					 sd_bus_error *ret_error __attribute__((unused)))
+					 sd_bus_error *ret_error
+					 __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_get_flash_info io;
@@ -177,8 +176,7 @@ static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
 		return rc;
 	}
 
-	rc = sd_bus_message_append(n, "qq",
-				   io.resp.v2.flash_size,
+	rc = sd_bus_message_append(n, "qq", io.resp.v2.flash_size,
 				   io.resp.v2.erase_size);
 	if (rc < 0) {
 		MSG_ERR("sd_bus_message_append failed!\n");
@@ -190,10 +188,10 @@ static int transport_dbus_get_flash_info(sd_bus_message *m, void *userdata,
 	return rc;
 }
 
-static int transport_dbus_create_window(struct mbox_context *context,
-					bool ro,
+static int transport_dbus_create_window(struct mbox_context *context, bool ro,
 					sd_bus_message *m,
-					sd_bus_error *ret_error __attribute__((unused)))
+					sd_bus_error *ret_error
+					__attribute__((unused)))
 {
 	struct protocol_create_window io;
 	sd_bus_message *n;
@@ -222,9 +220,7 @@ static int transport_dbus_create_window(struct mbox_context *context,
 		return rc;
 	}
 
-	rc = sd_bus_message_append(n, "qqq",
-				   io.resp.lpc_address,
-				   io.resp.size,
+	rc = sd_bus_message_append(n, "qqq", io.resp.lpc_address, io.resp.size,
 				   io.resp.offset);
 	if (rc < 0) {
 		MSG_ERR("sd_bus_message_append failed!\n");
@@ -253,7 +249,8 @@ static int transport_dbus_create_write_window(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_close_window(sd_bus_message *m, void *userdata,
-				       sd_bus_error *ret_error __attribute__((unused)))
+				       sd_bus_error *ret_error
+				       __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_close io;
@@ -285,11 +282,11 @@ static int transport_dbus_close_window(sd_bus_message *m, void *userdata,
 	rc = sd_bus_send(NULL, n, NULL);
 	sd_bus_message_unref(n);
 	return rc;
-
 }
 
 static int transport_dbus_mark_dirty(sd_bus_message *m, void *userdata,
-				     sd_bus_error *ret_error __attribute__((unused)))
+				     sd_bus_error *ret_error
+				     __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	struct protocol_mark_dirty io;
@@ -324,7 +321,8 @@ static int transport_dbus_mark_dirty(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_write_flush(sd_bus_message *m, void *userdata,
-				      sd_bus_error *ret_error __attribute__((unused)))
+				      sd_bus_error *ret_error
+				      __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	sd_bus_message *n;
@@ -422,12 +420,11 @@ static int transport_dbus_erase(sd_bus_message *m, void *userdata,
 }
 
 static int transport_dbus_get_property(sd_bus *bus __attribute__((unused)),
-				       const char *path,
-				       const char *interface,
+				       const char *path, const char *interface,
 				       const char *property,
-				       sd_bus_message *reply,
-				       void *userdata,
-				       sd_bus_error *ret_error __attribute__((unused)))
+				       sd_bus_message *reply, void *userdata,
+				       sd_bus_error *ret_error
+				       __attribute__((unused)))
 {
 	struct mbox_context *context = userdata;
 	bool value;
@@ -493,12 +490,10 @@ static const sd_bus_vtable protocol_v2_vtable[] = {
 	SD_BUS_PROPERTY("DaemonReady", "b", transport_dbus_get_property,
 			0, /* Just a pointer to struct mbox_context */
 			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("ProtocolReset",  "b",
-			transport_dbus_get_property,
+	SD_BUS_PROPERTY("ProtocolReset", "b", transport_dbus_get_property,
 			0, /* Just a pointer to struct mbox_context */
 			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-	SD_BUS_PROPERTY("WindowReset", "b",
-			transport_dbus_get_property,
+	SD_BUS_PROPERTY("WindowReset", "b", transport_dbus_get_property,
 			0, /* Just a pointer to struct mbox_context */
 			SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
 	SD_BUS_VTABLE_END
@@ -509,19 +504,16 @@ int transport_dbus_init(struct mbox_context *context,
 {
 	int rc;
 
-	rc = sd_bus_add_object_vtable(context->bus, NULL,
-					MBOX_DBUS_OBJECT,
-					MBOX_DBUS_PROTOCOL_IFACE,
-					protocol_unversioned_vtable,
-					context);
+	rc = sd_bus_add_object_vtable(context->bus, NULL, MBOX_DBUS_OBJECT,
+				      MBOX_DBUS_PROTOCOL_IFACE,
+				      protocol_unversioned_vtable, context);
 	if (rc < 0) {
 		return rc;
 	}
 
-	rc = sd_bus_add_object_vtable(context->bus, NULL,
-					MBOX_DBUS_OBJECT,
-					MBOX_DBUS_PROTOCOL_IFACE_V2,
-					protocol_v2_vtable, context);
+	rc = sd_bus_add_object_vtable(context->bus, NULL, MBOX_DBUS_OBJECT,
+				      MBOX_DBUS_PROTOCOL_IFACE_V2,
+				      protocol_v2_vtable, context);
 	if (rc < 0) {
 		return rc;
 	}

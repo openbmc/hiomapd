@@ -26,12 +26,12 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "common.h"
 #include "backend.h"
+#include "common.h"
 #include "lpc.h"
 #include "mboxd.h"
 
-#define MIN(__x__, __y__)  (((__x__) < (__y__)) ? (__x__) : (__y__))
+#define MIN(__x__, __y__) (((__x__) < (__y__)) ? (__x__) : (__y__))
 
 #define FILE_ERASE_SIZE (4 * 1024)
 
@@ -124,12 +124,12 @@ static int file_erase(struct backend *backend, uint32_t offset, uint32_t count)
 {
 	const uint32_t erase_size = 1 << backend->erase_size_shift;
 	struct file_data *priv = backend->priv;
-	struct erase_info_user erase_info = {0};
+	struct erase_info_user erase_info = { 0 };
 	int rc;
 
 	MSG_DBG("Erase flash @ 0x%.8x for 0x%.8x\n", offset, count);
 
-	uint8_t* erase_buf = (uint8_t*)malloc(count);
+	uint8_t *erase_buf = (uint8_t *)malloc(count);
 	if (!erase_buf) {
 		MSG_ERR("Couldn't malloc erase buffer. %s\n", strerror(errno));
 		return -1;
@@ -142,7 +142,6 @@ static int file_erase(struct backend *backend, uint32_t offset, uint32_t count)
 		MSG_ERR("Couldn't erase flash at 0x%.8x\n", erase_info.start);
 		return -errno;
 	}
-
 
 	return 0;
 }
@@ -159,8 +158,8 @@ static int file_erase(struct backend *backend, uint32_t offset, uint32_t count)
  *		code. file_copy will copy at most 'size' bytes, but it may
  *		copy less.
  */
-static int64_t file_copy(struct backend *backend, uint32_t offset,
-			  void *mem, uint32_t size)
+static int64_t file_copy(struct backend *backend, uint32_t offset, void *mem,
+			 uint32_t size)
 {
 	struct file_data *priv = backend->priv;
 	int32_t size_read;
@@ -199,7 +198,7 @@ static int64_t file_copy(struct backend *backend, uint32_t offset,
  * Return:	0 on success otherwise negative error code
  */
 static int file_write(struct backend *backend, uint32_t offset, void *buf,
-		       uint32_t count)
+		      uint32_t count)
 {
 	struct file_data *priv = backend->priv;
 	uint32_t buf_offset = 0;
@@ -268,7 +267,7 @@ static const struct backend_ops file_ops = {
 
 struct backend backend_get_file(void)
 {
-	struct backend be = {0};
+	struct backend be = { 0 };
 
 	be.ops = &file_ops;
 
